@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Fast Sokon | مساعد الصيدلي الذكي</title>
+    
+    <!-- Critical CSS inline -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    
+    <!-- Firebase SDKs - deferred loading for performance -->
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js" defer></script>
+    <script is:inline src="/firebase-config.js" defer></script>
+
+    <style is:global>
+        :root {
+            --bg-start: #0a0a1a;
+            --bg-end: #12102a;
+            --card-bg: rgba(20, 18, 38, 0.85);
+            --border-light: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(255, 255, 255, 0.12);
+            --purple: #9d8cff;
+            --purple-dark: #6b5bdb;
+            --purple-glow: rgba(157, 140, 255, 0.2);
+            --gold: #ffd966;
+            --gold-dark: #e6c450;
+            --text-white: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --danger: #ff6b6b;
+            --success: #51cf66;
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 0.25s ease;
+            --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+            min-height: 100vh;
+            min-height: 100dvh;
+            color: var(--text-white);
+            padding: 12px;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 30%, var(--purple-glow), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            transform: translateZ(0);
+        }
+
+        .logo {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .logo-icon {
+            font-size: 26px;
+            background: linear-gradient(135deg, var(--purple), var(--gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, var(--purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .profile-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-sm);
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-family: inherit;
+            color: inherit;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .profile-btn:active {
+            transform: scale(0.97);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-name {
+            font-size: 14px;
+            font-weight: 600;
+            max-width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-dim);
+        }
+
+        /* Camera Card */
+        .camera-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-xl);
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .camera-btn {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(157, 140, 255, 0.15), rgba(255, 217, 102, 0.08));
+            border: 1px solid var(--purple);
+            color: var(--purple);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-family: inherit;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .camera-btn:active {
+            transform: scale(0.98);
+            background: linear-gradient(135deg, rgba(157, 140, 255, 0.25), rgba(255, 217, 102, 0.15));
+        }
+
+        /* Invoices Section */
+        .invoices-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-xl);
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: var(--purple);
+        }
+
+        .sync-status {
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-sm);
+            transition: var(--transition-fast);
+        }
+
+        .sync-status.online {
+            color: var(--success);
+        }
+
+        .sync-status.offline {
+            color: var(--danger);
+        }
+
+        .sync-status.syncing {
+            color: var(--purple);
+        }
+
+        .date-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-sm);
+            padding: 8px 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-family: inherit;
+            color: var(--text-dim);
+            width: 100%;
+            justify-content: center;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .date-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-md);
+            padding: 12px 8px;
+            text-align: center;
+            transition: var(--transition-fast);
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .stat-card:active {
+            transform: scale(0.98);
+        }
+
+        .stat-icon {
+            font-size: 22px;
+            color: var(--purple);
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .stat-unit {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Invoices List */
+        .invoices-list {
+            max-height: 45vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .invoices-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .invoices-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .invoices-list::-webkit-scrollbar-thumb {
+            background: var(--purple);
+            border-radius: 4px;
+        }
+
+        .invoice-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            position: relative;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .invoice-item:active {
+            transform: scale(0.99);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .supplier {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--purple);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .invoice-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .items-count {
+            font-size: 12px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .total {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(255, 107, 107, 0.15);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: var(--radius-sm);
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        .delete-btn i {
+            color: var(--danger);
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Modals - محسنة للأداء */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-normal), visibility var(--transition-normal);
+            will-change: opacity;
+        }
+
+        .modal.active {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(20, 18, 38, 0.98), rgba(16, 14, 32, 0.98));
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 450px;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: transform var(--transition-normal);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            background: inherit;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-sm);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            color: var(--text-dim);
+            font-family: inherit;
+        }
+
+        .modal-close:active {
+            transform: scale(0.95);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        /* Calendar Styles */
+        .filter-select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-white);
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            outline: none;
+            transition: var(--transition-fast);
+        }
+
+        .filter-select:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 10px var(--purple-glow);
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .month-text {
+            font-size: 18px;
+            font-weight: 700;
+            user-select: none;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-sm);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            color: var(--text-dim);
+            font-family: inherit;
+            transform: translateZ(0);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            user-select: none;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            transition: var(--transition-fast);
+            transform: translateZ(0);
+            will-change: transform;
+            user-select: none;
+        }
+
+        .calendar-day:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--gold);
+            color: var(--gold);
+        }
+
+        .calendar-day.selected {
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            color: white;
+        }
+
+        .calendar-day.has-invoices::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--gold);
+        }
+
+        .calendar-hint {
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .hint-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--gold);
+        }
+
+        /* Invoice Detail Styles */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .items-list {
+            margin-top: 16px;
+        }
+
+        .items-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--purple);
+        }
+
+        .item-row {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .item-price {
+            font-size: 13px;
+            color: var(--gold);
+        }
+
+        .detail-total {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px solid var(--border-light);
+            text-align: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .delete-detail-btn {
+            width: 100%;
+            margin-top: 20px;
+            background: rgba(255, 107, 107, 0.15);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-family: inherit;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .delete-detail-btn:active {
+            transform: scale(0.98);
+            background: rgba(255, 107, 107, 0.25);
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* تحسينات للهواتف الضعيفة */
+        @media (max-width: 380px) {
+            body {
+                padding: 8px;
+            }
+            
+            .stat-value {
+                font-size: 16px;
+            }
+            
+            .profile-name {
+                display: none;
+            }
+            
+            .calendar-day {
+                font-size: 12px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo" aria-label="Fast Sokon">
+                <i class="fas fa-capsules logo-icon" aria-hidden="true"></i>
+                <span class="logo-text">Fast Sokon</span>
+            </div>
+            <button class="profile-btn" id="profileBtn" aria-label="الملف الشخصي">
+                <div class="profile-avatar" id="profileAvatar">👤</div>
+                <span class="profile-name" id="profileName">الملف الشخصي</span>
+            </button>
+        </div>
+
+        <!-- Camera Section -->
+        <div class="camera-card">
+            <button class="camera-btn" id="cameraBtn" aria-label="مسح فاتورة جديدة">
+                <i class="fas fa-camera-retro fa-lg" aria-hidden="true"></i>
+                مسح فاتورة جديدة
+            </button>
+        </div>
+
+        <!-- Invoices Section -->
+        <div class="invoices-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-file-invoice" aria-hidden="true"></i>
+                    <span>الفواتير</span>
+                </div>
+                <div class="sync-status offline" id="syncStatus" role="status" aria-live="polite">
+                    <i class="fas fa-cloud-slash" aria-hidden="true"></i>
+                    <span>غير متصل</span>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <button class="date-btn" id="dateBtn" aria-label="اختيار التاريخ">
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                    <span id="currentDateText"></span>
+                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-receipt" aria-hidden="true"></i></div>
+                    <div class="stat-label">الفواتير</div>
+                    <div class="stat-value" id="statInvoices">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-cubes" aria-hidden="true"></i></div>
+                    <div class="stat-label">الأصناف</div>
+                    <div class="stat-value" id="statItems">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-money-bill-wave" aria-hidden="true"></i></div>
+                    <div class="stat-label">الإجمالي</div>
+                    <div class="stat-value" id="statTotal">0</div>
+                    <span class="stat-unit">ج.م</span>
+                </div>
+            </div>
+
+            <!-- Invoices List -->
+            <div class="invoices-list" id="invoicesList">
+                <div class="empty-state">
+                    <i class="fas fa-inbox" aria-hidden="true"></i>
+                    <p>لا توجد فواتير لهذا اليوم</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div class="modal" id="calendarModal" role="dialog" aria-modal="true" aria-label="اختيار التاريخ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                    <span>اختر تاريخ</span>
+                </div>
+                <button class="modal-close" id="closeCalendarModal" aria-label="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <select class="filter-select" id="supplierFilter" aria-label="فلترة حسب المورد">
+                    <option value="all">🔍 جميع الموردين</option>
+                </select>
+                
+                <div class="calendar-nav">
+                    <button class="nav-btn" id="prevMonth" aria-label="الشهر السابق">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <div class="month-text" id="monthText" aria-live="polite"></div>
+                    <button class="nav-btn" id="nextMonth" aria-label="الشهر التالي">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                
+                <div class="weekdays">
+                    <span>أحد</span><span>إثنين</span><span>ثلاثاء</span>
+                    <span>أربعاء</span><span>خميس</span><span>جمعة</span><span>سبت</span>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+                
+                <div class="calendar-hint">
+                    <div class="hint-dot"></div>
+                    <span>أيام تحتوي على فواتير</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Detail Modal -->
+    <div class="modal" id="invoiceModal" role="dialog" aria-modal="true" aria-label="تفاصيل الفاتورة">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-receipt" aria-hidden="true"></i>
+                    <span>تفاصيل الفاتورة</span>
+                </div>
+                <button class="modal-close" id="closeInvoiceModal" aria-label="إغلاق">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="invoiceDetailContent">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script is:inline>
+        // ============================================
+        // Fast Sokon - الصفحة الرئيسية v2.1
+        // ✅ حل تضارب المزامنة باستخدام updatedAt
+        // ✅ تحسينات أمان: التحقق من صحة الفواتير
+        // ✅ قراءة الفواتير من السحابة أولاً (Cloud-First)
+        // ============================================
+
+        class FastSokonHome {
+            constructor() {
+                // Core services
+                this.db = null;
+                this.auth = null;
+                this.firestore = null;
+                this.rtdb = null;
+                
+                // State
+                this.currentUser = null;
+                this.profileData = null;
+                this.broadcastChannel = null;
+                this.unsubscribeAuth = null;
+                this.unsubscribeRTDB = null;
+                
+                // Invoices data
+                this.allInvoices = [];
+                this.invoicesByDate = new Map();
+                this.suppliersSet = new Set();
+                this.invoiceListHandler = null;
+                
+                // UI state
+                this.selectedDate = new Date();
+                this.selectedDateStr = this.formatDateStr(this.selectedDate);
+                this.currentMonth = this.selectedDate.getMonth();
+                this.currentYear = this.selectedDate.getFullYear();
+                this.selectedSupplier = 'all';
+                this.currentInvoiceId = null;
+                this.isOnline = navigator.onLine;
+                
+                // Loading states
+                this.loadingStates = new Set();
+                
+                // Cache
+                this.cacheTimestamp = 0;
+                this.CACHE_DURATION = 5000;
+                
+                // Constants
+                this.DB_NAME = 'FastSokonDB';
+                this.DB_VERSION = 8;
+                this.MAX_INVOICE_ITEMS = 500;
+                this.MAX_INVOICE_TOTAL = 1000000;
+                
+                // Initialize
+                this.init();
+            }
+
+            async init() {
+                try {
+                    await this.waitForFirebase();
+                    this.setupFirebase();
+                    this.setupBroadcastChannel();
+                    await this.openIndexedDB();
+                    this.setupAuthListener();
+                    this.setupEventListeners();
+                    this.setupKeyboardShortcuts();
+                    this.startOnlineMonitoring();
+                    console.log('✅ Fast Sokon Home initialized');
+                } catch (error) {
+                    console.error('❌ Initialization failed:', error);
+                }
+            }
+
+            // ========== Firebase Initialization ==========
+            waitForFirebase() {
+                return new Promise((resolve, reject) => {
+                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+                        resolve();
+                        return;
+                    }
+                    
+                    let attempts = 0;
+                    const maxAttempts = 100;
+                    const check = () => {
+                        attempts++;
+                        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+                            resolve();
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error('Firebase SDK failed to load'));
+                        } else {
+                            requestAnimationFrame(() => setTimeout(check, 50));
+                        }
+                    };
+                    check();
+                });
+            }
+
+            setupFirebase() {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                this.auth = firebase.auth();
+                this.firestore = firebase.firestore();
+                this.rtdb = firebase.database();
+                
+                // Enable offline persistence
+                this.firestore.enablePersistence({ synchronizeTabs: false }).catch(err => {
+                    console.warn('Firestore persistence failed:', err.code);
+                });
+            }
+
+            setupBroadcastChannel() {
+                try {
+                    this.broadcastChannel = new BroadcastChannel('fast_sokon_updates');
+                    this.broadcastChannel.onmessage = async (event) => {
+                        if (event.data.type === 'profile_update' && this.currentUser) {
+                            await this.refreshProfileFromDB();
+                        }
+                        if (event.data.type === 'invoice_change' && this.currentUser) {
+                            await this.refreshData();
+                        }
+                    };
+                } catch (e) {
+                    console.warn('BroadcastChannel not supported, using localStorage fallback');
+                    window.addEventListener('storage', async (e) => {
+                        if (e.key === 'profile_update' && this.currentUser) {
+                            await this.refreshProfileFromDB();
+                        }
+                        if (e.key === 'invoice_change' && this.currentUser) {
+                            await this.refreshData();
+                        }
+                    });
+                }
+            }
+
+            // ========== IndexedDB Operations ==========
+            openIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                    
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        
+                        if (!db.objectStoreNames.contains('invoices')) {
+                            const store = db.createObjectStore('invoices', { keyPath: 'id' });
+                            store.createIndex('date', 'dateStr');
+                            store.createIndex('supplier', 'supplier');
+                            store.createIndex('updatedAt', 'updatedAt');
+                        }
+                        
+                        if (!db.objectStoreNames.contains('profile')) {
+                            db.createObjectStore('profile', { keyPath: 'uid' });
+                        }
+                        
+                        if (!db.objectStoreNames.contains('saved_accounts')) {
+                            db.createObjectStore('saved_accounts', { keyPath: 'uid' });
+                        }
+                    };
+                    
+                    request.onsuccess = (e) => {
+                        this.db = e.target.result;
+                        this.db.onclose = () => console.warn('IndexedDB connection closed unexpectedly');
+                        resolve();
+                    };
+                    
+                    request.onerror = () => reject(request.error);
+                    request.onblocked = () => console.warn('IndexedDB blocked. Please close other tabs.');
+                });
+            }
+
+            async getFromDB(store, key) {
+                if (!this.db) return null;
+                return new Promise((resolve) => {
+                    try {
+                        const tx = this.db.transaction(store, 'readonly');
+                        const req = tx.objectStore(store).get(key);
+                        req.onsuccess = () => resolve(req.result || null);
+                        req.onerror = () => resolve(null);
+                    } catch (e) {
+                        resolve(null);
+                    }
+                });
+            }
+
+            async putToDB(store, data) {
+                if (!this.db) return;
+                return new Promise((resolve) => {
+                    try {
+                        const tx = this.db.transaction(store, 'readwrite');
+                        tx.objectStore(store).put(data);
+                        tx.oncomplete = () => resolve();
+                    } catch (e) {
+                        resolve();
+                    }
+                });
+            }
+
+            async getAllFromDB(store) {
+                if (!this.db) return [];
+                return new Promise((resolve) => {
+                    try {
+                        const tx = this.db.transaction(store, 'readonly');
+                        const req = tx.objectStore(store).getAll();
+                        req.onsuccess = () => resolve(req.result || []);
+                        req.onerror = () => resolve([]);
+                    } catch (e) {
+                        resolve([]);
+                    }
+                });
+            }
+
+            async deleteFromDB(store, key) {
+                if (!this.db) return;
+                return new Promise((resolve) => {
+                    try {
+                        const tx = this.db.transaction(store, 'readwrite');
+                        tx.objectStore(store).delete(key);
+                        tx.oncomplete = () => resolve();
+                    } catch (e) {
+                        resolve();
+                    }
+                });
+            }
+
+            // ========== Validation (أمان) ==========
+            /**
+             * التحقق من صحة بيانات الفاتورة قبل الحفظ
+             * @param {Object} invoice - كائن الفاتورة
+             * @returns {boolean} - صحة البيانات
+             */
+            validateInvoice(invoice) {
+                if (!invoice || typeof invoice !== 'object') {
+                    console.warn('❌ فشل التحقق: الفاتورة غير موجودة أو ليست كائنًا');
+                    return false;
+                }
+
+                // 1. الحقول الإلزامية
+                const required = ['id', 'supplier', 'total', 'items', 'dateStr'];
+                for (const field of required) {
+                    if (invoice[field] === undefined || invoice[field] === null) {
+                        console.warn(`❌ فشل التحقق: الحقل "${field}" مفقود`);
+                        return false;
+                    }
+                }
+
+                // 2. نوع المورد
+                if (typeof invoice.supplier !== 'string' || invoice.supplier.trim().length === 0) {
+                    console.warn('❌ فشل التحقق: اسم المورد غير صالح');
+                    return false;
+                }
+
+                // 3. صحة التاريخ
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(invoice.dateStr)) {
+                    console.warn('❌ فشل التحقق: تنسيق التاريخ غير صالح');
+                    return false;
+                }
+
+                // 4. التحقق من المصفوفة items
+                if (!Array.isArray(invoice.items)) {
+                    console.warn('❌ فشل التحقق: الأصناف ليست مصفوفة');
+                    return false;
+                }
+
+                // 5. حد أقصى لعدد الأصناف (لمنع إساءة الاستخدام)
+                if (invoice.items.length > this.MAX_INVOICE_ITEMS) {
+                    console.warn(`❌ فشل التحقق: عدد الأصناف (${invoice.items.length}) يتجاوز الحد المسموح (${this.MAX_INVOICE_ITEMS})`);
+                    return false;
+                }
+
+                // 6. التحقق من صحة كل صنف
+                for (let i = 0; i < invoice.items.length; i++) {
+                    const item = invoice.items[i];
+                    if (!item || typeof item !== 'object') {
+                        console.warn(`❌ فشل التحقق: الصنف #${i} غير صالح`);
+                        return false;
+                    }
+                    if (!item.name || typeof item.name !== 'string' || item.name.trim().length === 0) {
+                        console.warn(`❌ فشل التحقق: الصنف #${i} ليس له اسم`);
+                        return false;
+                    }
+                    const itemPrice = parseFloat(item.price);
+                    if (isNaN(itemPrice) || itemPrice < 0) {
+                        console.warn(`❌ فشل التحقق: سعر الصنف #${i} غير صالح`);
+                        return false;
+                    }
+                    const itemQty = parseInt(item.quantity) || 1;
+                    if (itemQty < 1 || itemQty > 10000) {
+                        console.warn(`❌ فشل التحقق: كمية الصنف #${i} غير صالحة`);
+                        return false;
+                    }
+                }
+
+                // 7. التحقق من قيمة الإجمالي
+                const total = parseFloat(invoice.total);
+                if (isNaN(total) || total < 0 || total > this.MAX_INVOICE_TOTAL) {
+                    console.warn(`❌ فشل التحقق: قيمة الإجمالي (${total}) غير صالحة`);
+                    return false;
+                }
+
+                return true;
+            }
+
+            // ========== Profile Management ==========
+            async loadProfileFromDB(uid) {
+                try {
+                    let profile = await this.getFromDB('profile', uid);
+                    if (!profile && this.currentUser) {
+                        profile = {
+                            uid: uid,
+                            email: this.currentUser.email || '',
+                            alias: this.currentUser.displayName || this.currentUser.email?.split('@')[0] || 'مستخدم',
+                            photoURL: this.currentUser.photoURL || '',
+                            lastLogin: Date.now()
+                        };
+                        await this.putToDB('profile', profile);
+                    }
+                    return profile;
+                } catch (e) {
+                    console.error('Error loading profile:', e);
+                    return null;
+                }
+            }
+
+            async refreshProfileFromDB() {
+                if (!this.currentUser) return;
+                this.profileData = await this.loadProfileFromDB(this.currentUser.uid);
+                this.updateProfileUI();
+            }
+
+            updateProfileUI() {
+                const avatarEl = document.getElementById('profileAvatar');
+                const nameEl = document.getElementById('profileName');
+                
+                if (!avatarEl || !nameEl) return;
+                
+                if (this.currentUser && this.profileData) {
+                    const displayName = this.profileData.alias || 
+                                       this.currentUser.displayName || 
+                                       (this.currentUser.email?.split('@')[0] || 'مستخدم');
+                    
+                    nameEl.textContent = displayName.length > 12 ? 
+                                        displayName.slice(0, 10) + '...' : 
+                                        displayName;
+                    
+                    const photoUrl = this.profileData.photoURL || '';
+                    
+                    if (photoUrl && (photoUrl.startsWith('data:image') || photoUrl.startsWith('http'))) {
+                        avatarEl.innerHTML = `<img src="${photoUrl}" alt="${this.escapeHtml(displayName)}" loading="lazy">`;
+                        avatarEl.style.background = 'none';
+                    } else {
+                        avatarEl.innerHTML = displayName.charAt(0).toUpperCase();
+                        avatarEl.style.background = 'linear-gradient(135deg, #9d8cff, #6b5bdb)';
+                    }
+                } else {
+                    nameEl.textContent = 'الملف الشخصي';
+                    avatarEl.innerHTML = '👤';
+                    avatarEl.style.background = 'none';
+                }
+            }
+
+            // ========== Invoices Management (Cloud-First) ==========
+            
+            /**
+             * تحميل الفواتير من السحابة (Firestore) - المصدر الأساسي
+             */
+            async loadInvoicesFromCloud() {
+                if (!this.firestore || !this.currentUser) return [];
+                
+                try {
+                    const snapshot = await this.firestore
+                        .collection('users')
+                        .doc(this.currentUser.uid)
+                        .collection('invoices')
+                        .get();
+                    
+                    const cloudInvoices = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        cloudInvoices.push({ 
+                            id: doc.id, 
+                            ...data,
+                            // ضمان وجود updatedAt (للبيانات القديمة)
+                            updatedAt: data.updatedAt || 0
+                        });
+                    });
+                    return cloudInvoices;
+                } catch (e) {
+                    console.warn('Cloud load failed:', e);
+                    return [];
+                }
+            }
+
+            /**
+             * تحميل الفواتير من التخزين المحلي (للوضع غير المتصل فقط)
+             */
+            async loadInvoicesFromLocal() {
+                return await this.getAllFromDB('invoices');
+            }
+
+            /**
+             * مزامنة فاتورة إلى السحابة
+             */
+            async syncInvoiceToCloud(invoice) {
+                if (!this.firestore || !this.currentUser) return false;
+                
+                try {
+                    // التأكد من وجود updatedAt
+                    if (!invoice.updatedAt) {
+                        invoice.updatedAt = Date.now();
+                    }
+                    
+                    await this.firestore
+                        .collection('users')
+                        .doc(this.currentUser.uid)
+                        .collection('invoices')
+                        .doc(invoice.id)
+                        .set(invoice, { merge: true });
+                    return true;
+                } catch (e) {
+                    console.warn('Cloud sync failed:', e);
+                    return false;
+                }
+            }
+
+            /**
+             * حفظ فاتورة (Cloud-First مع تحقق)
+             */
+            async saveInvoice(invoice) {
+                // 1. التحقق من صحة البيانات
+                if (!this.validateInvoice(invoice)) {
+                    throw new Error('بيانات الفاتورة غير صالحة - تم رفض الحفظ');
+                }
+
+                // 2. إضافة طابع زمني للتحديث
+                invoice.updatedAt = Date.now();
+
+                // 3. حفظ محلي سريع (للاستجابة الفورية والنسخ الاحتياطي)
+                await this.putToDB('invoices', invoice);
+
+                // 4. مزامنة إلى السحابة مع حل التضارب
+                if (this.isOnline && this.firestore && this.currentUser) {
+                    try {
+                        // جلب النسخة السحابية الحالية للمقارنة
+                        const cloudDoc = await this.firestore
+                            .collection('users')
+                            .doc(this.currentUser.uid)
+                            .collection('invoices')
+                            .doc(invoice.id)
+                            .get();
+
+                        if (cloudDoc.exists) {
+                            const cloudData = cloudDoc.data();
+                            const cloudUpdatedAt = cloudData.updatedAt || 0;
+                            const localUpdatedAt = invoice.updatedAt || 0;
+
+                            // حل التضارب: الأحدث يفوز
+                            if (cloudUpdatedAt > localUpdatedAt) {
+                                console.warn('⚠️ النسخة السحابية أحدث، لم يتم استبدالها. حفظ محلي فقط.');
+                                // تحديث النسخة المحلية بالنسخة السحابية الأحدث
+                                const mergedInvoice = { id: cloudDoc.id, ...cloudData };
+                                await this.putToDB('invoices', mergedInvoice);
+                                return mergedInvoice;
+                            }
+                        }
+
+                        // النسخة المحلية هي الأحدث أو غير موجودة سحابياً
+                        await this.syncInvoiceToCloud(invoice);
+                    } catch (e) {
+                        console.warn('⚠️ فشلت المزامعة السحابية، محفوظة محلياً:', e.message);
+                    }
+                }
+
+                return invoice;
+            }
+
+            /**
+             * حذف فاتورة (Cloud-First)
+             */
+            async deleteInvoice(invoiceId) {
+                if (!confirm('هل أنت متأكد من حذف هذه الفاتورة؟')) return false;
+                
+                this.setLoading('deleteDetailBtn', true);
+                
+                let cloudDeleted = false;
+                
+                // 1. حذف من السحابة أولاً
+                if (this.isOnline && this.firestore && this.currentUser) {
+                    try {
+                        await this.firestore
+                            .collection('users')
+                            .doc(this.currentUser.uid)
+                            .collection('invoices')
+                            .doc(invoiceId)
+                            .delete();
+                        cloudDeleted = true;
+                    } catch (e) {
+                        console.warn('Cloud delete failed:', e);
+                    }
+                }
+                
+                // 2. حذف من التخزين المحلي دائماً
+                await this.deleteFromDB('invoices', invoiceId);
+                
+                // 3. تحديث القائمة
+                await this.refreshData();
+                this.setLoading('deleteDetailBtn', false);
+                
+                return true;
+            }
+
+            // ========== Data Sync & Refresh (Cloud-First مع updatedAt) ==========
+            
+            /**
+             * تحديث البيانات: السحابة أولاً، مع حل التضارب باستخدام updatedAt
+             */
+            async refreshData() {
+                this.setSyncStatus('syncing', 'جاري المزامنة...');
+                
+                if (this.isOnline && this.currentUser) {
+                    try {
+                        // 1. جلب الفواتير من السحابة (المصدر الأساسي)
+                        const cloudInvoices = await this.loadInvoicesFromCloud();
+                        const cloudMap = new Map(cloudInvoices.map(inv => [inv.id, inv]));
+                        
+                        // 2. جلب الفواتير المحلية (للمقارنة ورفع الجديد منها)
+                        const localInvoices = await this.loadInvoicesFromLocal();
+                        const localMap = new Map(localInvoices.map(inv => [inv.id, inv]));
+                        
+                        // 3. تحديث التخزين المحلي بالبيانات السحابية مع حل التضارب
+                        for (const [id, cloudInv] of cloudMap) {
+                            const localInv = localMap.get(id);
+                            
+                            if (!localInv) {
+                                // موجودة سحابياً فقط → حفظ محلي
+                                await this.putToDB('invoices', cloudInv);
+                            } else {
+                                // موجودة في كلا المكانين → المقارنة بـ updatedAt
+                                const cloudUpdatedAt = cloudInv.updatedAt || 0;
+                                const localUpdatedAt = localInv.updatedAt || 0;
+                                
+                                if (cloudUpdatedAt >= localUpdatedAt) {
+                                    // السحابية أحدث أو متساوية → استخدام السحابية
+                                    await this.putToDB('invoices', cloudInv);
+                                }
+                                // إذا المحلية أحدث → ستبقى محلياً وسيتم رفعها لاحقاً
+                            }
+                        }
+                        
+                        // 4. رفع الفواتير المحلية الأحدث أو غير الموجودة سحابياً
+                        for (const [id, localInv] of localMap) {
+                            const cloudInv = cloudMap.get(id);
+                            
+                            if (!cloudInv) {
+                                // غير موجودة سحابياً → رفعها
+                                await this.syncInvoiceToCloud(localInv);
+                                await this.putToDB('invoices', localInv);
+                            } else {
+                                const cloudUpdatedAt = cloudInv.updatedAt || 0;
+                                const localUpdatedAt = localInv.updatedAt || 0;
+                                
+                                if (localUpdatedAt > cloudUpdatedAt) {
+                                    // المحلية أحدث → رفعها للسحابة
+                                    await this.syncInvoiceToCloud(localInv);
+                                    await this.putToDB('invoices', localInv);
+                                }
+                            }
+                        }
+                        
+                        // 5. تعيين جميع الفواتير من التخزين المحلي المحدث
+                        this.allInvoices = await this.loadInvoicesFromLocal();
+                        
+                    } catch (e) {
+                        console.warn('⚠️ فشلت المزامعة السحابية، استخدام التخزين المحلي:', e.message);
+                        this.allInvoices = await this.loadInvoicesFromLocal();
+                    }
+                } else {
+                    // وضع غير متصل: استخدام التخزين المحلي فقط
+                    this.allInvoices = await this.loadInvoicesFromLocal();
+                }
+                
+                // تحديث الذاكرة المؤقتة وعرض البيانات
+                this.updateCaches();
+                requestAnimationFrame(() => {
+                    this.renderAll();
+                    this.setSyncStatus(this.isOnline ? 'online' : 'offline');
+                });
+            }
+
+            updateCaches() {
+                this.invoicesByDate.clear();
+                this.suppliersSet.clear();
+                
+                this.allInvoices.forEach(inv => {
+                    if (inv.dateStr) {
+                        if (!this.invoicesByDate.has(inv.dateStr)) {
+                            this.invoicesByDate.set(inv.dateStr, []);
+                        }
+                        this.invoicesByDate.get(inv.dateStr).push(inv);
+                    }
+                    if (inv.supplier) {
+                        this.suppliersSet.add(inv.supplier);
+                    }
+                });
+            }
+
+            // ========== UI Rendering ==========
+            renderAll() {
+                this.renderStats();
+                this.renderInvoicesList();
+                this.updateDateDisplay();
+                this.updateSupplierFilter();
+                
+                if (document.getElementById('calendarModal')?.classList.contains('active')) {
+                    this.renderCalendar();
+                }
+            }
+
+            renderStats() {
+                const invoicesForDate = this.invoicesByDate.get(this.selectedDateStr) || [];
+                let filteredInvoices = invoicesForDate;
+                
+                if (this.selectedSupplier !== 'all') {
+                    filteredInvoices = invoicesForDate.filter(inv => inv.supplier === this.selectedSupplier);
+                }
+                
+                const totalInvoices = filteredInvoices.length;
+                const totalItems = filteredInvoices.reduce((sum, inv) => sum + (inv.items?.length || 0), 0);
+                const totalAmount = filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+                
+                document.getElementById('statInvoices').textContent = totalInvoices;
+                document.getElementById('statItems').textContent = totalItems;
+                document.getElementById('statTotal').textContent = totalAmount.toFixed(2);
+            }
+
+            renderInvoicesList() {
+                const container = document.getElementById('invoicesList');
+                if (!container) return;
+                
+                let invoices = this.invoicesByDate.get(this.selectedDateStr) || [];
+                
+                if (this.selectedSupplier !== 'all') {
+                    invoices = invoices.filter(inv => inv.supplier === this.selectedSupplier);
+                }
+                
+                if (invoices.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox" aria-hidden="true"></i>
+                            <p>لا توجد فواتير ${this.selectedSupplier !== 'all' ? `من "${this.escapeHtml(this.selectedSupplier)}" ` : ''}لهذا اليوم</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Sort invoices by time (newest first)
+                invoices.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+                
+                const fragment = document.createDocumentFragment();
+                
+                invoices.forEach(inv => {
+                    const item = document.createElement('div');
+                    item.className = 'invoice-item';
+                    item.dataset.id = inv.id;
+                    item.setAttribute('role', 'button');
+                    item.setAttribute('tabindex', '0');
+                    
+                    item.innerHTML = `
+                        <div class="delete-btn" data-id="${inv.id}" aria-label="حذف الفاتورة" role="button" tabindex="0">
+                            <i class="fas fa-trash" aria-hidden="true"></i>
+                        </div>
+                        <div class="invoice-header">
+                            <div class="supplier">
+                                <i class="fas fa-store" aria-hidden="true"></i>
+                                <span>${this.escapeHtml(inv.supplier || 'غير معروف')}</span>
+                            </div>
+                            <div class="time">
+                                <i class="far fa-clock" aria-hidden="true"></i>
+                                ${inv.time || '--:--'}
+                            </div>
+                        </div>
+                        <div class="invoice-footer">
+                            <div class="items-count">
+                                <i class="fas fa-boxes" aria-hidden="true"></i>
+                                <span>${inv.items?.length || 0} صنف</span>
+                            </div>
+                            <div class="total">
+                                ${parseFloat(inv.total || 0).toFixed(2)} ج.م
+                            </div>
+                        </div>
+                    `;
+                    fragment.appendChild(item);
+                });
+                
+                container.innerHTML = '';
+                container.appendChild(fragment);
+                
+                // Setup event delegation
+                this.setupInvoiceListListener();
+            }
+
+            renderCalendar() {
+                const grid = document.getElementById('calendarGrid');
+                if (!grid) return;
+                
+                const firstDay = new Date(this.currentYear, this.currentMonth, 1).getDay();
+                const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+                
+                grid.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                
+                // Empty cells
+                for (let i = 0; i < firstDay; i++) {
+                    const empty = document.createElement('div');
+                    empty.className = 'calendar-day';
+                    empty.style.background = 'transparent';
+                    empty.style.cursor = 'default';
+                    empty.setAttribute('aria-hidden', 'true');
+                    fragment.appendChild(empty);
+                }
+                
+                // Day cells
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(this.currentYear, this.currentMonth, day);
+                    const dateStr = this.formatDateStr(date);
+                    const hasInvoices = this.invoicesByDate.has(dateStr);
+                    const isToday = date.toDateString() === new Date().toDateString();
+                    const isSelected = date.toDateString() === this.selectedDate.toDateString();
+                    
+                    const dayEl = document.createElement('div');
+                    dayEl.className = 'calendar-day';
+                    if (isToday) dayEl.classList.add('today');
+                    if (isSelected) dayEl.classList.add('selected');
+                    if (hasInvoices) dayEl.classList.add('has-invoices');
+                    dayEl.textContent = day;
+                    dayEl.setAttribute('role', 'button');
+                    dayEl.setAttribute('tabindex', '0');
+                    dayEl.setAttribute('aria-label', `${day} ${this.getMonthName(this.currentMonth)} ${this.currentYear}${hasInvoices ? ' - يحتوي على فواتير' : ''}`);
+                    
+                    dayEl.addEventListener('click', () => {
+                        this.selectedDate = date;
+                        this.selectedDateStr = dateStr;
+                        this.renderAll();
+                        this.hideModal('calendarModal');
+                    });
+                    
+                    dayEl.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            dayEl.click();
+                        }
+                    });
+                    
+                    fragment.appendChild(dayEl);
+                }
+                
+                grid.appendChild(fragment);
+                
+                document.getElementById('monthText').textContent = 
+                    `${this.getMonthName(this.currentMonth)} ${this.currentYear}`;
+            }
+
+            updateDateDisplay() {
+                const element = document.getElementById('currentDateText');
+                if (element) {
+                    element.textContent = this.selectedDate.toLocaleDateString('ar-EG', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+            }
+
+            updateSupplierFilter() {
+                const select = document.getElementById('supplierFilter');
+                if (!select) return;
+                
+                const currentValue = select.value;
+                
+                // Clear and rebuild options
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+                
+                Array.from(this.suppliersSet).sort().forEach(supplier => {
+                    const option = document.createElement('option');
+                    option.value = supplier;
+                    option.textContent = supplier;
+                    select.appendChild(option);
+                });
+                
+                // Restore selection
+                if (currentValue && (currentValue === 'all' || this.suppliersSet.has(currentValue))) {
+                    select.value = currentValue;
+                } else {
+                    select.value = 'all';
+                    this.selectedSupplier = 'all';
+                }
+            }
+
+            setSyncStatus(status, customMessage = null) {
+                this.isOnline = status !== 'offline';
+                const statusEl = document.getElementById('syncStatus');
+                if (!statusEl) return;
+                
+                let icon, text, className;
+                
+                if (status === 'online') {
+                    icon = 'fa-cloud-upload-alt';
+                    text = 'متزامن';
+                    className = 'online';
+                } else if (status === 'syncing') {
+                    icon = 'fa-sync-alt fa-spin';
+                    text = customMessage || 'جاري المزامنة...';
+                    className = 'syncing';
+                } else {
+                    icon = 'fa-cloud-slash';
+                    text = 'غير متصل';
+                    className = 'offline';
+                }
+                
+                statusEl.innerHTML = `<i class="fas ${icon}" aria-hidden="true"></i><span>${text}</span>`;
+                statusEl.className = `sync-status ${className}`;
+            }
+
+            // ========== Invoice Detail ==========
+            async showInvoiceDetail(invoiceId) {
+                const invoice = this.allInvoices.find(inv => inv.id === invoiceId);
+                if (!invoice) return;
+                
+                this.currentInvoiceId = invoiceId;
+                const container = document.getElementById('invoiceDetailContent');
+                if (!container) return;
+                
+                const items = invoice.items || [];
+                
+                let itemsHtml = '';
+                if (items.length === 0) {
+                    itemsHtml = '<div class="item-row" style="justify-content: center;">لا توجد أصناف مسجلة</div>';
+                } else {
+                    items.forEach(item => {
+                        const qty = item.quantity || 1;
+                        const price = item.price || 0;
+                        const total = (qty * price).toFixed(2);
+                        itemsHtml += `
+                            <div class="item-row">
+                                <div class="item-name">${this.escapeHtml(item.name || 'صنف غير معروف')}</div>
+                                <div class="item-price">${qty} × ${price.toFixed(2)} = ${total} ج.م</div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                container.innerHTML = `
+                    <div class="detail-row">
+                        <div class="detail-label">المورد</div>
+                        <div class="detail-value">${this.escapeHtml(invoice.supplier || 'غير معروف')}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">التاريخ</div>
+                        <div class="detail-value">${invoice.dateStr || '--/--/----'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">الوقت</div>
+                        <div class="detail-value">${invoice.time || '--:--'}</div>
+                    </div>
+                    <div class="items-list">
+                        <div class="items-title">الأصناف (${items.length})</div>
+                        ${itemsHtml}
+                    </div>
+                    <div class="detail-total">
+                        الإجمالي: ${parseFloat(invoice.total || 0).toFixed(2)} ج.م
+                    </div>
+                    <button class="delete-detail-btn" id="deleteDetailBtn">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
+                        حذف الفاتورة
+                    </button>
+                `;
+                
+                this.showModal('invoiceModal');
+                
+                // Setup delete button
+                requestAnimationFrame(() => {
+                    const deleteBtn = document.getElementById('deleteDetailBtn');
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', async () => {
+                            const deleted = await this.deleteInvoice(invoiceId);
+                            if (deleted) {
+                                this.hideModal('invoiceModal');
+                            }
+                        });
+                    }
+                });
+            }
+
+            // ========== Auth Listener ==========
+            setupAuthListener() {
+                this.unsubscribeAuth = this.auth.onAuthStateChanged(async (user) => {
+                    this.currentUser = user;
+                    
+                    if (user) {
+                        this.profileData = await this.loadProfileFromDB(user.uid);
+                        this.updateProfileUI();
+                        this.setupRealtimeSync();
+                        await this.refreshData();
+                    } else {
+                        this.profileData = null;
+                        this.updateProfileUI();
+                        this.allInvoices = [];
+                        this.updateCaches();
+                        this.renderAll();
+                        this.setSyncStatus('offline');
+                    }
+                });
+            }
+
+            setupRealtimeSync() {
+                if (!this.rtdb || !this.currentUser) return;
+                
+                // Cleanup previous listener
+                if (this.unsubscribeRTDB) {
+                    this.rtdb.ref(`users/${this.currentUser.uid}/profile`).off('value', this.unsubscribeRTDB);
+                }
+                
+                // Listen for profile updates from profile page
+                this.unsubscribeRTDB = this.rtdb.ref(`users/${this.currentUser.uid}/profile`).on('value', async (snapshot) => {
+                    if (snapshot.exists()) {
+                        const cloudProfile = snapshot.val();
+                        const profile = await this.getFromDB('profile', this.currentUser.uid);
+                        if (profile) {
+                            profile.alias = cloudProfile.alias || profile.alias;
+                            profile.photoURL = cloudProfile.photoURL || profile.photoURL;
+                            await this.putToDB('profile', profile);
+                            this.profileData = profile;
+                            this.updateProfileUI();
+                        }
+                    }
+                });
+            }
+
+            // ========== Modal Management ==========
+            showModal(id) {
+                const modal = document.getElementById(id);
+                if (!modal) return;
+                
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                
+                // Focus first focusable element
+                requestAnimationFrame(() => {
+                    const focusable = modal.querySelector('button, input, select, [tabindex]');
+                    if (focusable) focusable.focus();
+                });
+            }
+
+            hideModal(id) {
+                const modal = document.getElementById(id);
+                if (!modal) return;
+                
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            hideAllModals() {
+                document.querySelectorAll('.modal.active').forEach(modal => {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden', 'true');
+                });
+            }
+
+            // ========== Loading States ==========
+            setLoading(btnId, loading) {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+                
+                if (loading) {
+                    if (!btn.dataset.originalHTML) {
+                        btn.dataset.originalHTML = btn.innerHTML;
+                    }
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="loading-spinner"></span> جاري...';
+                    this.loadingStates.add(btnId);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = btn.dataset.originalHTML || btn.innerHTML;
+                    delete btn.dataset.originalHTML;
+                    this.loadingStates.delete(btnId);
+                }
+            }
+
+            isLoading(btnId) {
+                return this.loadingStates.has(btnId);
+            }
+
+            // ========== Event Listeners ==========
+            setupEventListeners() {
+                // Navigation
+                document.getElementById('profileBtn')?.addEventListener('click', () => {
+                    window.location.href = '/profile';
+                });
+                
+                document.getElementById('cameraBtn')?.addEventListener('click', () => {
+                    window.location.href = '/camera';
+                });
+                
+                // Date button
+                document.getElementById('dateBtn')?.addEventListener('click', () => {
+                    this.renderCalendar();
+                    this.showModal('calendarModal');
+                });
+                
+                // Calendar navigation
+                document.getElementById('prevMonth')?.addEventListener('click', () => {
+                    if (this.currentMonth === 0) {
+                        this.currentMonth = 11;
+                        this.currentYear--;
+                    } else {
+                        this.currentMonth--;
+                    }
+                    this.renderCalendar();
+                });
+                
+                document.getElementById('nextMonth')?.addEventListener('click', () => {
+                    if (this.currentMonth === 11) {
+                        this.currentMonth = 0;
+                        this.currentYear++;
+                    } else {
+                        this.currentMonth++;
+                    }
+                    this.renderCalendar();
+                });
+                
+                // Supplier filter
+                document.getElementById('supplierFilter')?.addEventListener('change', (e) => {
+                    this.selectedSupplier = e.target.value;
+                    this.renderInvoicesList();
+                    this.renderStats();
+                });
+                
+                // Modal close buttons
+                document.getElementById('closeCalendarModal')?.addEventListener('click', () => {
+                    this.hideModal('calendarModal');
+                });
+                
+                document.getElementById('closeInvoiceModal')?.addEventListener('click', () => {
+                    this.hideModal('invoiceModal');
+                });
+                
+                // Close modals on outside click
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            this.hideModal(modal.id);
+                        }
+                    });
+                });
+            }
+
+            setupInvoiceListListener() {
+                const container = document.getElementById('invoicesList');
+                if (!container) return;
+                
+                // Remove previous handler
+                if (this.invoiceListHandler) {
+                    container.removeEventListener('click', this.invoiceListHandler);
+                }
+                
+                // Create and store new handler
+                this.invoiceListHandler = async (e) => {
+                    // Delete button
+                    const deleteBtn = e.target.closest('.delete-btn');
+                    if (deleteBtn) {
+                        e.stopPropagation();
+                        const id = deleteBtn.dataset.id;
+                        if (id) await this.deleteInvoice(id);
+                        return;
+                    }
+                    
+                    // Invoice item
+                    const invoiceItem = e.target.closest('.invoice-item');
+                    if (invoiceItem?.dataset?.id) {
+                        this.showInvoiceDetail(invoiceItem.dataset.id);
+                    }
+                };
+                
+                container.addEventListener('click', this.invoiceListHandler);
+                
+                // Keyboard support
+                container.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const target = e.target.closest('.invoice-item, .delete-btn');
+                        if (target) {
+                            e.preventDefault();
+                            target.click();
+                        }
+                    }
+                });
+            }
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.hideAllModals();
+                    }
+                });
+            }
+
+            startOnlineMonitoring() {
+                window.addEventListener('online', () => {
+                    this.setSyncStatus('syncing');
+                    this.refreshData();
+                });
+                
+                window.addEventListener('offline', () => {
+                    this.setSyncStatus('offline');
+                });
+                
+                // Initial status
+                this.setSyncStatus(navigator.onLine ? 'online' : 'offline');
+            }
+
+            // ========== Utility Functions ==========
+            formatDateStr(date) {
+                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            }
+
+            getMonthName(month) {
+                const names = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                return names[month] || '';
+            }
+
+            escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ========== Cleanup ==========
+            destroy() {
+                // Close BroadcastChannel
+                if (this.broadcastChannel) {
+                    this.broadcastChannel.close();
+                    this.broadcastChannel = null;
+                }
+                
+                // Unsubscribe from Firebase Auth
+                if (this.unsubscribeAuth) {
+                    this.unsubscribeAuth();
+                    this.unsubscribeAuth = null;
+                }
+                
+                // Unsubscribe from Realtime Database
+                if (this.unsubscribeRTDB && this.rtdb && this.currentUser) {
+                    this.rtdb.ref(`users/${this.currentUser.uid}/profile`).off('value', this.unsubscribeRTDB);
+                    this.unsubscribeRTDB = null;
+                }
+                
+                // Remove invoice list listener
+                const container = document.getElementById('invoicesList');
+                if (container && this.invoiceListHandler) {
+                    container.removeEventListener('click', this.invoiceListHandler);
+                    this.invoiceListHandler = null;
+                }
+                
+                // Close IndexedDB
+                if (this.db) {
+                    this.db.close();
+                    this.db = null;
+                }
+                
+                console.log('✅ Fast Sokon Home destroyed');
+            }
+        }
+
+        // Initialize application
+        let app;
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                app = new FastSokonHome();
+                window.app = app;
+            });
+        } else {
+            app = new FastSokonHome();
+            window.app = app;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (app) app.destroy();
+        });
+        
+        window.addEventListener('pagehide', () => {
+            if (app) app.destroy();
+        });
+    </script>
+</body>
+</html>

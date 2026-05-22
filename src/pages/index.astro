@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fast Sokon</title>
+<!-- تحميل الخط بشكل غير متزامن -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Cairo:wght@900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@900&display=swap" rel="stylesheet"></noscript>
+
+<style is:global>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #140a26 0%, #020108 100%);
+    font-family: 'Cairo', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+  }
+
+  /* ════ جسيمات الخلفية (نقاط لامعة) ════ */
+  .particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    box-shadow: 0 0 6px 2px #b794ff;
+    animation: twinkle 3s infinite alternate;
+  }
+  @keyframes twinkle {
+    0% { opacity: 0; transform: scale(0.5); }
+    80%, 100% { opacity: 0.8; transform: scale(1.5); }
+  }
+
+  /* ════ الحاوية الرئيسية للشعار ════ */
+  .logo-wrapper {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: logoEntry 1.2s cubic-bezier(0.17, 0.89, 0.32, 1.15) forwards;
+  }
+  @keyframes logoEntry {
+    0% { opacity: 0; transform: scale(0.3) translateY(30px); filter: blur(10px); }
+    50% { opacity: 1; transform: scale(1.05) translateY(0); filter: blur(0); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+  }
+
+  /* ════ الشعار النصي ════ */
+  .app-title {
+    font-size: clamp(3rem, 11vw, 6rem);
+    font-weight: 900;
+    text-align: center;
+    background: linear-gradient(135deg, #ffffff 0%, #b794ff 50%, #ffd966 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shineText 4s linear infinite;
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  @keyframes shineText {
+    to { background-position: 200% center; }
+  }
+
+  /* توهج خلفي للشعار */
+  .app-title::after {
+    content: 'Fast Sokon';
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: -1;
+    background: linear-gradient(135deg, #7c4dff, #ffd966);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: blur(20px);
+    opacity: 0.6;
+    animation: glowPulse 2.5s ease-in-out infinite alternate;
+  }
+  @keyframes glowPulse {
+    0% { opacity: 0.3; filter: blur(15px); }
+    100% { opacity: 0.9; filter: blur(30px); }
+  }
+
+  /* شريط التحميل الدائري (Spinner) */
+  .spinner {
+    width: 46px;
+    height: 46px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top: 3px solid #b794ff;
+    border-right: 3px solid #ffd966;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-top: 1.8rem;
+    box-shadow: 0 0 20px rgba(183,148,255,0.3);
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* رسالة نصية أسفل الدائرة */
+  .loading-text {
+    color: #b794ff;
+    font-size: 0.9rem;
+    margin-top: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    animation: fadeText 1.8s ease-in-out infinite;
+  }
+  @keyframes fadeText {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* ════ التجاوب مع الشاشات الصغيرة ════ */
+  @media (max-width: 480px) {
+    .app-title { font-size: 2.8rem; }
+    .spinner { width: 36px; height: 36px; }
+  }
+</style>
+</head>
+<body>
+  <!-- جسيمات الخلفية -->
+  <div class="particles" id="particles"></div>
+
+  <!-- المحتوى الرئيسي -->
+  <div class="logo-wrapper">
+    <h1 class="app-title">Fast Sokon</h1>
+    <div class="spinner"></div>
+    <div class="loading-text">يتم التحميل...</div>
+  </div>
+
+  <script is:inline>
+    // ======== 1. توليد جسيمات خفيفة عشوائية ========
+    (function createParticles() {
+      const container = document.getElementById('particles');
+      const fragment = document.createDocumentFragment();
+      const count = 35; // عدد الجسيمات
+      for (let i = 0; i < count; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const size = Math.random() * 3 + 1;
+        particle.style.width = size + 'px';
+        particle.style.height = size + 'px';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 3 + 's';
+        particle.style.animationDuration = 2 + Math.random() * 4 + 's';
+        fragment.appendChild(particle);
+      }
+      container.appendChild(fragment);
+    })();
+
+    // ======== 2. تسجيل Service Worker فوراً ========
+    if ('serviceWorker' in navigator) {
+      // sw.js لازم يكون في مجلد public/ عشان Astro يوصله
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('✅ SW مسجل:', reg.scope))
+        .catch(err => console.error('❌ فشل تسجيل SW:', err));
+    }
+
+    // ======== 3. الانتقال إلى الصفحة الرئيسية بعد التحميل ========
+    window.addEventListener('load', function() {
+      const delay = 2500; // فترة 2.5 ثانية
+
+      setTimeout(() => {
+        document.body.style.opacity = '0';
+        setTimeout(() => {
+          // تعديل المسار إلى "/home" بدل "home.html"
+          window.location.href = '/home';
+        }, 500);
+      }, delay);
+    });
+  </script>
+</body>
+</html>

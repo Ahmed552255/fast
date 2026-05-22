@@ -1,0 +1,1553 @@
+---
+// src/pages/profile.astro
+---
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>الملف الشخصي | Fast Sokon</title>
+    
+    <!-- Critical CSS inline -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    
+    <!-- Firebase SDKs - deferred loading -->
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js" defer></script>
+    <script is:inline src="/firebase-config.js" defer></script>
+
+    <style is:global>
+        :root {
+            --bg: #060411;
+            --card: rgba(13, 9, 31, 0.65);
+            --card-inner: rgba(255, 255, 255, 0.02);
+            --purple: #c3b0ff;
+            --purple-dark: #582fff;
+            --purple-glow: rgba(88, 47, 255, 0.2);
+            --gold: #ffc400;
+            --gold-light: #ffe082;
+            --text: #e5e1f5;
+            --text-dim: rgba(229, 225, 245, 0.4);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(114, 92, 255, 0.25);
+            --border-gold: rgba(255, 196, 0, 0.2);
+            --danger: #ff5252;
+            --success: #2ecc71;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            --blur: blur(16px);
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease;
+            --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-family);
+            background: radial-gradient(circle at 50% 15%, #130d35 0%, var(--bg) 75%);
+            min-height: 100vh; min-height: 100dvh;
+            color: var(--text);
+            display: flex; align-items: center; justify-content: center;
+            padding: 1rem;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100%; max-width: 410px; background: var(--card);
+            border-radius: var(--radius-lg); padding: 2rem 1.5rem;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), 0 0 30px var(--purple-glow);
+            border: 1px solid var(--border); backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            position: relative; z-index: 1;
+            will-change: transform;
+            transform: translateZ(0);
+        }
+
+        .back-btn {
+            position: absolute; top: 1.3rem; left: 1.3rem; width: 36px; height: 36px;
+            border-radius: 50%; background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border); color: var(--text);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; text-decoration: none;
+            transition: var(--transition-fast);
+        }
+        .back-btn:active { background: var(--purple-dark); border-color: transparent; transform: scale(1.05); }
+
+        h2 {
+            text-align: center; font-weight: 800; font-size: 1.45rem; margin-bottom: 1.8rem;
+            background: linear-gradient(135deg, #ffffff 40%, var(--purple) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+
+        .profile-card {
+            background: var(--card-inner); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 1.4rem 1.1rem;
+            margin-bottom: 1rem; text-align: center; position: relative; overflow: hidden;
+        }
+        .profile-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, var(--purple-dark), var(--purple));
+        }
+
+        .avatar {
+            width: 84px; height: 84px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple-dark), #3b19b8);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.3rem; font-weight: 800; color: #fff;
+            margin: 0 auto 0.8rem; border: 2px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            cursor: pointer; overflow: hidden; position: relative;
+            transition: var(--transition-fast); transform: translateZ(0);
+        }
+        .avatar:active { transform: scale(1.04); border-color: var(--purple); }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar .cam-icon {
+            position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; opacity: 0; transition: opacity var(--transition-fast);
+        }
+        .avatar:active .cam-icon { opacity: 1; }
+
+        .label { color: var(--purple); font-size: 0.78rem; font-weight: 700; margin-top: 0.7rem; letter-spacing: 0.3px; }
+        .value { color: #fff; font-size: 1rem; font-weight: 700; }
+        
+        .key-row { 
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem; 
+            margin: 0.25rem 0; 
+        }
+        .key-row .value {
+            font-size: 0.82rem; color: #fff; background: rgba(255,255,255,0.04);
+            padding: 0.25rem 0.7rem; border-radius: 10px;
+            max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .btn {
+            width: 100%; padding: 0.75rem 1.2rem; border-radius: 14px;
+            font-family: var(--font-family); font-weight: 700; font-size: 0.9rem;
+            cursor: pointer; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03); color: var(--text);
+            margin-bottom: 0.5rem; display: flex; align-items: center;
+            justify-content: center; gap: 0.4rem;
+            transition: var(--transition-fast); transform: translateZ(0);
+            -webkit-user-select: none; user-select: none;
+        }
+        .btn:active { background: rgba(255,255,255,0.06); border-color: var(--border-hover); transform: scale(0.98); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        
+        .btn.primary { 
+            background: linear-gradient(135deg, var(--purple-dark) 0%, #441ece 100%); 
+            border: none; box-shadow: 0 4px 15px var(--purple-glow); color: #fff; 
+        }
+        .btn.primary:active { transform: translateY(-1px) scale(0.98); box-shadow: 0 6px 20px rgba(88, 47, 255, 0.4); }
+        .btn.gold { background: rgba(255,196,0,0.05); border-color: var(--border-gold); color: var(--gold-light); }
+        .btn.gold:active { background: rgba(255,196,0,0.12); color: var(--gold); }
+        .btn.danger { background: rgba(255, 82, 82, 0.05); border-color: rgba(255, 82, 82, 0.18); color: #ffbcbc; }
+        .btn.danger:active { background: rgba(255, 82, 82, 0.12); border-color: var(--danger); }
+        
+        .btn.small { 
+            width: 30px; height: 30px; padding: 0; border-radius: 8px; 
+            margin-bottom: 0; font-size: 0.75rem; flex-shrink: 0;
+        }
+
+        input, .input-field {
+            width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
+            color: #fff; padding: 0.75rem 1.1rem; border-radius: 14px;
+            font-family: var(--font-family); font-size: 0.9rem; outline: none;
+            text-align: center; margin-bottom: 0.6rem;
+            transition: var(--transition-fast); transform: translateZ(0);
+        }
+        input:focus { 
+            border-color: var(--purple); box-shadow: 0 0 10px var(--purple-glow); 
+            background: rgba(0,0,0,0.3); 
+        }
+
+        .msg { 
+            padding: 0.5rem 0.9rem; border-radius: 10px; text-align: center; 
+            font-size: 0.78rem; font-weight: 600; margin-top: 0.4rem;
+            visibility: hidden; opacity: 0; transition: var(--transition-normal);
+        }
+        .msg.show { visibility: visible; opacity: 1; }
+        .msg.error { background: rgba(255, 82, 82, 0.1); border: 1px solid rgba(255, 82, 82, 0.2); color: #ffb3b3; }
+        .msg.success { background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.2); color: #b3ffe0; }
+        .msg.info { background: rgba(88, 47, 255, 0.1); border: 1px solid rgba(88, 47, 255, 0.2); color: #c3b0ff; }
+
+        .data-summary {
+            background: rgba(255,255,255,0.01); border: 1px solid var(--border);
+            border-radius: 12px; padding: 0.7rem 1rem; margin-bottom: 0.7rem;
+            font-size: 0.78rem; color: var(--text-dim); text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+        }
+        .data-summary strong { color: var(--gold); }
+        
+        #imageUploadInput { display: none; }
+
+        /* Modals - محسنة للأداء */
+        .modal {
+            position: fixed; inset: 0; background: rgba(4, 3, 11, 0.82);
+            z-index: 100; display: flex; align-items: center; justify-content: center;
+            padding: 1rem; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            visibility: hidden; opacity: 0; pointer-events: none;
+            transition: opacity var(--transition-normal), visibility var(--transition-normal);
+            will-change: opacity;
+        }
+        .modal.active { 
+            visibility: visible; opacity: 1; pointer-events: auto; 
+        }
+        .modal-box {
+            background: #0f0a24; border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius-lg); padding: 1.6rem; width: 100%;
+            max-width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            transform: scale(0.96); transition: transform var(--transition-normal);
+        }
+        .modal.active .modal-box { transform: scale(1); }
+        
+        .modal-box h3 { 
+            text-align: center; color: var(--gold-light); margin-bottom: 1rem; 
+            font-size: 1.15rem; font-weight: 700; 
+        }
+        .modal-actions { 
+            display: flex; gap: 0.5rem; margin-top: 0.8rem; 
+        }
+        .modal-actions .btn { flex: 1; margin-bottom: 0; }
+
+        .accounts-list-container { 
+            max-height: 180px; overflow-y: auto; margin-bottom: 1rem; 
+            padding-right: 0.2rem; -webkit-overflow-scrolling: touch;
+        }
+        .accounts-list-container::-webkit-scrollbar { width: 4px; }
+        .accounts-list-container::-webkit-scrollbar-thumb { 
+            background: rgba(255,255,255,0.1); border-radius: 4px; 
+        }
+        
+        .account-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.65rem 0.8rem; background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            margin-bottom: 0.4rem; cursor: pointer; transition: var(--transition-fast);
+            transform: translateZ(0);
+        }
+        .account-item:active { background: rgba(88, 47, 255, 0.1); border-color: var(--border-hover); }
+        .account-item.active { border-color: var(--gold); background: rgba(255, 196, 0, 0.03); }
+        
+        .acc-info { display: flex; align-items: center; gap: 0.6rem; text-align: right; max-width: 80%; }
+        .acc-avatar-mini {
+            width: 32px; height: 32px; border-radius: 50%; background: var(--purple-dark);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: #fff; font-size: 0.85rem;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .acc-avatar-mini img { width: 100%; height: 100%; object-fit: cover; }
+        .acc-meta { display: flex; flex-direction: column; overflow: hidden; }
+        .acc-meta .acc-alias { font-size: 0.85rem; font-weight: 700; color: #fff; }
+        .acc-meta .acc-email { font-size: 0.7rem; color: var(--text-dim); }
+        
+        .active-dot { 
+            width: 8px; height: 8px; background: var(--gold); border-radius: 50%; 
+            box-shadow: 0 0 8px var(--gold); 
+        }
+        .add-account-option { 
+            border: 1px dashed rgba(255, 196, 0, 0.3); background: transparent; 
+            color: var(--gold-light); 
+        }
+        .add-account-option:active { background: rgba(255, 196, 0, 0.05); border-color: var(--gold); }
+        
+        .hidden { display: none !important; }
+        
+        /* تحسينات للهواتف الضعيفة */
+        @media (max-width: 360px) {
+            .container { padding: 1.5rem 1rem; }
+            h2 { font-size: 1.3rem; }
+            .btn { font-size: 0.85rem; padding: 0.65rem 1rem; }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-btn" href="/" title="الرئيسية" aria-label="العودة للرئيسية">
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <h2><i class="fa-solid fa-id-card-clip"></i> الملف الشخصي</h2>
+
+        <!-- Login Panel -->
+        <div id="loginPanel">
+            <div style="text-align: center; margin-bottom: 1.2rem; padding: 0.8rem; background: rgba(88, 47, 255, 0.04); border-radius: 12px; border: 1px dashed rgba(88, 47, 255, 0.2);">
+                <p style="color: var(--purple); font-size: 0.85rem; font-weight: 700;">
+                    <i class="fa-solid fa-shield-halved"></i> تسجيل الدخول الآمن
+                </p>
+                <small style="color: var(--text-dim); font-size: 0.72rem;">قم بالدخول لإدارة بيانات سكون الخاصة بك</small>
+            </div>
+            <input type="email" id="emailInput" placeholder="البريد الإلكتروني" autocomplete="email" dir="ltr">
+            <input type="password" id="passwordInput" placeholder="كلمة المرور" autocomplete="current-password">
+            <button class="btn primary" id="loginBtn">
+                <i class="fa-solid fa-right-to-bracket"></i> دخول المنظومة
+            </button>
+            <button class="btn gold" id="showRegisterBtn">
+                <i class="fa-solid fa-user-plus"></i> فتح حساب جديد
+            </button>
+            <button class="btn hidden" id="quickSwitchLoginBtn">
+                <i class="fa-solid fa-users-gear"></i> تبديل إلى حساب محفوظ
+            </button>
+            <div class="msg" id="loginMsg" role="alert"></div>
+        </div>
+
+        <!-- Profile Panel -->
+        <div id="profilePanel" class="hidden">
+            <div class="profile-card">
+                <div class="avatar" id="avatarContainer" role="button" aria-label="تغيير الصورة الشخصية" tabindex="0">
+                    <span id="avatarInitial">?</span>
+                    <img id="avatarImage" src="" alt="الصورة الشخصية" style="display:none;" loading="lazy">
+                    <div class="cam-icon"><i class="fa-solid fa-camera"></i></div>
+                </div>
+                <input type="file" id="imageUploadInput" accept="image/*" capture="user">
+
+                <div class="label">الاسم المستعار</div>
+                <div class="key-row">
+                    <span class="value" id="displayAlias">---</span>
+                    <button class="btn small" id="editAliasBtn" title="تعديل الاسم" aria-label="تعديل الاسم المستعار">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </div>
+
+                <div class="label">البريد الإلكتروني المتصل</div>
+                <div class="key-row">
+                    <span class="value" id="displayEmail" dir="ltr">---</span>
+                    <button class="btn small" id="switchAccountBtn" style="color: var(--gold);" title="إدارة الحسابات" aria-label="إدارة الحسابات">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                    </button>
+                </div>
+
+                <div class="label">معرف المستخدم (UID)</div>
+                <div class="key-row">
+                    <span class="value" id="displayAccountId">---</span>
+                    <button class="btn small" id="copyIdBtn" title="نسخ المعرف" aria-label="نسخ معرف المستخدم">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="data-summary" id="dataSummary">
+                <i class="fa-solid fa-boxes-stacked"></i> جاري مزامنة الفواتير والمؤشرات...
+            </div>
+
+            <button class="btn danger" id="logoutBtn">
+                <i class="fa-solid fa-power-off"></i> قطع الاتصال الآمن
+            </button>
+            <div class="msg" id="profileMsg" role="alert"></div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="accountsModal" role="dialog" aria-modal="true" aria-label="إدارة الحسابات النشطة">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-users-gear"></i> إدارة الحسابات النشطة</h3>
+            <p style="font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-bottom: 0.8rem;">
+                اختر الحساب للتبديل السريع
+            </p>
+            <div class="accounts-list-container" id="accountsListContainer"></div>
+            <div class="account-item add-account-option" id="addNewAccountFromModal" role="button" tabindex="0">
+                <div class="acc-info">
+                    <div class="acc-avatar-mini" style="background: rgba(255,196,0,0.2); color: var(--gold);">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div class="acc-meta">
+                        <span class="acc-alias" style="color: var(--gold-light);">ربط حساب آخر</span>
+                        <span class="acc-email">إنشاء حساب جديد فوراً</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-left" style="font-size: 0.8rem; color: var(--gold);"></i>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" id="closeAccountsModalBtn">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="logoutChoiceModal" role="dialog" aria-modal="true" aria-label="خيارات تسجيل الخروج">
+        <div class="modal-box" style="text-align: center;">
+            <h3 style="color: var(--danger);">
+                <i class="fa-solid fa-right-from-bracket"></i> خيارات تسجيل الخروج
+            </h3>
+            <p style="font-size: 0.85rem; margin-bottom: 1.2rem;">كيف ترغب في إنهاء جلستك الحالية؟</p>
+            <button class="btn primary" id="confirmSoftLogoutBtn">
+                <i class="fa-solid fa-user-clock"></i> خروج مؤقت (إبقاء الحساب للتبديل)
+            </button>
+            <button class="btn danger" id="confirmHardLogoutBtn" style="margin-top: 0.5rem;">
+                <i class="fa-solid fa-trash-can"></i> خروج نهائي (مسح الحساب من الجهاز)
+            </button>
+            <div class="modal-actions" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.8rem;">
+                <button class="btn" id="cancelLogoutModalBtn">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="editAliasModal" role="dialog" aria-modal="true" aria-label="تحديث الاسم المستعار">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-signature"></i> تحديث الاسم المستعار</h3>
+            <input type="text" id="aliasInput" placeholder="أدخل الاسم الجديد" maxlength="30" aria-label="الاسم المستعار الجديد">
+            <div class="modal-actions">
+                <button class="btn primary" id="saveAliasBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> حفظ
+                </button>
+                <button class="btn" id="cancelAliasBtn">إلغاء</button>
+            </div>
+            <div class="msg error" id="aliasMsg" role="alert"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="registerModal" role="dialog" aria-modal="true" aria-label="تسجيل حساب جديد">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-user-plus"></i> تسجيل حساب جديد</h3>
+            <input type="email" id="regEmailInput" placeholder="البريد الإلكتروني" dir="ltr" aria-label="البريد الإلكتروني للتسجيل">
+            <input type="password" id="regPasswordInput" placeholder="كلمة المرور (6 خانات أو أكثر)" minlength="6" aria-label="كلمة المرور">
+            <input type="text" id="regAliasInput" placeholder="الاسم المستعار (اختياري)" maxlength="30" aria-label="الاسم المستعار">
+            <div class="modal-actions">
+                <button class="btn primary" id="confirmRegisterBtn">
+                    <i class="fa-solid fa-user-check"></i> إنشاء الحساب
+                </button>
+                <button class="btn" id="cancelRegisterBtn">إلغاء</button>
+            </div>
+            <div class="msg" id="registerMsg" role="alert"></div>
+        </div>
+    </div>
+
+    <script is:inline>
+        // ============================================
+        // صفحة الملف الشخصي - نسخة محسّنة للأداء
+        // Fast Sokon Profile Manager v2.0
+        // ============================================
+
+        class FastSokonProfile {
+            constructor() {
+                // Core services
+                this.db = null;
+                this.auth = null;
+                this.rtdb = null;
+                this.storage = null;
+                
+                // State
+                this.currentUser = null;
+                this.profileData = null;
+                this.idb = null;
+                this.idbReady = false;
+                this.broadcastChannel = null;
+                this.unsubscribeAuth = null;
+                
+                // Cache
+                this.savedAccountsCache = null;
+                this.cacheTimestamp = 0;
+                this.CACHE_DURATION = 5000; // 5 seconds
+                
+                // Loading states tracking
+                this.loadingStates = new Set();
+                
+                // Constants
+                this.DB_NAME = 'FastSokonDB';
+                this.DB_VERSION = 8;
+                this.MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+                
+                // Initialize
+                this.init();
+            }
+
+            async init() {
+                try {
+                    await this.waitForFirebase();
+                    this.setupFirebase();
+                    this.setupBroadcastChannel();
+                    await this.openIndexedDB();
+                    this.setupAuthListener();
+                    this.setupEventListeners();
+                    this.setupKeyboardShortcuts();
+                    console.log('✅ Fast Sokon Profile initialized');
+                } catch (error) {
+                    console.error('❌ Initialization failed:', error);
+                    this.showMessage('loginMsg', 'حدث خطأ في تهيئة التطبيق. يرجى تحديث الصفحة.', 'error');
+                }
+            }
+
+            // ========== Firebase Initialization ==========
+            waitForFirebase() {
+                return new Promise((resolve, reject) => {
+                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+                        resolve();
+                        return;
+                    }
+                    
+                    let attempts = 0;
+                    const maxAttempts = 100; // 5 seconds timeout
+                    const check = () => {
+                        attempts++;
+                        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+                            resolve();
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error('Firebase SDK failed to load'));
+                        } else {
+                            requestAnimationFrame(() => setTimeout(check, 50));
+                        }
+                    };
+                    check();
+                });
+            }
+
+            setupFirebase() {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                this.db = firebase.firestore();
+                this.auth = firebase.auth();
+                this.rtdb = firebase.database();
+                this.storage = firebase.storage();
+                
+                // Enable offline persistence for Firestore
+                this.db.enablePersistence({ synchronizeTabs: false }).catch(err => {
+                    console.warn('Firestore persistence failed:', err.code);
+                });
+            }
+
+            setupBroadcastChannel() {
+                try {
+                    this.broadcastChannel = new BroadcastChannel('fast_sokon_updates');
+                    this.broadcastChannel.onmessage = (event) => {
+                        if (event.data.type === 'profile_update' && this.currentUser) {
+                            this.refreshProfileData();
+                        }
+                    };
+                } catch (e) {
+                    console.warn('BroadcastChannel not supported, using localStorage fallback');
+                    this.setupLocalStorageFallback();
+                }
+            }
+
+            setupLocalStorageFallback() {
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'profile_update' && this.currentUser) {
+                        this.refreshProfileData();
+                    }
+                });
+            }
+
+            // ========== IndexedDB Operations ==========
+            openIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                    
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('profile')) {
+                            db.createObjectStore('profile', { keyPath: 'uid' });
+                        }
+                        if (!db.objectStoreNames.contains('saved_accounts')) {
+                            db.createObjectStore('saved_accounts', { keyPath: 'uid' });
+                        }
+                        if (!db.objectStoreNames.contains('invoices')) {
+                            const store = db.createObjectStore('invoices', { keyPath: 'id' });
+                            store.createIndex('date', 'dateStr');
+                            store.createIndex('supplier', 'supplier');
+                        }
+                    };
+                    
+                    request.onsuccess = (e) => {
+                        this.idb = e.target.result;
+                        this.idbReady = true;
+                        
+                        // Handle database closure
+                        this.idb.onclose = () => {
+                            this.idbReady = false;
+                            console.warn('IndexedDB connection closed unexpectedly');
+                        };
+                        
+                        resolve();
+                    };
+                    
+                    request.onerror = (e) => {
+                        console.error('IndexedDB Error:', e.target.error);
+                        reject(e.target.error);
+                    };
+                    
+                    request.onblocked = () => {
+                        console.warn('IndexedDB blocked. Please close other tabs.');
+                    };
+                });
+            }
+
+            async idbOperation(store, mode, callback) {
+                if (!this.idbReady) {
+                    await this.openIndexedDB();
+                }
+                
+                return new Promise((resolve, reject) => {
+                    try {
+                        const tx = this.idb.transaction(store, mode);
+                        const storeObj = tx.objectStore(store);
+                        const request = callback(storeObj);
+                        
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                        
+                        tx.oncomplete = () => {
+                            // Transaction completed successfully
+                        };
+                        
+                        tx.onerror = () => reject(tx.error);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+
+            async getFromDB(store, key) {
+                try {
+                    return await this.idbOperation(store, 'readonly', (storeObj) => storeObj.get(key));
+                } catch (error) {
+                    console.warn(`Failed to get from ${store}:`, error);
+                    return null;
+                }
+            }
+
+            async putToDB(store, data) {
+                try {
+                    await this.idbOperation(store, 'readwrite', (storeObj) => storeObj.put(data));
+                } catch (error) {
+                    console.warn(`Failed to put to ${store}:`, error);
+                }
+            }
+
+            async deleteFromDB(store, key) {
+                try {
+                    await this.idbOperation(store, 'readwrite', (storeObj) => storeObj.delete(key));
+                } catch (error) {
+                    console.warn(`Failed to delete from ${store}:`, error);
+                }
+            }
+
+            async getAllFromDB(store) {
+                try {
+                    return await this.idbOperation(store, 'readonly', (storeObj) => storeObj.getAll()) || [];
+                } catch (error) {
+                    console.warn(`Failed to get all from ${store}:`, error);
+                    return [];
+                }
+            }
+
+            // ========== Profile Management ==========
+            async saveProfileToLocal(user, additionalData = {}) {
+                if (!user?.uid) return null;
+                
+                const profile = {
+                    uid: user.uid,
+                    email: user.email || '',
+                    alias: user.displayName || additionalData.alias || (user.email?.split('@')[0] || 'مستخدم'),
+                    photoURL: user.photoURL || additionalData.photoURL || '',
+                    lastLogin: Date.now()
+                };
+                
+                await this.putToDB('profile', profile);
+                return profile;
+            }
+
+            async loadProfileFromLocal(uid) {
+                return await this.getFromDB('profile', uid);
+            }
+
+            async getSavedAccounts(forceRefresh = false) {
+                const now = Date.now();
+                if (!forceRefresh && this.savedAccountsCache && (now - this.cacheTimestamp < this.CACHE_DURATION)) {
+                    return this.savedAccountsCache;
+                }
+                
+                this.savedAccountsCache = await this.getAllFromDB('saved_accounts');
+                this.cacheTimestamp = now;
+                return this.savedAccountsCache;
+            }
+
+            async saveAccountToList(profile) {
+                const accounts = await this.getSavedAccounts(true);
+                const exists = accounts.find(a => a.uid === profile.uid);
+                
+                const accountData = {
+                    uid: profile.uid,
+                    email: profile.email,
+                    alias: profile.alias,
+                    photoURL: profile.photoURL || ''
+                };
+                
+                if (!exists) {
+                    await this.putToDB('saved_accounts', accountData);
+                } else {
+                    await this.putToDB('saved_accounts', { ...exists, ...accountData });
+                }
+                
+                // Update cache
+                this.savedAccountsCache = null;
+            }
+
+            async removeSavedAccount(uid) {
+                await this.deleteFromDB('saved_accounts', uid);
+                await this.deleteFromDB('profile', uid);
+                this.savedAccountsCache = null;
+            }
+
+            // ========== Cloud Sync ==========
+            async syncProfileToCloud(uid, data) {
+                if (!this.rtdb) return;
+                
+                try {
+                    await this.rtdb.ref(`users/${uid}/profile`).update({
+                        alias: data.alias || '',
+                        photoURL: data.photoURL || '',
+                        updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    
+                    this.notifyProfileUpdate();
+                } catch (error) {
+                    console.warn('Cloud sync failed:', error);
+                }
+            }
+
+            async fetchProfileFromCloud(uid) {
+                if (!this.rtdb) return null;
+                
+                try {
+                    const snapshot = await this.rtdb.ref(`users/${uid}/profile`).once('value');
+                    return snapshot.exists() ? snapshot.val() : null;
+                } catch (error) {
+                    console.warn('Cloud fetch failed:', error);
+                    return null;
+                }
+            }
+
+            notifyProfileUpdate() {
+                try {
+                    if (this.broadcastChannel) {
+                        this.broadcastChannel.postMessage({
+                            type: 'profile_update',
+                            timestamp: Date.now()
+                        });
+                    } else {
+                        // Fallback for older browsers
+                        const current = localStorage.getItem('profile_update');
+                        const timestamp = Date.now().toString();
+                        if (current !== timestamp) {
+                            localStorage.setItem('profile_update', timestamp);
+                        }
+                    }
+                } catch (e) {
+                    // Silently fail - non-critical feature
+                }
+            }
+
+            async refreshProfileData() {
+                if (!this.currentUser) return;
+                
+                try {
+                    await this.currentUser.reload();
+                    const cloudProfile = await this.fetchProfileFromCloud(this.currentUser.uid);
+                    
+                    this.profileData = await this.saveProfileToLocal(this.currentUser, {
+                        alias: cloudProfile?.alias || this.currentUser.displayName,
+                        photoURL: cloudProfile?.photoURL || this.currentUser.photoURL
+                    });
+                    
+                    this.updateProfileDisplay();
+                } catch (error) {
+                    console.warn('Failed to refresh profile:', error);
+                }
+            }
+
+            // ========== Image Handling ==========
+            async uploadAvatarToStorage(file, uid) {
+                try {
+                    // Compress image first
+                    const dataUrl = await this.compressImage(file);
+                    
+                    // Try Firebase Storage upload
+                    const storageRef = this.storage.ref(`avatars/${uid}`);
+                    const response = await fetch(dataUrl);
+                    const blob = await response.blob();
+                    
+                    await storageRef.put(blob, {
+                        contentType: 'image/jpeg',
+                        cacheControl: 'public, max-age=3600'
+                    });
+                    
+                    return await storageRef.getDownloadURL();
+                } catch (error) {
+                    console.warn('Storage upload failed, using dataURL:', error);
+                    return await this.compressImage(file);
+                }
+            }
+
+            compressImage(file) {
+                return new Promise((resolve, reject) => {
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                        reject(new Error('الملف المحدد ليس صورة'));
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            // Use OffscreenCanvas if available for better performance
+                            const canvas = document.createElement('canvas');
+                            const MAX_SIZE = 200;
+                            let { width, height } = img;
+                            
+                            // Calculate new dimensions
+                            if (width > height) {
+                                if (width > MAX_SIZE) {
+                                    height = Math.round((height * MAX_SIZE) / width);
+                                    width = MAX_SIZE;
+                                }
+                            } else {
+                                if (height > MAX_SIZE) {
+                                    width = Math.round((width * MAX_SIZE) / height);
+                                    height = MAX_SIZE;
+                                }
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d', { 
+                                alpha: false,
+                                willReadFrequently: false 
+                            });
+                            
+                            // Use imageSmoothingQuality for better performance
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'medium';
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // Always use JPEG for better compatibility and smaller size
+                            resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        };
+                        
+                        img.onerror = () => reject(new Error('فشل تحميل الصورة'));
+                        img.src = e.target.result;
+                    };
+                    
+                    reader.onerror = () => reject(new Error('فشل قراءة الملف'));
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // ========== Authentication ==========
+            async login(email, password) {
+                try {
+                    const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
+                    return { success: true, user: userCredential.user };
+                } catch (error) {
+                    console.error('Login error:', error.code);
+                    return { success: false, message: this.getAuthErrorMessage(error.code) };
+                }
+            }
+
+            async register(email, password, alias) {
+                try {
+                    const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
+                    
+                    if (alias?.trim() && userCredential.user) {
+                        await userCredential.user.updateProfile({ displayName: alias.trim() });
+                        await userCredential.user.reload();
+                    }
+                    
+                    return { success: true, user: userCredential.user };
+                } catch (error) {
+                    console.error('Register error:', error.code);
+                    return { success: false, message: this.getAuthErrorMessage(error.code) };
+                }
+            }
+
+            async logout(removeFromDevice = false) {
+                try {
+                    if (removeFromDevice && this.currentUser) {
+                        await this.removeSavedAccount(this.currentUser.uid);
+                    }
+                    
+                    await this.auth.signOut();
+                    return { success: true };
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    return { success: false, message: 'حدث خطأ أثناء تسجيل الخروج.' };
+                }
+            }
+
+            getAuthErrorMessage(code) {
+                const messages = {
+                    'auth/user-not-found': 'البريد الإلكتروني غير مسجل.',
+                    'auth/wrong-password': 'كلمة المرور غير صحيحة.',
+                    'auth/invalid-email': 'البريد الإلكتروني غير صالح.',
+                    'auth/email-already-in-use': 'البريد الإلكتروني مستخدم بالفعل.',
+                    'auth/weak-password': 'كلمة المرور ضعيفة جداً (6 خانات على الأقل).',
+                    'auth/too-many-requests': 'تم تعطيل الحساب مؤقتاً. حاول لاحقاً.',
+                    'auth/network-request-failed': 'فشل الاتصال بالإنترنت. تحقق من اتصالك.',
+                    'auth/invalid-credential': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+                    'auth/operation-not-allowed': 'نوع تسجيل الدخول غير مفعل حالياً.'
+                };
+                return messages[code] || 'حدث خطأ غير متوقع. حاول مرة أخرى.';
+            }
+
+            // ========== Auth State Listener ==========
+            setupAuthListener() {
+                this.unsubscribeAuth = this.auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        await this.handleAuthenticatedUser(user);
+                    } else {
+                        this.handleUnauthenticatedUser();
+                    }
+                });
+            }
+
+            async handleAuthenticatedUser(user) {
+                console.log('✅ User authenticated:', user.uid);
+                this.currentUser = user;
+                
+                // Load profile data
+                let profile = await this.loadProfileFromLocal(user.uid);
+                
+                if (!profile) {
+                    const cloudProfile = await this.fetchProfileFromCloud(user.uid);
+                    profile = await this.saveProfileToLocal(user, {
+                        alias: cloudProfile?.alias || user.displayName,
+                        photoURL: cloudProfile?.photoURL || user.photoURL
+                    });
+                } else {
+                    profile = await this.saveProfileToLocal(user, {
+                        alias: user.displayName || profile.alias,
+                        photoURL: user.photoURL || profile.photoURL
+                    });
+                }
+                
+                // Save to accounts list
+                await this.saveAccountToList(profile);
+                
+                // Update UI
+                this.profileData = profile;
+                this.showProfilePanel(profile);
+                await this.updateInvoicesCount();
+            }
+
+            handleUnauthenticatedUser() {
+                console.log('ℹ️ User not authenticated');
+                this.currentUser = null;
+                this.profileData = null;
+                this.showLoginPanel();
+            }
+
+            // ========== Profile Updates ==========
+            async updateAlias(newAlias) {
+                if (!this.currentUser) {
+                    return { success: false, message: 'لا يوجد مستخدم نشط.' };
+                }
+                
+                const trimmedAlias = newAlias?.trim();
+                if (!trimmedAlias) {
+                    return { success: false, message: 'الاسم المستعار مطلوب.' };
+                }
+                if (trimmedAlias.length > 30) {
+                    return { success: false, message: 'الاسم المستعار طويل جداً (الحد الأقصى 30 حرف).' };
+                }
+                
+                try {
+                    await this.currentUser.updateProfile({ displayName: trimmedAlias });
+                    await this.currentUser.reload();
+                    
+                    // Update local storage
+                    const profile = await this.loadProfileFromLocal(this.currentUser.uid);
+                    if (profile) {
+                        profile.alias = trimmedAlias;
+                        await this.putToDB('profile', profile);
+                    }
+                    
+                    // Update accounts list
+                    await this.saveAccountToList({
+                        uid: this.currentUser.uid,
+                        email: this.currentUser.email,
+                        alias: trimmedAlias,
+                        photoURL: this.currentUser.photoURL
+                    });
+                    
+                    // Sync to cloud
+                    await this.syncProfileToCloud(this.currentUser.uid, {
+                        alias: trimmedAlias,
+                        photoURL: this.currentUser.photoURL
+                    });
+                    
+                    // Update UI
+                    this.profileData = profile;
+                    this.updateProfileDisplay();
+                    
+                    return { success: true };
+                } catch (error) {
+                    console.error('Update alias failed:', error);
+                    return { success: false, message: 'فشل تحديث الاسم المستعار.' };
+                }
+            }
+
+            async updatePhoto(file) {
+                if (!this.currentUser) {
+                    return { success: false, message: 'لا يوجد مستخدم نشط.' };
+                }
+                
+                if (!file?.type?.startsWith('image/')) {
+                    return { success: false, message: 'الملف المحدد ليس صورة.' };
+                }
+                
+                if (file.size > this.MAX_IMAGE_SIZE) {
+                    return { success: false, message: `حجم الصورة كبير جداً. الحد الأقصى ${this.MAX_IMAGE_SIZE / 1024 / 1024} ميجابايت.` };
+                }
+                
+                try {
+                    const photoURL = await this.uploadAvatarToStorage(file, this.currentUser.uid);
+                    
+                    await this.currentUser.updateProfile({ photoURL });
+                    await this.currentUser.reload();
+                    
+                    // Update local storage
+                    const profile = await this.loadProfileFromLocal(this.currentUser.uid);
+                    if (profile) {
+                        profile.photoURL = photoURL;
+                        await this.putToDB('profile', profile);
+                    }
+                    
+                    // Update accounts list
+                    await this.saveAccountToList({
+                        uid: this.currentUser.uid,
+                        email: this.currentUser.email,
+                        alias: this.currentUser.displayName || profile?.alias,
+                        photoURL
+                    });
+                    
+                    // Sync to cloud
+                    await this.syncProfileToCloud(this.currentUser.uid, {
+                        alias: this.currentUser.displayName || profile?.alias,
+                        photoURL
+                    });
+                    
+                    // Update UI
+                    this.profileData = profile;
+                    this.updateProfileDisplay();
+                    
+                    return { success: true };
+                } catch (error) {
+                    console.error('Update photo failed:', error);
+                    return { success: false, message: 'فشل تحديث الصورة الشخصية.' };
+                }
+            }
+
+            async updateInvoicesCount() {
+                try {
+                    const invoices = await this.getAllFromDB('invoices');
+                    const count = invoices.length;
+                    const summaryEl = document.getElementById('dataSummary');
+                    if (summaryEl) {
+                        summaryEl.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> الفواتير المحفوظة: <strong>${count}</strong> ${count === 1 ? 'فاتورة' : 'فاتورة'}`;
+                    }
+                } catch (error) {
+                    console.warn('Failed to get invoices count:', error);
+                    const summaryEl = document.getElementById('dataSummary');
+                    if (summaryEl) {
+                        summaryEl.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> الفواتير المحفوظة: <strong>0</strong> فاتورة`;
+                    }
+                }
+            }
+
+            // ========== UI Management ==========
+            showMessage(elementId, text, type = 'error') {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                
+                el.textContent = text;
+                el.className = `msg show ${type}`;
+                
+                // Auto-hide after 4 seconds
+                clearTimeout(el._timeout);
+                el._timeout = setTimeout(() => {
+                    el.className = 'msg';
+                }, 4000);
+            }
+
+            showLoginPanel() {
+                const loginPanel = document.getElementById('loginPanel');
+                const profilePanel = document.getElementById('profilePanel');
+                
+                if (loginPanel) loginPanel.classList.remove('hidden');
+                if (profilePanel) profilePanel.classList.add('hidden');
+                
+                this.updateQuickSwitchButton();
+            }
+
+            showProfilePanel(profile) {
+                const loginPanel = document.getElementById('loginPanel');
+                const profilePanel = document.getElementById('profilePanel');
+                
+                if (loginPanel) loginPanel.classList.add('hidden');
+                if (profilePanel) profilePanel.classList.remove('hidden');
+                
+                this.updateProfileDisplay();
+            }
+
+            updateProfileDisplay() {
+                if (!this.currentUser) return;
+                
+                const alias = this.currentUser.displayName || 
+                             this.profileData?.alias || 
+                             (this.currentUser.email?.split('@')[0] || 'مستخدم');
+                
+                const email = this.currentUser.email || '---';
+                const uid = this.currentUser.uid || '---';
+                
+                // Batch DOM updates
+                requestAnimationFrame(() => {
+                    const aliasEl = document.getElementById('displayAlias');
+                    const emailEl = document.getElementById('displayEmail');
+                    const uidEl = document.getElementById('displayAccountId');
+                    
+                    if (aliasEl) aliasEl.textContent = alias;
+                    if (emailEl) emailEl.textContent = email;
+                    if (uidEl) uidEl.textContent = uid;
+                    
+                    this.updateAvatar(this.currentUser.photoURL || this.profileData?.photoURL, alias);
+                });
+            }
+
+            updateAvatar(photoURL, alias) {
+                const img = document.getElementById('avatarImage');
+                const initial = document.getElementById('avatarInitial');
+                
+                if (!img || !initial) return;
+                
+                const hasValidPhoto = photoURL && (photoURL.startsWith('data:image') || photoURL.startsWith('http'));
+                
+                if (hasValidPhoto) {
+                    img.src = photoURL;
+                    img.style.display = 'block';
+                    initial.style.display = 'none';
+                } else {
+                    img.style.display = 'none';
+                    initial.style.display = 'flex';
+                    initial.textContent = (alias || '?').charAt(0).toUpperCase();
+                }
+            }
+
+            async updateQuickSwitchButton() {
+                const accounts = await this.getSavedAccounts();
+                const btn = document.getElementById('quickSwitchLoginBtn');
+                if (!btn) return;
+                
+                const loginPanel = document.getElementById('loginPanel');
+                const shouldShow = accounts.length > 0 && loginPanel && !loginPanel.classList.contains('hidden');
+                
+                btn.classList.toggle('hidden', !shouldShow);
+            }
+
+            async renderAccountsList() {
+                const container = document.getElementById('accountsListContainer');
+                if (!container) return;
+                
+                const accounts = await this.getSavedAccounts();
+                
+                if (accounts.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 1rem; color: var(--text-dim); font-size: 0.8rem;">
+                            لا توجد حسابات محفوظة
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Use DocumentFragment for better performance
+                const fragment = document.createDocumentFragment();
+                
+                for (const acc of accounts) {
+                    const isActive = this.currentUser && acc.uid === this.currentUser.uid;
+                    const item = document.createElement('div');
+                    item.className = `account-item${isActive ? ' active' : ''}`;
+                    item.setAttribute('role', 'button');
+                    item.setAttribute('tabindex', '0');
+                    
+                    const hasPhoto = acc.photoURL && (acc.photoURL.startsWith('data:image') || acc.photoURL.startsWith('http'));
+                    const avatarContent = hasPhoto
+                        ? `<img src="${acc.photoURL}" alt="" loading="lazy">`
+                        : `<span>${(acc.alias || acc.email || '?').charAt(0).toUpperCase()}</span>`;
+                    
+                    item.innerHTML = `
+                        <div class="acc-info">
+                            <div class="acc-avatar-mini">${avatarContent}</div>
+                            <div class="acc-meta">
+                                <span class="acc-alias">${this.escapeHtml(acc.alias || 'مستخدم')}</span>
+                                <span class="acc-email">${this.escapeHtml(acc.email || '')}</span>
+                            </div>
+                        </div>
+                        ${isActive ? 
+                            '<div class="active-dot" title="الحساب النشط"></div>' : 
+                            '<i class="fa-solid fa-angles-left" style="font-size:0.75rem;color:var(--purple);"></i>'
+                        }
+                    `;
+                    
+                    if (!isActive) {
+                        item.addEventListener('click', () => this.switchToAccount(acc));
+                        item.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                this.switchToAccount(acc);
+                            }
+                        });
+                    }
+                    
+                    fragment.appendChild(item);
+                }
+                
+                container.innerHTML = '';
+                container.appendChild(fragment);
+            }
+
+            switchToAccount(account) {
+                this.hideModal('accountsModal');
+                document.getElementById('emailInput').value = account.email || '';
+                this.showMessage('loginMsg', 
+                    `للتبديل إلى ${account.alias || account.email}، يرجى إدخال كلمة المرور.`, 
+                    'info'
+                );
+                document.getElementById('passwordInput')?.focus();
+            }
+
+            // ========== Modal Management ==========
+            showModal(id) {
+                const modal = document.getElementById(id);
+                if (!modal) return;
+                
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                
+                // Focus trap and render content
+                if (id === 'accountsModal') {
+                    requestAnimationFrame(() => this.renderAccountsList());
+                }
+                
+                // Focus first input if exists
+                requestAnimationFrame(() => {
+                    const firstInput = modal.querySelector('input');
+                    if (firstInput) firstInput.focus();
+                });
+            }
+
+            hideModal(id) {
+                const modal = document.getElementById(id);
+                if (!modal) return;
+                
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            hideAllModals() {
+                document.querySelectorAll('.modal.active').forEach(modal => {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden', 'true');
+                });
+            }
+
+            // ========== Loading States ==========
+            setLoading(btnId, loading) {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+                
+                if (loading) {
+                    if (!btn.dataset.originalHTML) {
+                        btn.dataset.originalHTML = btn.innerHTML;
+                    }
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> جاري...';
+                    this.loadingStates.add(btnId);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = btn.dataset.originalHTML || btn.innerHTML;
+                    delete btn.dataset.originalHTML;
+                    this.loadingStates.delete(btnId);
+                }
+            }
+
+            isLoading(btnId) {
+                return this.loadingStates.has(btnId);
+            }
+
+            // ========== Utility Functions ==========
+            escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            async copyToClipboard(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        return true;
+                    } catch (err) {
+                        return false;
+                    } finally {
+                        document.body.removeChild(textarea);
+                    }
+                }
+            }
+
+            // ========== Event Listeners ==========
+            setupEventListeners() {
+                // Login
+                this.addListener('loginBtn', 'click', () => this.handleLogin());
+                this.addListener('passwordInput', 'keypress', (e) => {
+                    if (e.key === 'Enter') this.handleLogin();
+                });
+                
+                // Register
+                this.addListener('showRegisterBtn', 'click', () => this.showModal('registerModal'));
+                this.addListener('confirmRegisterBtn', 'click', () => this.handleRegister());
+                this.addListener('cancelRegisterBtn', 'click', () => this.hideModal('registerModal'));
+                
+                // Logout
+                this.addListener('logoutBtn', 'click', () => this.showModal('logoutChoiceModal'));
+                this.addListener('confirmSoftLogoutBtn', 'click', () => this.handleLogout(false));
+                this.addListener('confirmHardLogoutBtn', 'click', () => this.handleLogout(true));
+                this.addListener('cancelLogoutModalBtn', 'click', () => this.hideModal('logoutChoiceModal'));
+                
+                // Edit Alias
+                this.addListener('editAliasBtn', 'click', () => this.showEditAliasModal());
+                this.addListener('saveAliasBtn', 'click', () => this.handleAliasUpdate());
+                this.addListener('cancelAliasBtn', 'click', () => this.hideModal('editAliasModal'));
+                this.addListener('aliasInput', 'keypress', (e) => {
+                    if (e.key === 'Enter') this.handleAliasUpdate();
+                });
+                
+                // Avatar
+                this.addListener('avatarContainer', 'click', () => document.getElementById('imageUploadInput')?.click());
+                this.addListener('imageUploadInput', 'change', (e) => this.handleImageUpload(e));
+                
+                // Copy UID
+                this.addListener('copyIdBtn', 'click', () => this.handleCopyUID());
+                
+                // Switch Account
+                this.addListener('switchAccountBtn', 'click', () => this.showModal('accountsModal'));
+                this.addListener('quickSwitchLoginBtn', 'click', () => this.showModal('accountsModal'));
+                this.addListener('closeAccountsModalBtn', 'click', () => this.hideModal('accountsModal'));
+                this.addListener('addNewAccountFromModal', 'click', () => {
+                    this.hideModal('accountsModal');
+                    this.showModal('registerModal');
+                });
+                
+                // Modal outside clicks
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) this.hideModal(modal.id);
+                    });
+                });
+            }
+
+            addListener(id, event, handler) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(event, handler);
+                }
+            }
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.hideAllModals();
+                    }
+                });
+            }
+
+            // ========== Event Handlers ==========
+            async handleLogin() {
+                const email = document.getElementById('emailInput')?.value.trim();
+                const password = document.getElementById('passwordInput')?.value;
+                
+                if (!email || !password) {
+                    return this.showMessage('loginMsg', 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+                }
+                
+                if (this.isLoading('loginBtn')) return;
+                
+                this.setLoading('loginBtn', true);
+                const result = await this.login(email, password);
+                this.setLoading('loginBtn', false);
+                
+                if (!result.success) {
+                    this.showMessage('loginMsg', result.message);
+                    document.getElementById('passwordInput').value = '';
+                }
+            }
+
+            async handleRegister() {
+                const email = document.getElementById('regEmailInput')?.value.trim();
+                const password = document.getElementById('regPasswordInput')?.value;
+                const alias = document.getElementById('regAliasInput')?.value.trim();
+                
+                if (!email || !password) {
+                    return this.showMessage('registerMsg', 'البريد الإلكتروني وكلمة المرور مطلوبان.');
+                }
+                
+                if (password.length < 6) {
+                    return this.showMessage('registerMsg', 'كلمة المرور يجب أن تكون 6 خانات على الأقل.');
+                }
+                
+                if (this.isLoading('confirmRegisterBtn')) return;
+                
+                this.setLoading('confirmRegisterBtn', true);
+                const result = await this.register(email, password, alias);
+                this.setLoading('confirmRegisterBtn', false);
+                
+                if (result.success) {
+                    this.hideModal('registerModal');
+                    this.showMessage('profileMsg', 'تم إنشاء الحساب بنجاح!', 'success');
+                } else {
+                    this.showMessage('registerMsg', result.message);
+                }
+            }
+
+            async handleLogout(removeFromDevice) {
+                if (removeFromDevice) {
+                    const confirmed = confirm('هل أنت متأكد؟ سيتم حذف جميع بيانات الحساب من هذا الجهاز.');
+                    if (!confirmed) return;
+                }
+                
+                const btnId = removeFromDevice ? 'confirmHardLogoutBtn' : 'confirmSoftLogoutBtn';
+                if (this.isLoading(btnId)) return;
+                
+                this.hideModal('logoutChoiceModal');
+                this.setLoading(btnId, true);
+                const result = await this.logout(removeFromDevice);
+                this.setLoading(btnId, false);
+                
+                const messageType = result.success ? 'success' : 'error';
+                this.showMessage('loginMsg', result.success ? 'تم تسجيل الخروج بنجاح.' : result.message, messageType);
+            }
+
+            showEditAliasModal() {
+                const currentAlias = this.currentUser?.displayName || 
+                                    this.profileData?.alias || 
+                                    this.currentUser?.email?.split('@')[0] || '';
+                const input = document.getElementById('aliasInput');
+                if (input) {
+                    input.value = currentAlias;
+                }
+                document.getElementById('aliasMsg').className = 'msg';
+                this.showModal('editAliasModal');
+            }
+
+            async handleAliasUpdate() {
+                const newAlias = document.getElementById('aliasInput')?.value.trim();
+                if (!newAlias) {
+                    return this.showMessage('aliasMsg', 'الاسم المستعار مطلوب.');
+                }
+                
+                if (this.isLoading('saveAliasBtn')) return;
+                
+                this.setLoading('saveAliasBtn', true);
+                const result = await this.updateAlias(newAlias);
+                this.setLoading('saveAliasBtn', false);
+                
+                if (result.success) {
+                    this.hideModal('editAliasModal');
+                    this.showMessage('profileMsg', 'تم تحديث الاسم المستعار بنجاح.', 'success');
+                } else {
+                    this.showMessage('aliasMsg', result.message);
+                }
+            }
+
+            async handleImageUpload(e) {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                
+                this.showMessage('profileMsg', 'جاري رفع الصورة ومعالجتها...', 'info');
+                const result = await this.updatePhoto(file);
+                
+                this.showMessage('profileMsg', result.message || (result.success ? 'تم تحديث الصورة الشخصية بنجاح.' : 'فشل تحديث الصورة.'), result.success ? 'success' : 'error');
+                
+                // Reset input
+                e.target.value = '';
+            }
+
+            async handleCopyUID() {
+                if (this.currentUser?.uid) {
+                    const success = await this.copyToClipboard(this.currentUser.uid);
+                    this.showMessage('profileMsg', success ? 'تم نسخ المعرف إلى الحافظة.' : 'فشل النسخ. حاول يدوياً.', success ? 'success' : 'error');
+                }
+            }
+
+            // ========== Cleanup ==========
+            destroy() {
+                // Close BroadcastChannel
+                if (this.broadcastChannel) {
+                    this.broadcastChannel.close();
+                    this.broadcastChannel = null;
+                }
+                
+                // Unsubscribe from Firebase Auth
+                if (this.unsubscribeAuth) {
+                    this.unsubscribeAuth();
+                    this.unsubscribeAuth = null;
+                }
+                
+                // Close IndexedDB connection
+                if (this.idb) {
+                    this.idb.close();
+                    this.idb = null;
+                    this.idbReady = false;
+                }
+                
+                // Clear timeouts
+                const msgElements = document.querySelectorAll('.msg');
+                msgElements.forEach(el => clearTimeout(el._timeout));
+                
+                console.log('✅ Fast Sokon Profile destroyed');
+            }
+        }
+
+        // Initialize application
+        const app = new FastSokonProfile();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => app.destroy());
+        window.addEventListener('pagehide', () => app.destroy());
+        
+        // Expose for debugging
+        if (typeof window !== 'undefined') {
+            window.profileApp = app;
+        }
+    </script>
+</body>
+</html>

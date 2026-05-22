@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>مراجعة ذكية | Fast Sokon</title>
+
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+
+    <!-- Firebase SDKs - deferred -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
+    <script src="/firebase-config.js" defer></script>
+
+    <style>
+        :root {
+            --bg: #060411;
+            --bg-card: rgba(13, 9, 31, 0.75);
+            --bg-elevated: rgba(20, 15, 45, 0.9);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-active: rgba(114, 92, 255, 0.3);
+            --purple: #c3b0ff;
+            --purple-dark: #582fff;
+            --purple-glow: rgba(88, 47, 255, 0.2);
+            --gold: #ffc400;
+            --gold-light: #ffe082;
+            --text: #e5e1f5;
+            --text-dim: rgba(229, 225, 245, 0.6);
+            --text-muted: rgba(229, 225, 245, 0.35);
+            --danger: #ff5252;
+            --danger-bg: rgba(255, 82, 82, 0.1);
+            --success: #2ecc71;
+            --success-bg: rgba(46, 204, 113, 0.1);
+            --radius-xl: 22px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+            --radius-xs: 8px;
+            --transition-fast: 0.12s ease;
+            --transition-normal: 0.2s ease;
+            --font: 'Cairo', system-ui, -apple-system, sans-serif;
+            --safe-bottom: env(safe-area-inset-bottom, 12px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font);
+            background: radial-gradient(circle at 50% 10%, #130d35 0%, var(--bg) 80%);
+            min-height: 100vh;
+            min-height: 100dvh;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            padding: 0 8px;
+            padding-bottom: var(--safe-bottom);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 480px;
+            padding: 12px 8px 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 4px;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: rgba(6, 4, 17, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            margin: 4px -4px 0;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+        }
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: var(--transition-fast);
+            position: relative;
+            text-decoration: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .nav-btn:active {
+            background: var(--purple-dark);
+            border-color: var(--purple-dark);
+            transform: scale(0.93);
+        }
+        .nav-btn.undo-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .nav-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 30%, var(--purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.3px;
+        }
+        .nav-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            transition: var(--transition-normal);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .card-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--purple);
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-label i {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Form Inputs */
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .input-row:last-child {
+            margin-bottom: 0;
+        }
+        .input-icon {
+            font-size: 15px;
+            color: var(--text-dim);
+            min-width: 22px;
+            text-align: center;
+        }
+        input,
+        select {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 11px 14px;
+            border-radius: var(--radius-xs);
+            font-family: var(--font);
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition-fast);
+            min-width: 0;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        input:focus,
+        select:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px var(--purple-glow);
+            background: rgba(0, 0, 0, 0.4);
+        }
+        input[type="date"],
+        input[type="time"] {
+            color-scheme: dark;
+            -webkit-color-scheme: dark;
+        }
+        /* Fix date/time placeholder color */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
+        }
+
+        /* Supplier suggestions */
+        .suggestions-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+        }
+        .suggestions-drop {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-active);
+            border-radius: var(--radius-xs);
+            z-index: 50;
+            max-height: 140px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            margin-top: 3px;
+        }
+        .suggestions-drop.visible {
+            display: block;
+        }
+        .suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition-fast);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        .suggestion-item:active {
+            background: rgba(88, 47, 255, 0.25);
+            color: #fff;
+        }
+
+        /* Items Section */
+        .items-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 4px 8px;
+        }
+        .items-count {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--purple);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 196, 0, 0.08);
+            border: 1px solid rgba(255, 196, 0, 0.25);
+            color: var(--gold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: var(--transition-fast);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .btn-icon:active {
+            background: rgba(255, 196, 0, 0.2);
+            transform: scale(0.9);
+        }
+
+        /* Items List */
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 50vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 2px;
+            scroll-behavior: smooth;
+        }
+        .items-list:empty::after {
+            content: 'لا توجد أصناف بعد. اضغط + لإضافة صنف.';
+            display: block;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 28px 16px;
+            font-size: 0.85rem;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+        }
+
+        /* Item Row */
+        .item-row {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            display: grid;
+            grid-template-columns: 1fr 70px 80px 55px auto;
+            gap: 4px;
+            align-items: center;
+            position: relative;
+            transition: var(--transition-fast);
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+            overflow: hidden;
+        }
+        .item-row.selected {
+            background: rgba(88, 47, 255, 0.12);
+            border-color: var(--purple-dark);
+            box-shadow: 0 0 12px rgba(88, 47, 255, 0.08);
+        }
+        .item-row .delete-bg {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            background: var(--danger-bg);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.2s ease;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .item-row .delete-bg i {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            color: var(--danger);
+            font-size: 18px;
+        }
+        .item-row.swiping .delete-bg {
+            width: 55px;
+        }
+        .item-row.swiping .delete-bg i {
+            opacity: 1;
+        }
+
+        .item-input {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text);
+            padding: 7px 6px;
+            border-radius: 6px;
+            font-family: var(--font);
+            font-size: 0.82rem;
+            outline: none;
+            text-align: center;
+            min-width: 0;
+            width: 100%;
+            transition: var(--transition-fast);
+        }
+        .item-input:focus {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: var(--purple);
+            box-shadow: 0 0 6px var(--purple-glow);
+        }
+        .item-input.name-input {
+            text-align: right;
+            font-weight: 500;
+        }
+        .item-input.qty-input {
+            font-weight: 600;
+        }
+        .item-input.price-input {
+            font-weight: 600;
+            color: var(--gold-light);
+        }
+        .item-total {
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--gold);
+            white-space: nowrap;
+            min-width: 48px;
+        }
+        .item-actions-inline {
+            display: flex;
+            gap: 1px;
+            justify-content: center;
+        }
+        .item-action-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: var(--transition-fast);
+        }
+        .item-action-dot:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .item-action-dot.delete-dot:active {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        /* Batch bar */
+        .batch-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(88, 47, 255, 0.15);
+            border: 1px solid rgba(88, 47, 255, 0.3);
+            border-radius: var(--radius-sm);
+            gap: 8px;
+            flex-wrap: wrap;
+            animation: fadeInDown 0.2s ease;
+        }
+        .batch-bar.active {
+            display: flex;
+        }
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .batch-bar .batch-count {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--purple);
+            white-space: nowrap;
+        }
+        .batch-bar .btn-sm {
+            padding: 7px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            white-space: nowrap;
+            transition: var(--transition-fast);
+        }
+        .batch-bar .btn-sm:active {
+            transform: scale(0.95);
+        }
+        .batch-bar .btn-sm.danger {
+            background: var(--danger-bg);
+            border-color: rgba(255, 82, 82, 0.3);
+            color: #ffbcbc;
+        }
+        .batch-bar .btn-sm.gold {
+            background: rgba(255, 196, 0, 0.08);
+            border-color: rgba(255, 196, 0, 0.3);
+            color: var(--gold-light);
+        }
+
+        /* Total Row */
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 196, 0, 0.04);
+            border: 1px solid rgba(255, 196, 0, 0.15);
+            border-radius: var(--radius-md);
+            margin-top: 4px;
+        }
+        .total-label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--purple);
+        }
+        .total-value {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: -0.5px;
+        }
+        .total-value .currency {
+            font-size: 0.8rem;
+            font-weight: 600;
+            opacity: 0.7;
+            margin-right: 3px;
+        }
+
+        /* Templates */
+        .templates-wrap {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 4px 0;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .templates-wrap::-webkit-scrollbar {
+            display: none;
+        }
+        .template-chip {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            white-space: nowrap;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .template-chip:active {
+            background: rgba(255, 196, 0, 0.12);
+            border-color: rgba(255, 196, 0, 0.3);
+            color: var(--gold-light);
+        }
+
+        /* Bottom Actions */
+        .bottom-actions {
+            display: flex;
+            gap: 8px;
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            padding: 10px 12px calc(10px + var(--safe-bottom));
+            background: rgba(6, 4, 17, 0.9);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid var(--border);
+            z-index: 40;
+        }
+        .btn {
+            flex: 1;
+            padding: 13px 12px;
+            border-radius: 25px;
+            font-family: var(--font);
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: var(--transition-fast);
+            white-space: nowrap;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--purple-dark), #441ece);
+            border: none;
+            color: #fff;
+            box-shadow: 0 6px 20px var(--purple-glow);
+        }
+        .btn.gold {
+            background: rgba(255, 196, 0, 0.08);
+            border-color: rgba(255, 196, 0, 0.3);
+            color: var(--gold-light);
+        }
+        .btn:disabled {
+            opacity: 0.45;
+            pointer-events: none;
+            filter: grayscale(30%);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--bg-elevated);
+            border: 1px solid var(--purple);
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.82rem;
+            z-index: 200;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            text-align: center;
+            max-width: 85vw;
+            white-space: nowrap;
+            font-family: var(--font);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        .toast.error {
+            border-color: var(--danger);
+            background: rgba(30, 5, 10, 0.95);
+        }
+        .toast.success {
+            border-color: var(--success);
+            background: rgba(5, 20, 15, 0.95);
+        }
+
+        /* Loading state */
+        .saving-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(6, 4, 17, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .saving-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .saving-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--purple);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Haptic feedback hint (visual only) */
+        @media (hover: none) and (pointer: coarse) {
+            .btn:active,
+            .nav-btn:active,
+            .btn-icon:active,
+            .template-chip:active {
+                transition: transform 0.05s ease;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Small screens adjustments */
+        @media (max-width: 360px) {
+            .item-row {
+                grid-template-columns: 1fr 55px 65px 48px auto;
+                gap: 2px;
+                padding: 6px 6px;
+            }
+            .item-input {
+                font-size: 0.75rem;
+                padding: 6px 3px;
+            }
+            .item-total {
+                font-size: 0.75rem;
+                min-width: 40px;
+            }
+            .btn {
+                font-size: 0.78rem;
+                padding: 11px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- Top Navigation -->
+        <nav class="top-nav" role="navigation" aria-label="شريط التنقل">
+            <a href="/" class="nav-btn" title="العودة للرئيسية" aria-label="العودة للصفحة الرئيسية">
+                <i class="fas fa-arrow-right"></i>
+            </a>
+            <span class="nav-title">📋 مراجعة ذكية</span>
+            <button class="nav-btn undo-disabled" id="undoBtn" title="تراجع (Ctrl+Z)" aria-label="تراجع عن آخر تعديل">
+                <i class="fas fa-undo"></i>
+            </button>
+        </nav>
+
+        <!-- Batch actions bar -->
+        <div class="batch-bar" id="batchBar" role="toolbar" aria-label="إجراءات متعددة">
+            <span class="batch-count" id="selectedCount">0 مختار</span>
+            <button class="btn-sm danger" id="batchDeleteBtn"><i class="fas fa-trash"></i> حذف</button>
+            <button class="btn-sm gold" id="batchDuplicateBtn"><i class="fas fa-copy"></i> نسخ</button>
+            <button class="btn-sm" id="cancelBatchBtn">✕ إلغاء</button>
+        </div>
+
+        <!-- Supplier & Date Card -->
+        <div class="card" id="metaCard">
+            <div class="card-header">
+                <span class="card-label"><i class="fas fa-store"></i> بيانات الفاتورة</span>
+            </div>
+            <div class="input-row">
+                <span class="input-icon"><i class="fas fa-building"></i></span>
+                <div class="suggestions-wrap">
+                    <input type="text" id="supplierInput" placeholder="اسم المورد أو الشركة..." autocomplete="off" aria-label="اسم المورد">
+                    <div class="suggestions-drop" id="supplierSuggestions" role="listbox"></div>
+                </div>
+            </div>
+            <div class="input-row" style="display:flex; gap:8px;">
+                <span class="input-icon"><i class="fas fa-calendar"></i></span>
+                <input type="date" id="dateInput" aria-label="تاريخ الفاتورة" style="flex:1;">
+                <input type="time" id="timeInput" aria-label="وقت الفاتورة" style="flex:0.7;">
+            </div>
+        </div>
+
+        <!-- Items Section -->
+        <div class="items-header">
+            <span class="items-count"><i class="fas fa-boxes"></i> الأصناف (<span id="itemsCountLabel">0</span>)</span>
+            <button class="btn-icon" id="addItemBtn" title="إضافة صنف جديد" aria-label="إضافة صنف">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <div class="items-list" id="itemsList" role="list" aria-label="قائمة الأصناف"></div>
+
+        <!-- Total -->
+        <div class="total-row">
+            <span class="total-label">💰 الإجمالي</span>
+            <span class="total-value" id="totalDisplay"><span class="currency">ج.م</span> 0.00</span>
+        </div>
+
+        <!-- Templates -->
+        <div class="templates-wrap" id="templatesContainer" style="min-height:6px;"></div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="bottom-actions" id="bottomActions">
+        <button class="btn gold" id="templateBtn"><i class="fas fa-layer-group"></i> قالب</button>
+        <button class="btn" id="clearBtn"><i class="fas fa-eraser"></i> مسح</button>
+        <button class="btn primary" id="saveBtn"><i class="fas fa-save"></i> حفظ</button>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- Saving overlay -->
+    <div class="saving-overlay" id="savingOverlay">
+        <div class="saving-spinner"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // Fast Sokon - مراجعة ذكية للفاتورة v3.0
+        // خفيف، متوافق مع الكاميرا، ومخصص للموبايل
+        // ============================================
+
+        class InvoiceReview {
+            constructor() {
+                // Core state
+                this.invoiceData = {
+                    supplier: '',
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date().toTimeString().slice(0, 5)
+                };
+                this.items = [];
+                this.originalItems = [];
+
+                // History for undo
+                this.history = [];
+                this.historyIndex = -1;
+                this.maxHistory = 25;
+
+                // Selection
+                this.selectedIndices = new Set();
+                this.lastSelectedIndex = null;
+
+                // Templates
+                this.templates = [];
+
+                // Supplier autocomplete
+                this.supplierSuggestions = [];
+
+                // Services
+                this.db = null;
+                this.auth = null;
+                this.firestore = null;
+                this.currentUser = null;
+
+                // Timers
+                this.autoSaveTimer = null;
+                this.toastTimer = null;
+                this.unsavedChanges = false;
+                this.isSaving = false;
+
+                // Swipe tracking
+                this.swipeState = new Map();
+
+                // Bind methods
+                this.onInputChange = this.onInputChange.bind(this);
+                this.onItemClick = this.onItemClick.bind(this);
+
+                // Init
+                this.init();
+            }
+
+            async init() {
+                this.cacheDom();
+                await this.waitForFirebase();
+                this.setupFirebase();
+                await this.openDatabase();
+                this.setupAuthListener();
+                this.loadInitialData();
+                this.render();
+                this.attachEvents();
+                this.loadTemplates();
+                this.loadSupplierHistory();
+                this.pushHistory();
+                this.startAutoSave();
+                this.setupKeyboardShortcuts();
+                console.log('✅ مراجعة ذكية v3.0 جاهزة');
+            }
+
+            // ========== DOM Cache ==========
+            cacheDom() {
+                this.els = {
+                    supplierInput: document.getElementById('supplierInput'),
+                    supplierSuggestions: document.getElementById('supplierSuggestions'),
+                    dateInput: document.getElementById('dateInput'),
+                    timeInput: document.getElementById('timeInput'),
+                    itemsList: document.getElementById('itemsList'),
+                    itemsCountLabel: document.getElementById('itemsCountLabel'),
+                    totalDisplay: document.getElementById('totalDisplay'),
+                    templatesContainer: document.getElementById('templatesContainer'),
+                    batchBar: document.getElementById('batchBar'),
+                    selectedCount: document.getElementById('selectedCount'),
+                    undoBtn: document.getElementById('undoBtn'),
+                    toast: document.getElementById('toast'),
+                    savingOverlay: document.getElementById('savingOverlay'),
+                    addItemBtn: document.getElementById('addItemBtn'),
+                    saveBtn: document.getElementById('saveBtn'),
+                    templateBtn: document.getElementById('templateBtn'),
+                    clearBtn: document.getElementById('clearBtn'),
+                    batchDeleteBtn: document.getElementById('batchDeleteBtn'),
+                    batchDuplicateBtn: document.getElementById('batchDuplicateBtn'),
+                    cancelBatchBtn: document.getElementById('cancelBatchBtn'),
+                };
+            }
+
+            // ========== Firebase ==========
+            waitForFirebase() {
+                return new Promise(resolve => {
+                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+                        resolve();
+                        return;
+                    }
+                    let attempts = 0;
+                    const check = () => {
+                        attempts++;
+                        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+                            resolve();
+                        } else if (attempts < 80) {
+                            setTimeout(check, 60);
+                        } else {
+                            console.warn('⚠️ Firebase لم يتم تحميله - تشغيل بدون مزامنة');
+                            resolve();
+                        }
+                    };
+                    check();
+                });
+            }
+
+            setupFirebase() {
+                try {
+                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+                        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                        this.auth = firebase.auth();
+                        this.firestore = firebase.firestore();
+                    }
+                } catch (e) {
+                    console.warn('⚠️ خطأ في إعداد Firebase:', e);
+                }
+            }
+
+            setupAuthListener() {
+                if (!this.auth) return;
+                this.auth.onAuthStateChanged(user => {
+                    this.currentUser = user;
+                    if (user) {
+                        this.els.saveBtn.disabled = false;
+                        this.els.saveBtn.title = '';
+                    } else {
+                        this.els.saveBtn.disabled = true;
+                        this.els.saveBtn.title = 'يجب تسجيل الدخول أولاً';
+                    }
+                });
+            }
+
+            // ========== IndexedDB ==========
+            openDatabase() {
+                return new Promise((resolve) => {
+                    const request = indexedDB.open('FastSokonDB', 8);
+                    request.onsuccess = (e) => {
+                        this.db = e.target.result;
+                        resolve();
+                    };
+                    request.onerror = () => {
+                        this.db = null;
+                        resolve();
+                    };
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('invoices')) {
+                            db.createObjectStore('invoices', { keyPath: 'id' });
+                        }
+                    };
+                });
+            }
+
+            // ========== Data Loading ==========
+            loadInitialData() {
+                // First priority: sessionStorage from camera flow
+                const analysisResult = this.getAnalysisFromCamera();
+                if (analysisResult) {
+                    this.parseAnalysisResult(analysisResult);
+                    return;
+                }
+
+                // Second priority: localStorage draft
+                const draft = this.getDraftFromLocal();
+                if (draft) {
+                    this.invoiceData = {
+                        supplier: draft.supplier || '',
+                        date: draft.date || this.invoiceData.date,
+                        time: draft.time || this.invoiceData.time
+                    };
+                    this.items = draft.items || [];
+                }
+
+                this.originalItems = JSON.parse(JSON.stringify(this.items));
+                this.unsavedChanges = false;
+            }
+
+            getAnalysisFromCamera() {
+                try {
+                    const stored = sessionStorage.getItem('analysis_result');
+                    if (!stored) return null;
+                    const data = JSON.parse(stored);
+                    // Clean up after reading
+                    sessionStorage.removeItem('analysis_result');
+                    return data;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            getDraftFromLocal() {
+                try {
+                    const stored = localStorage.getItem('current_invoice_data');
+                    return stored ? JSON.parse(stored) : null;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            parseAnalysisResult(result) {
+                const text = result.text || '';
+                const items = [];
+
+                // Try multiple parsing strategies
+                const strategies = [
+                    this.parseTableFormat,
+                    this.parseLineByLine,
+                    this.parseJsonEmbedded,
+                ];
+
+                for (const strategy of strategies) {
+                    const parsed = strategy.call(this, text);
+                    if (parsed && parsed.length > 0) {
+                        items.push(...parsed);
+                        break;
+                    }
+                }
+
+                // Extract supplier name
+                const supplierMatch = text.match(/(?:مورد|شركة|محل|متجر|بائع|المورد|الشركة)[:\s]*[:\s]+([^\n]{2,40})/i);
+                if (supplierMatch) {
+                    this.invoiceData.supplier = supplierMatch[1].trim();
+                }
+
+                // Extract date
+                const dateMatch = text.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
+                if (dateMatch) {
+                    const d = dateMatch[1].replace(/\//g, '-');
+                    if (!isNaN(Date.parse(d))) this.invoiceData.date = d;
+                }
+
+                this.items = items.length > 0 ? items : [{ name: '', quantity: 1, price: 0 }];
+                this.originalItems = JSON.parse(JSON.stringify(this.items));
+
+                if (items.length > 0) {
+                    this.showToast(`✅ تم استخراج ${items.length} صنف من الفاتورة`, 'success');
+                } else if (text) {
+                    this.showToast('⚠️ لم نتمكن من استخراج أصناف تلقائياً. يمكنك إضافتها يدوياً.', 'error');
+                }
+            }
+
+            parseTableFormat(text) {
+                // Look for table-like patterns: name | quantity | price | total
+                const items = [];
+                const lines = text.split('\n').filter(l => l.trim());
+
+                for (const line of lines) {
+                    // Match: item name ... quantity ... price ... total
+                    const match = line.match(
+                        /([^\d]{2,40}?)\s+(\d+)\s+([\d,.]+)\s+([\d,.]+)/
+                    );
+                    if (match) {
+                        items.push({
+                            name: match[1].trim(),
+                            quantity: parseInt(match[2]) || 1,
+                            price: parseFloat(match[3].replace(/,/g, '')) || 0
+                        });
+                        continue;
+                    }
+
+                    // Match: item name x quantity @ price
+                    const match2 = line.match(
+                        /([^\d]{2,40}?)\s*[x×]\s*(\d+)\s*[@]?\s*([\d,.]+)/
+                    );
+                    if (match2) {
+                        items.push({
+                            name: match2[1].trim(),
+                            quantity: parseInt(match2[2]) || 1,
+                            price: parseFloat(match2[3].replace(/,/g, '')) || 0
+                        });
+                    }
+                }
+
+                return items;
+            }
+
+            parseLineByLine(text) {
+                const items = [];
+                const lines = text.split('\n').filter(l => l.trim());
+
+                for (const line of lines) {
+                    // Try: name price (simple format)
+                    const match = line.match(/^(.{2,30}?)\s+([\d,.]+)\s*(?:ج\.م|EGP|جنيه)?\s*$/);
+                    if (match && !match[1].match(/إجمال|مجموع|total|sum/i)) {
+                        items.push({
+                            name: match[1].trim(),
+                            quantity: 1,
+                            price: parseFloat(match[2].replace(/,/g, '')) || 0
+                        });
+                    }
+                }
+
+                return items;
+            }
+
+            parseJsonEmbedded(text) {
+                try {
+                    const jsonMatch = text.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const data = JSON.parse(jsonMatch[0]);
+                        if (data.items && Array.isArray(data.items)) {
+                            return data.items.map(item => ({
+                                name: item.name || item.product || '',
+                                quantity: item.quantity || item.qty || 1,
+                                price: item.price || item.unit_price || 0
+                            }));
+                        }
+                    }
+                } catch (e) {
+                    // Not JSON
+                }
+                return [];
+            }
+
+            // ========== History / Undo ==========
+            pushHistory() {
+                const snapshot = JSON.stringify(this.items);
+                // Don't push if same as current
+                if (this.history.length > 0 && this.history[this.historyIndex] === snapshot) return;
+
+                // Trim future history
+                this.history = this.history.slice(0, this.historyIndex + 1);
+                this.history.push(snapshot);
+
+                // Limit history size
+                if (this.history.length > this.maxHistory) this.history.shift();
+                this.historyIndex = this.history.length - 1;
+
+                this.unsavedChanges = true;
+                this.updateUndoButton();
+            }
+
+            undo() {
+                if (this.historyIndex <= 0) return;
+                this.historyIndex--;
+                this.items = JSON.parse(this.history[this.historyIndex]);
+                this.renderItems();
+                this.updateTotal();
+                this.clearSelection();
+                this.unsavedChanges = true;
+                this.updateUndoButton();
+                // Haptic-like visual feedback
+                this.pulseElement(this.els.undoBtn);
+            }
+
+            updateUndoButton() {
+                const btn = this.els.undoBtn;
+                if (this.historyIndex > 0) {
+                    btn.classList.remove('undo-disabled');
+                } else {
+                    btn.classList.add('undo-disabled');
+                }
+            }
+
+            pulseElement(el) {
+                el.style.transform = 'scale(0.88)';
+                setTimeout(() => el.style.transform = '', 120);
+            }
+
+            // ========== Supplier Autocomplete ==========
+            async loadSupplierHistory() {
+                if (!this.db) return;
+                try {
+                    const tx = this.db.transaction('invoices', 'readonly');
+                    const store = tx.objectStore('invoices');
+                    const req = store.getAll();
+                    req.onsuccess = () => {
+                        const invoices = req.result || [];
+                        const suppliers = new Set(
+                            invoices.map(inv => inv.supplier).filter(Boolean)
+                        );
+                        this.supplierSuggestions = Array.from(suppliers).sort();
+                    };
+                    req.onerror = () => {};
+                } catch (e) {
+                    // Silent fail
+                }
+            }
+
+            showSupplierSuggestions(value) {
+                const dropdown = this.els.supplierSuggestions;
+                if (!dropdown) return;
+
+                const query = value.trim().toLowerCase();
+                if (query.length === 0) {
+                    dropdown.classList.remove('visible');
+                    return;
+                }
+
+                const matches = this.supplierSuggestions
+                    .filter(s => s.toLowerCase().includes(query))
+                    .slice(0, 5);
+
+                if (matches.length === 0) {
+                    dropdown.classList.remove('visible');
+                    return;
+                }
+
+                dropdown.innerHTML = matches
+                    .map(s => `<div class="suggestion-item" role="option">${this.escHtml(s)}</div>`)
+                    .join('');
+                dropdown.classList.add('visible');
+            }
+
+            hideSupplierSuggestions() {
+                setTimeout(() => {
+                    this.els.supplierSuggestions?.classList.remove('visible');
+                }, 180);
+            }
+
+            // ========== Templates ==========
+            loadTemplates() {
+                try {
+                    const stored = localStorage.getItem('invoice_templates');
+                    this.templates = stored ? JSON.parse(stored) : [];
+                } catch (e) {
+                    this.templates = [];
+                }
+                this.renderTemplates();
+            }
+
+            saveAsTemplate() {
+                const name = prompt('اسم القالب (مثال: مشتريات أسبوعية):');
+                if (!name || !name.trim()) return;
+
+                const template = {
+                    name: name.trim(),
+                    supplier: this.invoiceData.supplier,
+                    items: JSON.parse(JSON.stringify(this.items)),
+                    savedAt: Date.now()
+                };
+
+                // Avoid duplicates
+                const existing = this.templates.findIndex(t => t.name === template.name);
+                if (existing >= 0) {
+                    this.templates[existing] = template;
+                } else {
+                    this.templates.unshift(template);
+                }
+
+                // Limit templates
+                if (this.templates.length > 15) this.templates = this.templates.slice(0, 15);
+
+                localStorage.setItem('invoice_templates', JSON.stringify(this.templates));
+                this.renderTemplates();
+                this.showToast(`✅ تم حفظ القالب "${template.name}"`, 'success');
+            }
+
+            applyTemplate(index) {
+                const template = this.templates[index];
+                if (!template) return;
+
+                this.items = JSON.parse(JSON.stringify(template.items));
+                if (template.supplier) {
+                    this.invoiceData.supplier = template.supplier;
+                    this.els.supplierInput.value = template.supplier;
+                }
+
+                this.renderItems();
+                this.updateTotal();
+                this.pushHistory();
+                this.showToast(`📋 تم تحميل "${template.name}"`, 'success');
+            }
+
+            deleteTemplate(index) {
+                const template = this.templates[index];
+                if (!template) return;
+                if (!confirm(`حذف القالب "${template.name}"؟`)) return;
+
+                this.templates.splice(index, 1);
+                localStorage.setItem('invoice_templates', JSON.stringify(this.templates));
+                this.renderTemplates();
+                this.showToast('🗑️ تم حذف القالب');
+            }
+
+            renderTemplates() {
+                const container = this.els.templatesContainer;
+                if (!container) return;
+
+                if (this.templates.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.innerHTML = this.templates
+                    .map((t, i) => `
+                <div class="template-chip" data-index="${i}" title="اضغط للتطبيق | ضغطة طويلة للحذف">
+                  <i class="fas fa-layer-group" style="font-size:10px;"></i>
+                  ${this.escHtml(t.name)}
+                </div>
+              `).join('');
+
+                // Template click events
+                container.querySelectorAll('.template-chip').forEach(chip => {
+                    let pressTimer;
+                    const index = parseInt(chip.dataset.index);
+
+                    chip.addEventListener('pointerdown', (e) => {
+                        pressTimer = setTimeout(() => {
+                            this.deleteTemplate(index);
+                        }, 800);
+                    });
+
+                    chip.addEventListener('pointerup', () => {
+                        clearTimeout(pressTimer);
+                    });
+
+                    chip.addEventListener('pointerleave', () => {
+                        clearTimeout(pressTimer);
+                    });
+
+                    chip.addEventListener('click', (e) => {
+                        if (pressTimer) {
+                            clearTimeout(pressTimer);
+                            this.applyTemplate(index);
+                        }
+                    });
+                });
+            }
+
+            // ========== Item Operations ==========
+            addItem(insertIndex = this.items.length) {
+                this.items.splice(insertIndex, 0, { name: '', quantity: 1, price: 0 });
+                this.renderItems();
+                this.updateTotal();
+                this.pushHistory();
+                this.clearSelection();
+
+                // Focus the new item's name input
+                requestAnimationFrame(() => {
+                    const inputs = this.els.itemsList.querySelectorAll('.name-input');
+                    const target = inputs[Math.min(insertIndex, inputs.length - 1)];
+                    if (target) target.focus();
+                });
+            }
+
+            deleteItem(index) {
+                if (index < 0 || index >= this.items.length) return;
+                this.items.splice(index, 1);
+                this.renderItems();
+                this.updateTotal();
+                this.pushHistory();
+                this.clearSelection();
+            }
+
+            duplicateItem(index) {
+                if (index < 0 || index >= this.items.length) return;
+                const clone = JSON.parse(JSON.stringify(this.items[index]));
+                this.items.splice(index + 1, 0, clone);
+                this.renderItems();
+                this.updateTotal();
+                this.pushHistory();
+            }
+
+            updateItem(index, field, value) {
+                if (index < 0 || index >= this.items.length) return;
+                if (field === 'quantity') {
+                    this.items[index].quantity = Math.max(1, parseInt(value) || 1);
+                } else if (field === 'price') {
+                    this.items[index].price = Math.max(0, parseFloat(value) || 0);
+                } else if (field === 'name') {
+                    this.items[index].name = value;
+                }
+                this.updateItemTotalDisplay(index);
+                this.updateTotal();
+                this.unsavedChanges = true;
+            }
+
+            updateItemTotalDisplay(index) {
+                const item = this.items[index];
+                const totalEl = document.querySelector(`.item-total[data-index="${index}"]`);
+                if (totalEl && item) {
+                    const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0);
+                    totalEl.textContent = total.toFixed(2);
+                }
+            }
+
+            calculateTotal() {
+                return this.items.reduce(
+                    (sum, item) => sum + (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0),
+                    0
+                );
+            }
+
+            // ========== Batch Operations ==========
+            toggleSelect(index, event) {
+                if (event && event.shiftKey && this.lastSelectedIndex !== null && this.lastSelectedIndex !==
+                    undefined) {
+                    const start = Math.min(index, this.lastSelectedIndex);
+                    const end = Math.max(index, this.lastSelectedIndex);
+                    const allInRange = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+                    const allSelected = allInRange.every(i => this.selectedIndices.has(i));
+
+                    if (allSelected) {
+                        allInRange.forEach(i => this.selectedIndices.delete(i));
+                    } else {
+                        allInRange.forEach(i => this.selectedIndices.add(i));
+                    }
+                } else {
+                    if (this.selectedIndices.has(index)) {
+                        this.selectedIndices.delete(index);
+                    } else {
+                        this.selectedIndices.add(index);
+                    }
+                }
+
+                this.lastSelectedIndex = index;
+                this.renderSelection();
+            }
+
+            clearSelection() {
+                this.selectedIndices.clear();
+                this.lastSelectedIndex = null;
+                this.renderSelection();
+            }
+
+            renderSelection() {
+                const rows = this.els.itemsList.querySelectorAll('.item-row');
+                rows.forEach(row => {
+                    const idx = parseInt(row.dataset.index);
+                    row.classList.toggle('selected', this.selectedIndices.has(idx));
+                });
+
+                const count = this.selectedIndices.size;
+                this.els.selectedCount.textContent = `${count} مختار`;
+                this.els.batchBar.classList.toggle('active', count > 0);
+            }
+
+            batchDelete() {
+                if (this.selectedIndices.size === 0) return;
+                const indices = Array.from(this.selectedIndices).sort((a, b) => b - a);
+                indices.forEach(i => this.items.splice(i, 1));
+                this.clearSelection();
+                this.renderItems();
+                this.updateTotal();
+                this.pushHistory();
+            }
+
+            batchDuplicate() {
+                if (this.selectedIndices.size === 0) return;
+                const indices = Array.from(this.selectedIndices).sort((a, b) => a - b);
+                const clones = indices.map(i => JSON.parse(JSON.stringify(this.items[i])));
+                const insertPos = indices[indices.length - 1] + 1;
+                this.items.splice(insertPos, 0, ...clones);
+                this.clearSelection();
+                this.renderItems();
+                this.updateTotal();
+                this.pushHistory();
+            }
+
+            // ========== Save ==========
+            async saveInvoice() {
+                if (this.isSaving) return;
+                if (!this.currentUser) {
+                    this.showToast('🔐 يرجى تسجيل الدخول أولاً', 'error');
+                    return;
+                }
+                if (!this.invoiceData.supplier.trim()) {
+                    this.showToast('⚠️ يرجى إدخال اسم المورد', 'error');
+                    this.els.supplierInput.focus();
+                    return;
+                }
+                if (this.items.length === 0 || this.items.every(i => !i.name.trim())) {
+                    this.showToast('⚠️ أضف صنفاً واحداً على الأقل', 'error');
+                    return;
+                }
+
+                this.isSaving = true;
+                this.showSaving(true);
+                this.els.saveBtn.disabled = true;
+
+                const invoice = {
+                    id: this.generateId(),
+                    supplier: this.invoiceData.supplier.trim(),
+                    dateStr: this.invoiceData.date,
+                    time: this.invoiceData.time,
+                    items: this.items.map(item => ({
+                        name: item.name.trim() || 'صنف غير معروف',
+                        quantity: parseFloat(item.quantity) || 1,
+                        price: parseFloat(item.price) || 0
+                    })),
+                    total: this.calculateTotal(),
+                    uid: this.currentUser.uid,
+                    createdAt: new Date().toISOString(),
+                    source: 'review_page'
+                };
+
+                try {
+                    // Save to Firestore
+                    await this.firestore
+                        .collection('users')
+                        .doc(this.currentUser.uid)
+                        .collection('invoices')
+                        .doc(invoice.id)
+                        .set(invoice);
+
+                    // Save to IndexedDB
+                    await this.saveToLocalDB(invoice);
+
+                    // Clear draft
+                    localStorage.removeItem('current_invoice_data');
+                    this.unsavedChanges = false;
+
+                    this.showToast(`✅ تم حفظ فاتورة ${invoice.supplier}`, 'success');
+                    this.showSaving(false);
+
+                    // Navigate back after short delay
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 900);
+                } catch (error) {
+                    console.error('Save error:', error);
+
+                    // Try offline save
+                    try {
+                        await this.saveToLocalDB(invoice);
+                        localStorage.removeItem('current_invoice_data');
+                        this.showToast('📦 تم الحفظ محلياً. ستتم المزامنة عند الاتصال.', 'info');
+                        setTimeout(() => window.location.href = '/', 900);
+                    } catch (localError) {
+                        this.showToast('❌ فشل الحفظ. حاول مجدداً.', 'error');
+                    }
+
+                    this.showSaving(false);
+                    this.els.saveBtn.disabled = false;
+                } finally {
+                    this.isSaving = false;
+                }
+            }
+
+            saveToLocalDB(invoice) {
+                return new Promise((resolve, reject) => {
+                    if (!this.db) {
+                        resolve();
+                        return;
+                    }
+                    try {
+                        const tx = this.db.transaction('invoices', 'readwrite');
+                        const store = tx.objectStore('invoices');
+                        store.put(invoice);
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            }
+
+            generateId() {
+                if (crypto.randomUUID) return crypto.randomUUID();
+                return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+            }
+
+            showSaving(show) {
+                this.els.savingOverlay.classList.toggle('active', show);
+            }
+
+            // ========== Auto-save Draft ==========
+            startAutoSave() {
+                this.autoSaveTimer = setInterval(() => {
+                    if (this.unsavedChanges) this.saveDraft();
+                }, 2500);
+            }
+
+            saveDraft() {
+                const data = {
+                    ...this.invoiceData,
+                    items: this.items,
+                    savedAt: Date.now()
+                };
+                try {
+                    localStorage.setItem('current_invoice_data', JSON.stringify(data));
+                    this.unsavedChanges = false;
+                } catch (e) {
+                    // Storage full - try clearing old drafts
+                    try {
+                        localStorage.removeItem('invoice_templates');
+                        localStorage.setItem('current_invoice_data', JSON.stringify(data));
+                    } catch (e2) {
+                        // Silent fail
+                    }
+                }
+            }
+
+            // ========== Rendering ==========
+            render() {
+                // Set initial values
+                this.els.supplierInput.value = this.invoiceData.supplier;
+                this.els.dateInput.value = this.invoiceData.date;
+                this.els.timeInput.value = this.invoiceData.time;
+
+                this.renderItems();
+                this.updateTotal();
+                this.updateUndoButton();
+                this.renderTemplates();
+            }
+
+            renderItems() {
+                const list = this.els.itemsList;
+                const fragment = document.createDocumentFragment();
+
+                this.items.forEach((item, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'item-row';
+                    row.dataset.index = index;
+                    row.setAttribute('role', 'listitem');
+
+                    const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0);
+
+                    row.innerHTML = `
+                <div class="delete-bg"><i class="fas fa-trash"></i></div>
+                <input class="item-input name-input" type="text" value="${this.escHtml(item.name)}"
+                       placeholder="اسم الصنف" data-field="name" data-index="${index}" aria-label="اسم الصنف">
+                <input class="item-input qty-input" type="number" value="${item.quantity}"
+                       min="1" step="1" data-field="quantity" data-index="${index}" aria-label="الكمية">
+                <input class="item-input price-input" type="number" value="${item.price}"
+                       min="0" step="0.01" data-field="price" data-index="${index}" aria-label="السعر">
+                <span class="item-total" data-index="${index}">${total.toFixed(2)}</span>
+                <div class="item-actions-inline">
+                  <button class="item-action-dot" data-action="duplicate" data-index="${index}" title="نسخ" aria-label="نسخ الصنف">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                  <button class="item-action-dot delete-dot" data-action="delete" data-index="${index}" title="حذف" aria-label="حذف الصنف">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              `;
+
+                    fragment.appendChild(row);
+                });
+
+                list.innerHTML = '';
+                list.appendChild(fragment);
+
+                // Update count
+                this.els.itemsCountLabel.textContent = this.items.length;
+
+                // Re-attach swipe listeners
+                this.attachSwipeToDelete();
+            }
+
+            updateTotal() {
+                const total = this.calculateTotal();
+                this.els.totalDisplay.innerHTML = `<span class="currency">ج.م</span> ${total.toFixed(2)}`;
+            }
+
+            // ========== Event Handling ==========
+            attachEvents() {
+                // Supplier input
+                this.els.supplierInput.addEventListener('input', (e) => {
+                    this.invoiceData.supplier = e.target.value;
+                    this.showSupplierSuggestions(e.target.value);
+                    this.unsavedChanges = true;
+                });
+                this.els.supplierInput.addEventListener('blur', () => this.hideSupplierSuggestions());
+                this.els.supplierInput.addEventListener('focus', (e) => this.showSupplierSuggestions(e.target.value));
+
+                // Suggestion click
+                this.els.supplierSuggestions.addEventListener('pointerdown', (e) => {
+                    const item = e.target.closest('.suggestion-item');
+                    if (item) {
+                        this.els.supplierInput.value = item.textContent;
+                        this.invoiceData.supplier = item.textContent;
+                        this.els.supplierSuggestions.classList.remove('visible');
+                        this.unsavedChanges = true;
+                    }
+                });
+
+                // Date & time
+                this.els.dateInput.addEventListener('change', (e) => {
+                    this.invoiceData.date = e.target.value;
+                    this.unsavedChanges = true;
+                });
+                this.els.timeInput.addEventListener('change', (e) => {
+                    this.invoiceData.time = e.target.value;
+                    this.unsavedChanges = true;
+                });
+
+                // Add item
+                this.els.addItemBtn.addEventListener('click', () => this.addItem());
+
+                // Save
+                this.els.saveBtn.addEventListener('click', () => this.saveInvoice());
+
+                // Template save
+                this.els.templateBtn.addEventListener('click', () => this.saveAsTemplate());
+
+                // Clear
+                this.els.clearBtn.addEventListener('click', () => {
+                    if (this.items.length === 0) return;
+                    if (confirm('مسح جميع الأصناف؟ يمكنك التراجع بعد المسح.')) {
+                        this.items = [];
+                        this.renderItems();
+                        this.updateTotal();
+                        this.pushHistory();
+                        this.clearSelection();
+                    }
+                });
+
+                // Undo
+                this.els.undoBtn.addEventListener('click', () => this.undo());
+
+                // Batch actions
+                this.els.batchDeleteBtn.addEventListener('click', () => this.batchDelete());
+                this.els.batchDuplicateBtn.addEventListener('click', () => this.batchDuplicate());
+                this.els.cancelBatchBtn.addEventListener('click', () => this.clearSelection());
+
+                // Items list delegation
+                this.els.itemsList.addEventListener('input', this.onInputChange);
+                this.els.itemsList.addEventListener('click', this.onItemClick);
+
+                // Enter key in last item adds new
+                this.els.itemsList.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && e.target.classList.contains('name-input')) {
+                        const index = parseInt(e.target.dataset.index);
+                        if (index === this.items.length - 1 && this.items[index].name.trim()) {
+                            e.preventDefault();
+                            this.addItem();
+                        }
+                    }
+                });
+
+                // Before unload warning
+                window.addEventListener('beforeunload', (e) => {
+                    if (this.unsavedChanges && this.items.some(i => i.name.trim())) {
+                        this.saveDraft();
+                    }
+                });
+
+                // Toast dismiss
+                this.els.toast.addEventListener('click', () => {
+                    this.els.toast.classList.remove('show');
+                });
+            }
+
+            onInputChange(e) {
+                const index = parseInt(e.target.dataset.index);
+                const field = e.target.dataset.field;
+                if (isNaN(index) || !field) return;
+
+                this.updateItem(index, field, e.target.value);
+
+                // Debounce history push for typing
+                clearTimeout(this._historyDebounce);
+                this._historyDebounce = setTimeout(() => this.pushHistory(), 600);
+            }
+
+            onItemClick(e) {
+                const index = parseInt(e.target.dataset.index);
+                if (isNaN(index)) return;
+
+                // Action buttons
+                const action = e.target.closest('[data-action]')?.dataset.action;
+                if (action === 'delete') {
+                    this.deleteItem(index);
+                    return;
+                }
+                if (action === 'duplicate') {
+                    this.duplicateItem(index);
+                    return;
+                }
+
+                // Don't select when clicking inputs
+                if (e.target.tagName === 'INPUT') return;
+
+                // Toggle selection
+                this.toggleSelect(index, e);
+            }
+
+            attachSwipeToDelete() {
+                const rows = this.els.itemsList.querySelectorAll('.item-row');
+
+                rows.forEach(row => {
+                    // Remove old listeners by cloning (simple approach)
+                    const newRow = row.cloneNode(true);
+                    row.parentNode.replaceChild(newRow, row);
+
+                    let startX = 0;
+                    let currentX = 0;
+                    let swiping = false;
+
+                    newRow.addEventListener('touchstart', (e) => {
+                        if (e.target.tagName === 'INPUT') return;
+                        startX = e.touches[0].clientX;
+                        swiping = true;
+                    }, { passive: true });
+
+                    newRow.addEventListener('touchmove', (e) => {
+                        if (!swiping) return;
+                        currentX = e.touches[0].clientX;
+                        const diff = startX - currentX;
+                        if (diff > 15) {
+                            newRow.classList.add('swiping');
+                        } else {
+                            newRow.classList.remove('swiping');
+                        }
+                    }, { passive: true });
+
+                    newRow.addEventListener('touchend', () => {
+                        if (!swiping) return;
+                        swiping = false;
+                        const diff = startX - currentX;
+                        if (diff > 55) {
+                            const index = parseInt(newRow.dataset.index);
+                            if (!isNaN(index)) {
+                                // Visual feedback then delete
+                                newRow.style.transform = 'translateX(-60px)';
+                                newRow.style.opacity = '0';
+                                newRow.style.transition = 'all 0.2s ease';
+                                setTimeout(() => {
+                                    this.deleteItem(index);
+                                }, 200);
+                                return;
+                            }
+                        }
+                        newRow.classList.remove('swiping');
+                        newRow.style.transform = '';
+                        newRow.style.opacity = '';
+                        newRow.style.transition = '';
+                    });
+                });
+            }
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl+Z = Undo
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.undo();
+                    }
+                    // Escape = clear selection
+                    if (e.key === 'Escape') {
+                        this.clearSelection();
+                    }
+                });
+            }
+
+            // ========== Toast ==========
+            showToast(message, type = 'info') {
+                const toast = this.els.toast;
+                toast.textContent = message;
+                toast.className = `toast show ${type}`;
+                clearTimeout(this.toastTimer);
+                this.toastTimer = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2500);
+            }
+
+            // ========== Utilities ==========
+            escHtml(str) {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            // ========== Cleanup ==========
+            destroy() {
+                clearInterval(this.autoSaveTimer);
+                clearTimeout(this.toastTimer);
+                clearTimeout(this._historyDebounce);
+                if (this.unsavedChanges) this.saveDraft();
+            }
+        }
+
+        // Bootstrap
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new InvoiceReview();
+            window.reviewApp = app;
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (app) app.destroy();
+        });
+
+        window.addEventListener('pagehide', () => {
+            if (app) app.destroy();
+        });
+    </script>
+</body>
+</html>

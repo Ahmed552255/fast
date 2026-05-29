@@ -7,7 +7,7 @@
  * يتم استيراده في جميع صفحات التطبيق لضمان الاتساق وسهولة الصيانة.
  * 
  * @version 1.0.0
- * @lastUpdate 2026-05-09
+ * @lastUpdate 2026-05-29
  * @author Fast Sokon Team
  */
 
@@ -24,34 +24,36 @@ const CURRENT_ENV = ENV.DEVELOPMENT;
 
 /**
  * إعدادات بيئة التطوير (Development)
+ * المشروع: i-excelled
  */
 const devConfig = {
-    apiKey: "AIzaSyAfYqB_0OcQcnYvxP6C0J4cuViY6EmLE8U",
-    authDomain: "fast-sokon.firebaseapp.com",
-    databaseURL: "https://fast-sokon-default-rtdb.firebaseio.com",
-    projectId: "fast-sokon",
-    storageBucket: "fast-sokon.firebasestorage.app",
-    messagingSenderId: "45959507911",
-    appId: "1:45959507911:web:e78de78f4a928062dff3e2",
-    measurementId: "G-2R52W7Q4CE"
+    apiKey: "AIzaSyCjCLdv6QWfJieZQO7Qt_U5W0UgxNx8TXQ",
+    authDomain: "i-excelled.firebaseapp.com",
+    databaseURL: "https://i-excelled-default-rtdb.firebaseio.com",
+    projectId: "i-excelled",
+    storageBucket: "i-excelled.firebasestorage.app",
+    messagingSenderId: "872523261091",
+    appId: "1:872523261091:web:77f465166d877b96b84b16",
+    measurementId: "G-DJBW60TWCF"
 };
 
 /**
- * إعدادات بيئة الإنتاج (Production )
+ * إعدادات بيئة الإنتاج (Production)
+ * المشروع: i-excelled
  */
 const prodConfig = {
-    apiKey: "AIzaSyAfYqB_0OcQcnYvxP6C0J4cuViY6EmLE8U",
-    authDomain: "fast-sokon.firebaseapp.com",
-    databaseURL: "https://fast-sokon-default-rtdb.firebaseio.com",
-    projectId: "fast-sokon",
-    storageBucket: "fast-sokon.firebasestorage.app",
-    messagingSenderId: "45959507911",
-    appId: "1:45959507911:web:e78de78f4a928062dff3e2",
-    measurementId: "G-2R52W7Q4CE"
+    apiKey: "AIzaSyCjCLdv6QWfJieZQO7Qt_U5W0UgxNx8TXQ",
+    authDomain: "i-excelled.firebaseapp.com",
+    databaseURL: "https://i-excelled-default-rtdb.firebaseio.com",
+    projectId: "i-excelled",
+    storageBucket: "i-excelled.firebasestorage.app",
+    messagingSenderId: "872523261091",
+    appId: "1:872523261091:web:77f465166d877b96b84b16",
+    measurementId: "G-DJBW60TWCF"
 };
 
 // ==================== اختيار الإعدادات النشطة ====================
-const activeConfig = (CURRENT_ENV === ENV.PRODUCTION ) ? prodConfig : devConfig;
+const activeConfig = (CURRENT_ENV === ENV.PRODUCTION) ? prodConfig : devConfig;
 
 /**
  * كائن الإعدادات الرئيسي الذي يتم استخدامه في التطبيق
@@ -94,8 +96,8 @@ function validateConfig() {
 
 function logConfigInfo() {
     if (CURRENT_ENV === ENV.DEVELOPMENT) {
-        console.log(`🔥 Firebase initialized [${CURRENT_ENV}]`);
-        console.log(`📁 Project: ${firebaseConfig.projectId}`);
+        console.log(`🔥 Firebase تم التهيئة [${CURRENT_ENV}]`);
+        console.log(`📁 المشروع: ${firebaseConfig.projectId}`);
     }
 }
 

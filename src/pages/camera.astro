@@ -16,9 +16,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
 
-    <!-- ✅ OpenCV.js - المعالج الأساسي للصور (تمت إضافته) -->
+    <!-- ✅ OpenCV.js - المعالج الأساسي للصور -->
     <script id="opencv-script"
-    src="https://docs.opencv.org/4.8.0/opencv.js"
+    src="https://docs.opencv.org/4.9.0/opencv.js"
     async
     onload="console.log('✅ OpenCV loaded')"
     onerror="console.error('❌ OpenCV failed to load')"
@@ -631,8 +631,9 @@
 
     <script is:inline>
         // ============================================
-        // Sokoon Cam v4.0 - نسخة إنتاجية كاملة
-        // جميع التحسينات الأمنية والأداء مطبّقة
+        // Sokoon Cam v5.0 - نسخة مدمجة
+        // تم أخذ: منطق الكود الأول الكامل
+        // + تصليح: رفع الصور من المعرض والتصوير والتحسين من الكود الثاني
         // ============================================
 
         class SokoonCam {
@@ -646,7 +647,7 @@
                 this.auth = null;
                 this.broadcastChannel = null;
                 this.loadingStates = new Set();
-                this.db = null; // IndexedDB reference
+                this.db = null;
 
                 // OpenCV Mats tracking for guaranteed cleanup
                 this.activeMats = [];
@@ -654,8 +655,8 @@
                 // Retry & Timeout
                 this.maxRetries = 3;
                 this.retryCount = 0;
-                this.maxQueueRetries = 5; // 🛡️ حد أقصى للمحاولات لكل فاتورة
-                this.requestTimeout = 60000; // 60 seconds
+                this.maxQueueRetries = 5;
+                this.requestTimeout = 60000;
                 this.uploadStartTime = null;
 
                 // Constants
@@ -663,8 +664,8 @@
                 this.CANNY_EDGE_DENSITY_MIN = 0.02;
                 this.DB_NAME = 'FastSokonDB';
                 this.DB_VERSION = 8;
-                this.MAX_SESSION_STORAGE_SIZE = 3 * 1024 * 1024; // 3MB safe limit
-                this.TARGET_UPLOAD_SIZE_MB = 1.5; // 🎯 حجم الرفع المستهدف
+                this.MAX_SESSION_STORAGE_SIZE = 3 * 1024 * 1024;
+                this.TARGET_UPLOAD_SIZE_MB = 1.5;
 
                 // DOM Elements cache
                 this.elements = {};
@@ -686,14 +687,14 @@
                 try {
                     this.cacheElements();
                     this.setupBroadcastChannel();
-                    await this.openIndexedDB(); // ✅ فتح قاعدة البيانات أولاً
+                    await this.openIndexedDB();
                     await this.waitForFirebase();
                     this.setupFirebase();
                     this.setupAuthListener();
                     this.setupEventListeners();
                     this.setupKeyboardShortcuts();
-                    this.setupOnlineListener(); // ✅ مراقبة الاتصال بالإنترنت
-                    console.log('✅ Sokoon Cam v4.0 initialized');
+                    this.setupOnlineListener();
+                    console.log('✅ Sokoon Cam v5.0 initialized');
                 } catch (error) {
                     console.error('❌ Initialization failed:', error);
                     this.showToast('حدث خطأ في تهيئة التطبيق. يرجى تحديث الصفحة.', 'error');
@@ -715,14 +716,13 @@
                 });
             }
 
-            // ========== ✅ IndexedDB - قاعدة البيانات للمزامنة دون اتصال ==========
+            // ========== IndexedDB ==========
             openIndexedDB() {
                 return new Promise((resolve, reject) => {
                     const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
                     request.onupgradeneeded = (event) => {
                         const db = event.target.result;
-                        // إنشاء مخزن للفواتير المعلقة إذا لم يكن موجوداً
                         if (!db.objectStoreNames.contains('pendingQueue')) {
                             const store = db.createObjectStore('pendingQueue', {
                                 keyPath: 'id',
@@ -737,7 +737,6 @@
                     request.onsuccess = (event) => {
                         this.db = event.target.result;
                         console.log('✅ IndexedDB opened successfully');
-                        // محاولة مزامنة أي فواتير معلقة عند الفتح
                         this.syncPendingQueue();
                         resolve(this.db);
                     };
@@ -745,7 +744,7 @@
                     request.onerror = (event) => {
                         console.error('❌ IndexedDB error:', event.target.error);
                         this.db = null;
-                        resolve(null); // نستمر بدون قاعدة البيانات
+                        resolve(null);
                     };
 
                     request.onblocked = () => {
@@ -887,7 +886,6 @@
                 console.log(`🔄 بدء مزامنة ${pendingItems.length} عنصر من قائمة الانتظار`);
 
                 for (const item of pendingItems) {
-                    // 🛡️ تخطي العناصر التي تجاوزت الحد الأقصى للمحاولات
                     if (item.retries >= this.maxQueueRetries) {
                         console.warn(`⚠️ العنصر ${item.id} تجاوز الحد الأقصى للمحاولات (${this.maxQueueRetries}) - سيتم تخطيه`);
                         await this.removeFromPendingQueue(item.id);
@@ -978,7 +976,6 @@
                     }
                     this.auth = firebase.auth();
                 }
-                // 🛡️ قراءة CSRF Token
                 const csrfMeta = document.querySelector('meta[name="csrf-token"]');
                 this._csrfToken = csrfMeta ? csrfMeta.content : null;
             }
@@ -1005,7 +1002,6 @@
                         this.hideAuthWall();
                         this.showCameraScreen();
                         this.initOpenCV();
-                        // محاولة مزامنة الفواتير المعلقة بعد تسجيل الدخول
                         this.syncPendingQueue();
                     } else {
                         this.showAuthWall();
@@ -1023,9 +1019,8 @@
                     return;
                 }
 
-                // Wait for OpenCV to load
                 let attempts = 0;
-                const maxAttempts = 50; // 10 seconds max
+                const maxAttempts = 50;
                 const interval = setInterval(() => {
                     attempts++;
                     if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
@@ -1038,12 +1033,10 @@
                     }
                 }, 200);
 
-                // Also listen for script load event
                 const opencvScript = document.getElementById('opencv-script');
                 if (opencvScript) {
                     opencvScript.addEventListener('load', () => {
                         clearInterval(interval);
-                        // Give it a moment for the WASM to initialize
                         setTimeout(() => {
                             if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
                                 this.openCVReady = true;
@@ -1170,18 +1163,16 @@
                 }
             }
 
-            // ========== ✅ EXIF Orientation - معالجة اتجاه الصورة ==========
+            // ========== ✅ EXIF Orientation - مأخوذ من الكود الأول ==========
             getEXIFOrientation(file) {
                 return new Promise((resolve) => {
-                    // نقرأ أول 128 كيلوبايت من الملف (كافية لبيانات EXIF)
                     const blob = file.slice(0, 128 * 1024);
                     const reader = new FileReader();
 
                     reader.onload = function(e) {
                         const view = new DataView(e.target.result);
-                        let orientation = 1; // افتراضي: بدون دوران
+                        let orientation = 1;
 
-                        // التحقق من توقيع JPEG
                         if (view.getUint16(0, false) !== 0xFFD8) {
                             resolve(orientation);
                             return;
@@ -1196,9 +1187,8 @@
                                 continue;
                             }
 
-                            // وجدنا قسم EXIF
                             const exifOffset = offset + 4;
-                            if (view.getUint32(exifOffset, false) !== 0x45786966) { // "Exif"
+                            if (view.getUint32(exifOffset, false) !== 0x45786966) {
                                 resolve(orientation);
                                 return;
                             }
@@ -1213,7 +1203,7 @@
                                 const entryOffset = ifdOffset + 2 + i * 12;
                                 const tag = view.getUint16(entryOffset, isLittleEndian);
 
-                                if (tag === 0x0112) { // Orientation tag
+                                if (tag === 0x0112) {
                                     orientation = view.getUint16(entryOffset + 8, isLittleEndian);
                                     resolve(orientation);
                                     return;
@@ -1233,16 +1223,15 @@
             }
 
             applyEXIFRotation(canvas, ctx, img, orientation) {
-                // تطبيق الدوران بناءً على قيمة EXIF Orientation
                 const orientations = {
-                    1: { rotate: 0, flip: false }, // Normal
-                    2: { rotate: 0, flip: true }, // Flip horizontal
-                    3: { rotate: 180, flip: false }, // Rotate 180
-                    4: { rotate: 180, flip: true }, // Flip vertical
-                    5: { rotate: 90, flip: true }, // Rotate 90 + flip horizontal
-                    6: { rotate: 90, flip: false }, // Rotate 90 CW
-                    7: { rotate: 270, flip: true }, // Rotate 270 + flip horizontal
-                    8: { rotate: 270, flip: false } // Rotate 270 CW
+                    1: { rotate: 0, flip: false },
+                    2: { rotate: 0, flip: true },
+                    3: { rotate: 180, flip: false },
+                    4: { rotate: 180, flip: true },
+                    5: { rotate: 90, flip: true },
+                    6: { rotate: 90, flip: false },
+                    7: { rotate: 270, flip: true },
+                    8: { rotate: 270, flip: false }
                 };
 
                 const o = orientations[orientation] || orientations[1];
@@ -1272,20 +1261,18 @@
                 ctx.restore();
             }
 
-            // ========== ✅ ضغط ذكي للصورة ==========
+            // ========== ✅ ضغط ذكي للصورة - مأخوذ من الكود الأول ==========
             async smartCompress(canvas, targetMaxSizeMB = null) {
                 const targetMB = targetMaxSizeMB || this.TARGET_UPLOAD_SIZE_MB;
                 let quality = 0.85;
                 let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                const maxBytes = targetMB * 1024 * 1024 * 1.33; // base64 ~33% overhead
+                const maxBytes = targetMB * 1024 * 1024 * 1.33;
 
-                // تقليل الجودة تدريجياً حتى نصل للحجم المطلوب
                 while (dataUrl.length > maxBytes && quality > 0.5) {
                     quality -= 0.08;
                     dataUrl = canvas.toDataURL('image/jpeg', quality);
                 }
 
-                // لو الصورة لسه كبيرة جداً، نقلل الأبعاد
                 if (dataUrl.length > maxBytes && canvas.width > 1200) {
                     const scaleFactor = Math.sqrt(maxBytes / dataUrl.length);
                     const scaledCanvas = document.createElement('canvas');
@@ -1299,7 +1286,6 @@
                 return dataUrl;
             }
 
-            // ========== 🛡️ التحقق من صحة Base64 ==========
             isValidBase64Image(str) {
                 if (!str || typeof str !== 'string') return false;
                 return /^data:image\/(jpeg|png|webp|jpg);base64,[A-Za-z0-9+/=]+$/.test(str);
@@ -1316,30 +1302,28 @@
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.drawImage(video, 0, 0);
 
-                let mat = null;
-                const tempMats = [];
-
+                const mats = [];
                 try {
-                    mat = cv.imread(canvas);
+                    const mat = cv.imread(canvas);
                     if (mat.empty()) return null;
-                    this.activeMats.push(mat);
+                    mats.push(mat);
 
                     const gray = new cv.Mat();
-                    tempMats.push(gray);
+                    mats.push(gray);
                     cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
 
                     const lap = new cv.Mat();
-                    tempMats.push(lap);
+                    mats.push(lap);
                     cv.Laplacian(gray, lap, cv.CV_64F);
 
                     const meanMat = new cv.Mat();
                     const stddevMat = new cv.Mat();
-                    tempMats.push(meanMat, stddevMat);
+                    mats.push(meanMat, stddevMat);
                     cv.meanStdDev(lap, meanMat, stddevMat);
                     const variance = stddevMat.data64F[0] ** 2;
 
                     const edges = new cv.Mat();
-                    tempMats.push(edges);
+                    mats.push(edges);
                     cv.Canny(gray, edges, 50, 150);
                     const nonZero = cv.countNonZero(edges);
                     const totalPixels = edges.rows * edges.cols;
@@ -1347,14 +1331,18 @@
 
                     const isGood = variance > this.QUALITY_VARIANCE_THRESHOLD && edgeDensity > this
                         .CANNY_EDGE_DENSITY_MIN;
+
+                    mats.forEach(m => {
+                        try { if (!m.isDeleted()) m.delete(); } catch (e) {}
+                    });
+
                     return { variance, edgeDensity, isGood };
                 } catch (e) {
                     console.warn('Quality check failed:', e);
-                    return null;
-                } finally {
-                    tempMats.forEach(m => {
+                    mats.forEach(m => {
                         try { if (!m.isDeleted()) m.delete(); } catch (e) {}
                     });
+                    return null;
                 }
             }
 
@@ -1399,16 +1387,17 @@
                 box.style.borderRightColor = borderColor;
             }
 
-            // ========== Image Processing (Memory Safe) ==========
+            // ========== ✅ Image Processing - تم تحسينه من الكودين (Memory Safe) ==========
             enhanceWithOpenCV(src) {
                 const mats = [];
+                let clahe = null;
 
                 try {
                     const gray = new cv.Mat();
                     mats.push(gray);
                     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-                    const clahe = new cv.CLAHE(3.0, new cv.Size(8, 8));
+                    clahe = new cv.CLAHE(3.0, new cv.Size(8, 8));
                     const claheOut = new cv.Mat();
                     mats.push(claheOut);
                     clahe.apply(gray, claheOut);
@@ -1432,24 +1421,26 @@
                     mats.forEach(m => {
                         try { if (!m.isDeleted()) m.delete(); } catch (e) {}
                     });
-                    clahe.delete();
+                    if (clahe) clahe.delete();
 
                     return enhancedColor;
                 } catch (e) {
                     mats.forEach(m => {
                         try { if (!m.isDeleted()) m.delete(); } catch (e) {}
                     });
-                    if (typeof clahe !== 'undefined') {
+                    if (clahe) {
                         try { clahe.delete(); } catch (e) {}
                     }
                     throw e;
                 }
             }
 
+            // ========== ✅ processAndShow - النسخة المحسنة من الكود الأول مع معالجة أفضل ==========
             async processAndShow(mat) {
                 const tempMats = [];
 
                 try {
+                    // فحص الجودة أولاً
                     const grayTmp = new cv.Mat();
                     tempMats.push(grayTmp);
                     cv.cvtColor(mat, grayTmp, cv.COLOR_RGBA2GRAY);
@@ -1469,12 +1460,14 @@
                     });
                     tempMats.length = 0;
 
+                    // لو الجودة منخفضة جداً
                     if (variance < (this.QUALITY_VARIANCE_THRESHOLD - 20)) {
                         this.showToast('⚠️ جودة الصورة منخفضة جداً. يرجى إعادة التصوير بإضاءة أفضل.', 'error');
                         mat.delete();
                         return false;
                     }
 
+                    // ✅ تطبيق التحسينات
                     const enhanced = this.enhanceWithOpenCV(mat);
                     const canvas = this.elements.enhancedResultCanvas;
 
@@ -1527,7 +1520,7 @@
                 this.activeMats = [];
             }
 
-            // ========== Capture & Upload ==========
+            // ========== ✅ Capture & Upload - تم إصلاحه ==========
             async handleCaptureClick() {
                 const video = this.elements.video;
                 if (!this.openCVReady || !video || !video.videoWidth) return;
@@ -1536,6 +1529,7 @@
                 this.setLoading('captureBtn', true);
 
                 try {
+                    // ✅ استخدام canvas مخصص للتصوير (زي الكود التاني)
                     const canvas = document.createElement('canvas');
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
@@ -1558,6 +1552,7 @@
                 }
             }
 
+            // ========== ✅ handleUpload - تم إصلاحه بالكامل (مدمج من الكودين) ==========
             async handleUpload(file) {
                 if (!file || !file.type.startsWith('image/')) {
                     this.showToast('الرجاء اختيار ملف صورة صالح.', 'error');
@@ -1569,42 +1564,50 @@
                     return;
                 }
 
-                // ✅ قراءة EXIF Orientation قبل المعالجة
-                const orientation = await this.getEXIFOrientation(file);
-                console.log(`📷 EXIF Orientation: ${orientation}`);
+                // عرض رسالة تحميل
+                this.showToast('⏳ جاري معالجة الصورة من المعرض...', 'info', 2000);
 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                try {
+                    // ✅ قراءة EXIF Orientation قبل المعالجة
+                    const orientation = await this.getEXIFOrientation(file);
+                    console.log(`📷 EXIF Orientation: ${orientation}`);
 
-                        // ✅ تطبيق تصحيح الاتجاه
-                        this.applyEXIFRotation(canvas, ctx, img, orientation);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-                        const mat = cv.imread(canvas);
-                        if (!mat.empty()) {
-                            this.processAndShow(mat);
-                        } else {
-                            this.showToast('فشل معالجة الملف. تأكد من صحة الصورة.', 'error');
-                            if (mat) mat.delete();
-                        }
+                            // ✅ تطبيق تصحيح الاتجاه
+                            this.applyEXIFRotation(canvas, ctx, img, orientation);
+
+                            // ✅ استخدام cv.imread مباشرة من canvas (زي الكود التاني)
+                            const mat = cv.imread(canvas);
+                            if (!mat.empty()) {
+                                this.processAndShow(mat);
+                            } else {
+                                this.showToast('فشل معالجة الملف. تأكد من صحة الصورة.', 'error');
+                                if (mat) mat.delete();
+                            }
+                        };
+                        img.onerror = () => {
+                            this.showToast('فشل تحميل الصورة. جرب ملفاً آخر.', 'error');
+                        };
+                        img.src = e.target.result;
                     };
-                    img.onerror = () => {
-                        this.showToast('فشل تحميل الصورة. جرب ملفاً آخر.', 'error');
+                    reader.onerror = () => {
+                        this.showToast('فشل قراءة الملف.', 'error');
                     };
-                    img.src = e.target.result;
-                };
-                reader.onerror = () => {
-                    this.showToast('فشل قراءة الملف.', 'error');
-                };
-                reader.readAsDataURL(file);
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    this.showToast('فشل معالجة الملف المرفوع.', 'error');
+                }
             }
 
             // ========== Submit with Retry & Offline Support ==========
             async handleSubmitClick() {
-                // 🛡️ التحقق من صحة الصورة قبل الإرسال
                 if (!this.isValidBase64Image(this.base64EnhancedImage)) {
                     this.showToast('❌ بيانات الصورة غير صالحة. أعد التصوير من فضلك.', 'error');
                     return;
@@ -1612,7 +1615,6 @@
 
                 if (this.isLoading('submitBtn')) return;
 
-                // ✅ التحقق من الاتصال بالإنترنت
                 if (!navigator.onLine) {
                     await this.handleOfflineSubmit();
                     return;
@@ -1638,7 +1640,6 @@
 
                 if (saved) {
                     this.showToast('📦 تم حفظ الفاتورة للمزامنة التلقائية عند عودة الإنترنت', 'info', 5000);
-                    // العودة للكاميرا لتصوير فاتورة أخرى
                     this.showCameraScreen();
                     this.base64EnhancedImage = null;
                     this.retryCount = 0;
@@ -1669,7 +1670,6 @@
                 } catch (error) {
                     console.error('Submit error:', error);
 
-                    // ✅ إذا كان الخطأ بسبب انقطاع الإنترنت، احفظ في قائمة الانتظار
                     if (!navigator.onLine || error.message?.includes('NetworkError') || error.message
                         ?.includes('Failed to fetch')) {
                         await this.handleOfflineSubmit();
@@ -1703,10 +1703,8 @@
                         token = await this.currentUser.getIdToken();
                     }
 
-                    // ✅ استخدام الصورة المضغوطة مسبقاً
                     let imageData = this.base64EnhancedImage;
 
-                    // 🛡️ تحقق إضافي من الحجم
                     const imageSizeMB = imageData.length / (1024 * 1024);
                     if (imageSizeMB > 3) {
                         const canvas = this.elements.enhancedResultCanvas;
@@ -1726,7 +1724,6 @@
                     const headers = {
                         'Content-Type': 'application/json',
                         ...(token && { 'Authorization': `Bearer ${token}` }),
-                        // 🛡️ إضافة CSRF Token
                         ...(this._csrfToken && { 'X-CSRF-Token': this._csrfToken })
                     };
 
@@ -1803,7 +1800,6 @@
                     errorMsg += 'انتهت مهلة الاتصال. تحقق من سرعة الإنترنت.';
                 } else if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
                     errorMsg += 'تعذر الاتصال بالإنترنت. سيتم حفظ الفاتورة للمزامنة التلقائية.';
-                    // حفظ تلقائي عند فشل الشبكة
                     this.handleOfflineSubmit();
                     return;
                 } else {
@@ -1905,14 +1901,6 @@
 
                 this.addListener('goToProfileBtn', 'click', () => {
                     window.location.href = '/profile';
-                });
-
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.addEventListener('click', (e) => {
-                        if (e.target === modal) {
-                            modal.classList.remove('active');
-                        }
-                    });
                 });
             }
 

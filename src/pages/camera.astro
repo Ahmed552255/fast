@@ -16,9 +16,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
 
-    <!-- ✅ OpenCV.js - المعالج الأساسي للصور -->
+    <!-- ✅ OpenCV.js - المعالج الأساسي للصور (تمت إضافته) -->
     <script id="opencv-script"
-    src="https://docs.opencv.org/4.9.0/opencv.js"
+    src="https://docs.opencv.org/4.8.0/opencv.js"
     async
     onload="console.log('✅ OpenCV loaded')"
     onerror="console.error('❌ OpenCV failed to load')"
@@ -607,10 +607,10 @@
             </button>
         </div>
         <div class="preview-wrapper">
-            <div class="preview-title">✨ الفاتورة بعد التصفية والتحسين</div>
+            <div class="preview-title">✨ معاينة الفاتورة</div>
             <canvas id="enhancedResultCanvas" width="600" height="450"></canvas>
             <div class="quality-badge" id="qualityBadge">
-                ✔ فلاتر: التباين التكيفي + إزالة الضوضاء + زيادة حدة النصوص
+                ✔ تم التقاط الصورة بنجاح
             </div>
             <textarea id="userPrompt" class="user-prompt" rows="3"
             placeholder="توجيه خاص بالتحليل؟ أو اتركه فارغاً لاستخراج الجدول تلقائياً..."></textarea>
@@ -631,9 +631,8 @@
 
     <script is:inline>
         // ============================================
-        // Sokoon Cam v5.0 - نسخة مدمجة
-        // تم أخذ: منطق الكود الأول الكامل
-        // + تصليح: رفع الصور من المعرض والتصوير والتحسين من الكود الثاني
+        // Sokoon Cam v4.0 - نسخة إنتاجية كاملة
+        // جميع التحسينات الأمنية والأداء مطبّقة
         // ============================================
 
         class SokoonCam {
@@ -647,25 +646,20 @@
                 this.auth = null;
                 this.broadcastChannel = null;
                 this.loadingStates = new Set();
-                this.db = null;
-
-                // OpenCV Mats tracking for guaranteed cleanup
-                this.activeMats = [];
+                this.db = null; // IndexedDB reference
 
                 // Retry & Timeout
                 this.maxRetries = 3;
                 this.retryCount = 0;
-                this.maxQueueRetries = 5;
-                this.requestTimeout = 60000;
+                this.maxQueueRetries = 5; // 🛡️ حد أقصى للمحاولات لكل فاتورة
+                this.requestTimeout = 60000; // 60 seconds
                 this.uploadStartTime = null;
 
                 // Constants
-                this.QUALITY_VARIANCE_THRESHOLD = 82;
-                this.CANNY_EDGE_DENSITY_MIN = 0.02;
                 this.DB_NAME = 'FastSokonDB';
                 this.DB_VERSION = 8;
-                this.MAX_SESSION_STORAGE_SIZE = 3 * 1024 * 1024;
-                this.TARGET_UPLOAD_SIZE_MB = 1.5;
+                this.MAX_SESSION_STORAGE_SIZE = 3 * 1024 * 1024; // 3MB safe limit
+                this.TARGET_UPLOAD_SIZE_MB = 1.5; // 🎯 حجم الرفع المستهدف
 
                 // DOM Elements cache
                 this.elements = {};
@@ -674,7 +668,6 @@
                 this.eventHandlers = new Map();
 
                 // Bind methods
-                this.onFrameQualityCheck = this.onFrameQualityCheck.bind(this);
                 this.handleCaptureClick = this.handleCaptureClick.bind(this);
                 this.handleSubmitClick = this.handleSubmitClick.bind(this);
                 this.syncPendingQueue = this.syncPendingQueue.bind(this);
@@ -687,14 +680,14 @@
                 try {
                     this.cacheElements();
                     this.setupBroadcastChannel();
-                    await this.openIndexedDB();
+                    await this.openIndexedDB(); // ✅ فتح قاعدة البيانات أولاً
                     await this.waitForFirebase();
                     this.setupFirebase();
                     this.setupAuthListener();
                     this.setupEventListeners();
                     this.setupKeyboardShortcuts();
-                    this.setupOnlineListener();
-                    console.log('✅ Sokoon Cam v5.0 initialized');
+                    this.setupOnlineListener(); // ✅ مراقبة الاتصال بالإنترنت
+                    console.log('✅ Sokoon Cam v4.0 initialized');
                 } catch (error) {
                     console.error('❌ Initialization failed:', error);
                     this.showToast('حدث خطأ في تهيئة التطبيق. يرجى تحديث الصفحة.', 'error');
@@ -716,13 +709,14 @@
                 });
             }
 
-            // ========== IndexedDB ==========
+            // ========== ✅ IndexedDB - قاعدة البيانات للمزامنة دون اتصال ==========
             openIndexedDB() {
                 return new Promise((resolve, reject) => {
                     const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
                     request.onupgradeneeded = (event) => {
                         const db = event.target.result;
+                        // إنشاء مخزن للفواتير المعلقة إذا لم يكن موجوداً
                         if (!db.objectStoreNames.contains('pendingQueue')) {
                             const store = db.createObjectStore('pendingQueue', {
                                 keyPath: 'id',
@@ -737,6 +731,7 @@
                     request.onsuccess = (event) => {
                         this.db = event.target.result;
                         console.log('✅ IndexedDB opened successfully');
+                        // محاولة مزامنة أي فواتير معلقة عند الفتح
                         this.syncPendingQueue();
                         resolve(this.db);
                     };
@@ -744,7 +739,7 @@
                     request.onerror = (event) => {
                         console.error('❌ IndexedDB error:', event.target.error);
                         this.db = null;
-                        resolve(null);
+                        resolve(null); // نستمر بدون قاعدة البيانات
                     };
 
                     request.onblocked = () => {
@@ -886,6 +881,7 @@
                 console.log(`🔄 بدء مزامنة ${pendingItems.length} عنصر من قائمة الانتظار`);
 
                 for (const item of pendingItems) {
+                    // 🛡️ تخطي العناصر التي تجاوزت الحد الأقصى للمحاولات
                     if (item.retries >= this.maxQueueRetries) {
                         console.warn(`⚠️ العنصر ${item.id} تجاوز الحد الأقصى للمحاولات (${this.maxQueueRetries}) - سيتم تخطيه`);
                         await this.removeFromPendingQueue(item.id);
@@ -976,6 +972,7 @@
                     }
                     this.auth = firebase.auth();
                 }
+                // 🛡️ قراءة CSRF Token
                 const csrfMeta = document.querySelector('meta[name="csrf-token"]');
                 this._csrfToken = csrfMeta ? csrfMeta.content : null;
             }
@@ -1002,6 +999,7 @@
                         this.hideAuthWall();
                         this.showCameraScreen();
                         this.initOpenCV();
+                        // محاولة مزامنة الفواتير المعلقة بعد تسجيل الدخول
                         this.syncPendingQueue();
                     } else {
                         this.showAuthWall();
@@ -1019,8 +1017,9 @@
                     return;
                 }
 
+                // Wait for OpenCV to load
                 let attempts = 0;
-                const maxAttempts = 50;
+                const maxAttempts = 50; // 10 seconds max
                 const interval = setInterval(() => {
                     attempts++;
                     if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
@@ -1033,6 +1032,7 @@
                     }
                 }, 200);
 
+                // Also listen for script load event
                 const opencvScript = document.getElementById('opencv-script');
                 if (opencvScript) {
                     opencvScript.addEventListener('load', () => {
@@ -1077,7 +1077,6 @@
                     this.elements.captureBtn.disabled = false;
                 }
                 this.startCamera();
-                this.startQualityCheck();
             }
 
             // ========== Screen Management ==========
@@ -1163,7 +1162,7 @@
                 }
             }
 
-            // ========== ✅ EXIF Orientation - مأخوذ من الكود الأول ==========
+            // ========== ✅ EXIF Orientation - معالجة اتجاه الصورة ==========
             getEXIFOrientation(file) {
                 return new Promise((resolve) => {
                     const blob = file.slice(0, 128 * 1024);
@@ -1261,7 +1260,7 @@
                 ctx.restore();
             }
 
-            // ========== ✅ ضغط ذكي للصورة - مأخوذ من الكود الأول ==========
+            // ========== ✅ ضغط ذكي للصورة ==========
             async smartCompress(canvas, targetMaxSizeMB = null) {
                 const targetMB = targetMaxSizeMB || this.TARGET_UPLOAD_SIZE_MB;
                 let quality = 0.85;
@@ -1286,201 +1285,36 @@
                 return dataUrl;
             }
 
+            // ========== 🛡️ التحقق من صحة Base64 ==========
             isValidBase64Image(str) {
                 if (!str || typeof str !== 'string') return false;
                 return /^data:image\/(jpeg|png|webp|jpg);base64,[A-Za-z0-9+/=]+$/.test(str);
             }
 
-            // ========== Quality Check (Memory Safe) ==========
-            async checkFrameQuality() {
-                const video = this.elements.video;
-                if (!this.openCVReady || !video || !video.videoWidth) return null;
-
-                const canvas = this.elements.hiddenCanvas || document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                ctx.drawImage(video, 0, 0);
-
-                const mats = [];
+            // ========== 🚀 معالجة الصورة بشكل مبسط (بدون تحسين OpenCV) ==========
+            async processImageAndShow(canvas, img, mat) {
                 try {
-                    const mat = cv.imread(canvas);
-                    if (mat.empty()) return null;
-                    mats.push(mat);
-
-                    const gray = new cv.Mat();
-                    mats.push(gray);
-                    cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
-
-                    const lap = new cv.Mat();
-                    mats.push(lap);
-                    cv.Laplacian(gray, lap, cv.CV_64F);
-
-                    const meanMat = new cv.Mat();
-                    const stddevMat = new cv.Mat();
-                    mats.push(meanMat, stddevMat);
-                    cv.meanStdDev(lap, meanMat, stddevMat);
-                    const variance = stddevMat.data64F[0] ** 2;
-
-                    const edges = new cv.Mat();
-                    mats.push(edges);
-                    cv.Canny(gray, edges, 50, 150);
-                    const nonZero = cv.countNonZero(edges);
-                    const totalPixels = edges.rows * edges.cols;
-                    const edgeDensity = totalPixels > 0 ? nonZero / totalPixels : 0;
-
-                    const isGood = variance > this.QUALITY_VARIANCE_THRESHOLD && edgeDensity > this
-                        .CANNY_EDGE_DENSITY_MIN;
-
-                    mats.forEach(m => {
-                        try { if (!m.isDeleted()) m.delete(); } catch (e) {}
-                    });
-
-                    return { variance, edgeDensity, isGood };
-                } catch (e) {
-                    console.warn('Quality check failed:', e);
-                    mats.forEach(m => {
-                        try { if (!m.isDeleted()) m.delete(); } catch (e) {}
-                    });
-                    return null;
-                }
-            }
-
-            startQualityCheck() {
-                if (this.qualityInterval) clearInterval(this.qualityInterval);
-                this.qualityInterval = setInterval(this.onFrameQualityCheck, 400);
-            }
-
-            async onFrameQualityCheck() {
-                if (!this.openCVReady) return;
-                const camScreen = this.elements.cameraScreen;
-                if (!camScreen || !camScreen.classList.contains('active')) return;
-
-                const q = await this.checkFrameQuality();
-                if (!q) return;
-
-                const box = this.elements.instructionBox;
-                if (!box) return;
-
-                let msg = '';
-                let borderColor = 'var(--purple)';
-
-                if (q.isGood) {
-                    msg = '✨ لقطة ممتازة! اضغط تصوير';
-                    borderColor = 'var(--success)';
-                } else {
-                    const advices = [];
-                    if (q.variance < 40) {
-                        advices.push('قرّب الكاميرا وثبّتها');
-                    } else if (q.variance < this.QUALITY_VARIANCE_THRESHOLD) {
-                        advices.push('حسّن الإضاءة');
-                    }
-                    if (q.edgeDensity < this.CANNY_EDGE_DENSITY_MIN) {
-                        advices.push('تأكد من وجود نص واضح');
-                    }
-                    if (advices.length === 0) advices.push('اضبط زاوية التصوير');
-                    msg = `🔍 ${advices.join('، ')}`;
-                    borderColor = 'var(--gold)';
-                }
-
-                box.innerHTML = msg;
-                box.style.borderRightColor = borderColor;
-            }
-
-            // ========== ✅ Image Processing - تم تحسينه من الكودين (Memory Safe) ==========
-            enhanceWithOpenCV(src) {
-                const mats = [];
-                let clahe = null;
-
-                try {
-                    const gray = new cv.Mat();
-                    mats.push(gray);
-                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-                    clahe = new cv.CLAHE(3.0, new cv.Size(8, 8));
-                    const claheOut = new cv.Mat();
-                    mats.push(claheOut);
-                    clahe.apply(gray, claheOut);
-
-                    const denoised = new cv.Mat();
-                    mats.push(denoised);
-                    cv.bilateralFilter(claheOut, denoised, 9, 75, 75);
-
-                    const blurred = new cv.Mat();
-                    mats.push(blurred);
-                    cv.GaussianBlur(denoised, blurred, new cv.Size(0, 0), 3.0);
-
-                    const sharp = new cv.Mat();
-                    mats.push(sharp);
-                    cv.addWeighted(denoised, 2.0, blurred, -1.0, 0, sharp);
-
-                    const enhancedColor = new cv.Mat();
-                    cv.cvtColor(sharp, enhancedColor, cv.COLOR_GRAY2RGBA);
-
-                    // Cleanup intermediate mats
-                    mats.forEach(m => {
-                        try { if (!m.isDeleted()) m.delete(); } catch (e) {}
-                    });
-                    if (clahe) clahe.delete();
-
-                    return enhancedColor;
-                } catch (e) {
-                    mats.forEach(m => {
-                        try { if (!m.isDeleted()) m.delete(); } catch (e) {}
-                    });
-                    if (clahe) {
-                        try { clahe.delete(); } catch (e) {}
-                    }
-                    throw e;
-                }
-            }
-
-            // ========== ✅ processAndShow - النسخة المحسنة من الكود الأول مع معالجة أفضل ==========
-            async processAndShow(mat) {
-                const tempMats = [];
-
-                try {
-                    // فحص الجودة أولاً
-                    const grayTmp = new cv.Mat();
-                    tempMats.push(grayTmp);
-                    cv.cvtColor(mat, grayTmp, cv.COLOR_RGBA2GRAY);
-
-                    const lapTmp = new cv.Mat();
-                    tempMats.push(lapTmp);
-                    cv.Laplacian(grayTmp, lapTmp, cv.CV_64F);
-
-                    const meanTmp = new cv.Mat();
-                    const stdTmp = new cv.Mat();
-                    tempMats.push(meanTmp, stdTmp);
-                    cv.meanStdDev(lapTmp, meanTmp, stdTmp);
-                    const variance = stdTmp.data64F[0] ** 2;
-
-                    tempMats.forEach(m => {
-                        try { if (!m.isDeleted()) m.delete(); } catch (e) {}
-                    });
-                    tempMats.length = 0;
-
-                    // لو الجودة منخفضة جداً
-                    if (variance < (this.QUALITY_VARIANCE_THRESHOLD - 20)) {
-                        this.showToast('⚠️ جودة الصورة منخفضة جداً. يرجى إعادة التصوير بإضاءة أفضل.', 'error');
-                        mat.delete();
-                        return false;
-                    }
-
-                    // ✅ تطبيق التحسينات
-                    const enhanced = this.enhanceWithOpenCV(mat);
-                    const canvas = this.elements.enhancedResultCanvas;
-
-                    if (canvas) {
-                        cv.imshow(canvas, enhanced);
-                        // ✅ استخدام ضغط JPEG ذكي
-                        this.base64EnhancedImage = await this.smartCompress(canvas);
+                    const resultCanvas = this.elements.enhancedResultCanvas;
+                    
+                    if (resultCanvas) {
+                        // ببساطة نرسم الصورة الأصلية على canvas النتيجة
+                        resultCanvas.width = canvas.width;
+                        resultCanvas.height = canvas.height;
+                        const resultCtx = resultCanvas.getContext('2d', { willReadFrequently: true });
+                        resultCtx.drawImage(canvas, 0, 0);
+                        
+                        // ضغط ذكي للصورة
+                        this.base64EnhancedImage = await this.smartCompress(resultCanvas);
                     }
 
                     const badge = this.elements.qualityBadge;
                     if (badge) {
-                        badge.innerHTML =
-                            `✔ جودة التباين: ${variance.toFixed(1)} | ضغط ذكي مُطبّق | فلاتر محسّنة`;
+                        badge.innerHTML = '✔ تم التقاط الصورة بنجاح';
+                    }
+
+                    // تنظيف OpenCV mat إذا كان موجوداً
+                    if (mat && !mat.isDeleted()) {
+                        mat.delete();
                     }
 
                     this.stopCamera();
@@ -1492,35 +1326,15 @@
                     const retryBtn = this.elements.retryBtn;
                     if (retryBtn) retryBtn.classList.remove('visible');
 
-                    enhanced.delete();
-                    mat.delete();
-                    this.cleanupAllMats();
-
                     return true;
                 } catch (e) {
-                    tempMats.forEach(m => {
-                        try { if (!m.isDeleted()) m.delete(); } catch (e) {}
-                    });
                     console.error('Process error:', e);
                     this.showToast('فشل معالجة الصورة. حاول مرة أخرى.', 'error');
                     return false;
                 }
             }
 
-            cleanupAllMats() {
-                this.activeMats.forEach(mat => {
-                    try {
-                        if (mat && !mat.isDeleted()) {
-                            mat.delete();
-                        }
-                    } catch (e) {
-                        // Ignore cleanup errors
-                    }
-                });
-                this.activeMats = [];
-            }
-
-            // ========== ✅ Capture & Upload - تم إصلاحه ==========
+            // ========== Capture & Upload ==========
             async handleCaptureClick() {
                 const video = this.elements.video;
                 if (!this.openCVReady || !video || !video.videoWidth) return;
@@ -1529,21 +1343,16 @@
                 this.setLoading('captureBtn', true);
 
                 try {
-                    // ✅ استخدام canvas مخصص للتصوير (زي الكود التاني)
                     const canvas = document.createElement('canvas');
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                     const ctx = canvas.getContext('2d', { willReadFrequently: true });
                     ctx.drawImage(video, 0, 0);
 
+                    // استخدام OpenCV فقط للقراءة (بدون تحسين)
                     const mat = cv.imread(canvas);
-                    if (mat.empty()) {
-                        this.showToast('فشل التقاط الصورة. حاول مرة أخرى.', 'error');
-                        mat.delete();
-                        return;
-                    }
-
-                    await this.processAndShow(mat);
+                    
+                    await this.processImageAndShow(canvas, null, mat);
                 } catch (e) {
                     console.error('Capture error:', e);
                     this.showToast('حدث خطأ أثناء التصوير.', 'error');
@@ -1552,7 +1361,6 @@
                 }
             }
 
-            // ========== ✅ handleUpload - تم إصلاحه بالكامل (مدمج من الكودين) ==========
             async handleUpload(file) {
                 if (!file || !file.type.startsWith('image/')) {
                     this.showToast('الرجاء اختيار ملف صورة صالح.', 'error');
@@ -1564,50 +1372,39 @@
                     return;
                 }
 
-                // عرض رسالة تحميل
-                this.showToast('⏳ جاري معالجة الصورة من المعرض...', 'info', 2000);
+                // ✅ قراءة EXIF Orientation قبل المعالجة
+                const orientation = await this.getEXIFOrientation(file);
+                console.log(`📷 EXIF Orientation: ${orientation}`);
 
-                try {
-                    // ✅ قراءة EXIF Orientation قبل المعالجة
-                    const orientation = await this.getEXIFOrientation(file);
-                    console.log(`📷 EXIF Orientation: ${orientation}`);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = async () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        // ✅ تطبيق تصحيح الاتجاه
+                        this.applyEXIFRotation(canvas, ctx, img, orientation);
 
-                            // ✅ تطبيق تصحيح الاتجاه
-                            this.applyEXIFRotation(canvas, ctx, img, orientation);
-
-                            // ✅ استخدام cv.imread مباشرة من canvas (زي الكود التاني)
-                            const mat = cv.imread(canvas);
-                            if (!mat.empty()) {
-                                this.processAndShow(mat);
-                            } else {
-                                this.showToast('فشل معالجة الملف. تأكد من صحة الصورة.', 'error');
-                                if (mat) mat.delete();
-                            }
-                        };
-                        img.onerror = () => {
-                            this.showToast('فشل تحميل الصورة. جرب ملفاً آخر.', 'error');
-                        };
-                        img.src = e.target.result;
+                        // استخدام OpenCV فقط للقراءة (بدون تحسين)
+                        const mat = cv.imread(canvas);
+                        
+                        await this.processImageAndShow(canvas, img, mat);
                     };
-                    reader.onerror = () => {
-                        this.showToast('فشل قراءة الملف.', 'error');
+                    img.onerror = () => {
+                        this.showToast('فشل تحميل الصورة. جرب ملفاً آخر.', 'error');
                     };
-                    reader.readAsDataURL(file);
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    this.showToast('فشل معالجة الملف المرفوع.', 'error');
-                }
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => {
+                    this.showToast('فشل قراءة الملف.', 'error');
+                };
+                reader.readAsDataURL(file);
             }
 
             // ========== Submit with Retry & Offline Support ==========
             async handleSubmitClick() {
+                // 🛡️ التحقق من صحة الصورة قبل الإرسال
                 if (!this.isValidBase64Image(this.base64EnhancedImage)) {
                     this.showToast('❌ بيانات الصورة غير صالحة. أعد التصوير من فضلك.', 'error');
                     return;
@@ -1615,6 +1412,7 @@
 
                 if (this.isLoading('submitBtn')) return;
 
+                // ✅ التحقق من الاتصال بالإنترنت
                 if (!navigator.onLine) {
                     await this.handleOfflineSubmit();
                     return;
@@ -1640,6 +1438,7 @@
 
                 if (saved) {
                     this.showToast('📦 تم حفظ الفاتورة للمزامنة التلقائية عند عودة الإنترنت', 'info', 5000);
+                    // العودة للكاميرا لتصوير فاتورة أخرى
                     this.showCameraScreen();
                     this.base64EnhancedImage = null;
                     this.retryCount = 0;
@@ -1670,6 +1469,7 @@
                 } catch (error) {
                     console.error('Submit error:', error);
 
+                    // ✅ إذا كان الخطأ بسبب انقطاع الإنترنت، احفظ في قائمة الانتظار
                     if (!navigator.onLine || error.message?.includes('NetworkError') || error.message
                         ?.includes('Failed to fetch')) {
                         await this.handleOfflineSubmit();
@@ -1703,8 +1503,10 @@
                         token = await this.currentUser.getIdToken();
                     }
 
+                    // ✅ استخدام الصورة المضغوطة مسبقاً
                     let imageData = this.base64EnhancedImage;
 
+                    // 🛡️ تحقق إضافي من الحجم
                     const imageSizeMB = imageData.length / (1024 * 1024);
                     if (imageSizeMB > 3) {
                         const canvas = this.elements.enhancedResultCanvas;
@@ -1724,6 +1526,7 @@
                     const headers = {
                         'Content-Type': 'application/json',
                         ...(token && { 'Authorization': `Bearer ${token}` }),
+                        // 🛡️ إضافة CSRF Token
                         ...(this._csrfToken && { 'X-CSRF-Token': this._csrfToken })
                     };
 
@@ -1800,6 +1603,7 @@
                     errorMsg += 'انتهت مهلة الاتصال. تحقق من سرعة الإنترنت.';
                 } else if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
                     errorMsg += 'تعذر الاتصال بالإنترنت. سيتم حفظ الفاتورة للمزامنة التلقائية.';
+                    // حفظ تلقائي عند فشل الشبكة
                     this.handleOfflineSubmit();
                     return;
                 } else {
@@ -1902,6 +1706,14 @@
                 this.addListener('goToProfileBtn', 'click', () => {
                     window.location.href = '/profile';
                 });
+
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.classList.remove('active');
+                        }
+                    });
+                });
             }
 
             addListener(id, event, handler) {
@@ -1942,7 +1754,6 @@
             // ========== Cleanup ==========
             destroy() {
                 this.stopCamera();
-                this.cleanupAllMats();
 
                 if (this.broadcastChannel) {
                     this.broadcastChannel.close();

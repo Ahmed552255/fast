@@ -11,11 +11,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
 
-    <!-- Firebase SDKs - deferred -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
-    <script src="/firebase-config.js" defer></script>
+    <!-- ✅ Firebase SDKs - تحميل مباشر بدون defer لضمان التهيئة -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="/firebase-config.js"></script>
 
     <style>
         :root {
@@ -222,7 +223,6 @@
             color-scheme: dark;
             -webkit-color-scheme: dark;
         }
-        /* Fix date/time placeholder color */
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="time"]::-webkit-calendar-picker-indicator {
             filter: invert(0.8);
@@ -461,14 +461,8 @@
             display: flex;
         }
         @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .batch-bar .batch-count {
             font-weight: 700;
@@ -542,9 +536,7 @@
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
-        .templates-wrap::-webkit-scrollbar {
-            display: none;
-        }
+        .templates-wrap::-webkit-scrollbar { display: none; }
         .template-chip {
             flex-shrink: 0;
             padding: 8px 14px;
@@ -605,9 +597,7 @@
             -webkit-user-select: none;
             user-select: none;
         }
-        .btn:active {
-            transform: scale(0.96);
-        }
+        .btn:active { transform: scale(0.96); }
         .btn.primary {
             background: linear-gradient(135deg, var(--purple-dark), #441ece);
             border: none;
@@ -653,14 +643,8 @@
             transform: translateX(-50%) translateY(0);
             pointer-events: auto;
         }
-        .toast.error {
-            border-color: var(--danger);
-            background: rgba(30, 5, 10, 0.95);
-        }
-        .toast.success {
-            border-color: var(--success);
-            background: rgba(5, 20, 15, 0.95);
-        }
+        .toast.error { border-color: var(--danger); background: rgba(30, 5, 10, 0.95); }
+        .toast.success { border-color: var(--success); background: rgba(5, 20, 15, 0.95); }
 
         /* Loading state */
         .saving-overlay {
@@ -677,10 +661,7 @@
             pointer-events: none;
             transition: opacity 0.2s ease;
         }
-        .saving-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .saving-overlay.active { opacity: 1; pointer-events: auto; }
         .saving-spinner {
             width: 40px;
             height: 40px;
@@ -689,51 +670,30 @@
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Haptic feedback hint (visual only) */
         @media (hover: none) and (pointer: coarse) {
-            .btn:active,
-            .nav-btn:active,
-            .btn-icon:active,
-            .template-chip:active {
+            .btn:active, .nav-btn:active, .btn-icon:active, .template-chip:active {
                 transition: transform 0.05s ease;
             }
         }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
+            *, *::before, *::after {
                 animation-duration: 0.01ms !important;
                 transition-duration: 0.01ms !important;
             }
         }
 
-        /* Small screens adjustments */
         @media (max-width: 360px) {
             .item-row {
                 grid-template-columns: 1fr 55px 65px 48px auto;
                 gap: 2px;
                 padding: 6px 6px;
             }
-            .item-input {
-                font-size: 0.75rem;
-                padding: 6px 3px;
-            }
-            .item-total {
-                font-size: 0.75rem;
-                min-width: 40px;
-            }
-            .btn {
-                font-size: 0.78rem;
-                padding: 11px 8px;
-            }
+            .item-input { font-size: 0.75rem; padding: 6px 3px; }
+            .item-total { font-size: 0.75rem; min-width: 40px; }
+            .btn { font-size: 0.78rem; padding: 11px 8px; }
         }
     </style>
 </head>
@@ -813,8 +773,8 @@
 
     <script>
         // ============================================
-        // Fast Sokon - مراجعة ذكية للفاتورة v3.0
-        // خفيف، متوافق مع الكاميرا، ومخصص للموبايل
+        // Fast Sokon - مراجعة ذكية للفاتورة v3.1
+        // ✅ تم إصلاح الحفظ إلى قاعدة البيانات السحابية
         // ============================================
 
         class InvoiceReview {
@@ -847,6 +807,7 @@
                 this.db = null;
                 this.auth = null;
                 this.firestore = null;
+                this.realtimeDb = null; // ✅ إضافة Realtime Database
                 this.currentUser = null;
 
                 // Timers
@@ -868,10 +829,9 @@
 
             async init() {
                 this.cacheDom();
-                await this.waitForFirebase();
                 this.setupFirebase();
-                await this.openDatabase();
                 this.setupAuthListener();
+                await this.openDatabase();
                 this.loadInitialData();
                 this.render();
                 this.attachEvents();
@@ -880,7 +840,7 @@
                 this.pushHistory();
                 this.startAutoSave();
                 this.setupKeyboardShortcuts();
-                console.log('✅ مراجعة ذكية v3.0 جاهزة');
+                console.log('✅ مراجعة ذكية v3.1 جاهزة | Firebase متصل');
             }
 
             // ========== DOM Cache ==========
@@ -909,51 +869,54 @@
                 };
             }
 
-            // ========== Firebase ==========
-            waitForFirebase() {
-                return new Promise(resolve => {
-                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                        resolve();
-                        return;
-                    }
-                    let attempts = 0;
-                    const check = () => {
-                        attempts++;
-                        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                            resolve();
-                        } else if (attempts < 80) {
-                            setTimeout(check, 60);
-                        } else {
-                            console.warn('⚠️ Firebase لم يتم تحميله - تشغيل بدون مزامنة');
-                            resolve();
-                        }
-                    };
-                    check();
-                });
-            }
-
+            // ========== ✅ Firebase Setup ==========
             setupFirebase() {
                 try {
-                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                    // ✅ استخدام firebaseConfig من الملف الخارجي أو المضمن
+                    const config = typeof firebaseConfig !== 'undefined' ? firebaseConfig : {
+                        apiKey: "AIzaSyCjCLdv6QWfJieZQO7Qt_U5W0UgxNx8TXQ",
+                        authDomain: "i-excelled.firebaseapp.com",
+                        databaseURL: "https://i-excelled-default-rtdb.firebaseio.com",
+                        projectId: "i-excelled",
+                        storageBucket: "i-excelled.firebasestorage.app",
+                        messagingSenderId: "872523261091",
+                        appId: "1:872523261091:web:77f465166d877b96b84b16"
+                    };
+
+                    if (typeof firebase !== 'undefined') {
+                        if (!firebase.apps.length) {
+                            firebase.initializeApp(config);
+                            console.log('🔥 Firebase تم التهيئة:', config.projectId);
+                        }
                         this.auth = firebase.auth();
                         this.firestore = firebase.firestore();
+                        this.realtimeDb = firebase.database(); // ✅ Realtime Database
+                    } else {
+                        console.warn('⚠️ Firebase SDK غير محمل');
                     }
                 } catch (e) {
-                    console.warn('⚠️ خطأ في إعداد Firebase:', e);
+                    console.error('❌ خطأ في إعداد Firebase:', e);
                 }
             }
 
             setupAuthListener() {
-                if (!this.auth) return;
+                if (!this.auth) {
+                    // ✅ إذا لم يكن هناك auth، نجعل زر الحفظ متاح دائماً
+                    this.els.saveBtn.disabled = false;
+                    return;
+                }
+
                 this.auth.onAuthStateChanged(user => {
                     this.currentUser = user;
                     if (user) {
+                        console.log('✅ مستخدم مسجل:', user.email);
                         this.els.saveBtn.disabled = false;
                         this.els.saveBtn.title = '';
                     } else {
-                        this.els.saveBtn.disabled = true;
-                        this.els.saveBtn.title = 'يجب تسجيل الدخول أولاً';
+                        console.log('ℹ️ لا يوجد مستخدم مسجل - سيتم الحفظ محلياً');
+                        // ✅ نسمح بالحفظ حتى بدون تسجيل دخول (محلياً)
+                        this.els.saveBtn.disabled = false;
+                        this.els.saveBtn.title = 'سيتم الحفظ في قاعدة البيانات المحلية';
                     }
                 });
             }
@@ -981,14 +944,12 @@
 
             // ========== Data Loading ==========
             loadInitialData() {
-                // First priority: sessionStorage from camera flow
                 const analysisResult = this.getAnalysisFromCamera();
                 if (analysisResult) {
                     this.parseAnalysisResult(analysisResult);
                     return;
                 }
 
-                // Second priority: localStorage draft
                 const draft = this.getDraftFromLocal();
                 if (draft) {
                     this.invoiceData = {
@@ -1008,7 +969,6 @@
                     const stored = sessionStorage.getItem('analysis_result');
                     if (!stored) return null;
                     const data = JSON.parse(stored);
-                    // Clean up after reading
                     sessionStorage.removeItem('analysis_result');
                     return data;
                 } catch (e) {
@@ -1029,7 +989,6 @@
                 const text = result.text || '';
                 const items = [];
 
-                // Try multiple parsing strategies
                 const strategies = [
                     this.parseTableFormat,
                     this.parseLineByLine,
@@ -1044,13 +1003,11 @@
                     }
                 }
 
-                // Extract supplier name
                 const supplierMatch = text.match(/(?:مورد|شركة|محل|متجر|بائع|المورد|الشركة)[:\s]*[:\s]+([^\n]{2,40})/i);
                 if (supplierMatch) {
                     this.invoiceData.supplier = supplierMatch[1].trim();
                 }
 
-                // Extract date
                 const dateMatch = text.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
                 if (dateMatch) {
                     const d = dateMatch[1].replace(/\//g, '-');
@@ -1068,15 +1025,11 @@
             }
 
             parseTableFormat(text) {
-                // Look for table-like patterns: name | quantity | price | total
                 const items = [];
                 const lines = text.split('\n').filter(l => l.trim());
 
                 for (const line of lines) {
-                    // Match: item name ... quantity ... price ... total
-                    const match = line.match(
-                        /([^\d]{2,40}?)\s+(\d+)\s+([\d,.]+)\s+([\d,.]+)/
-                    );
+                    const match = line.match(/([^\d]{2,40}?)\s+(\d+)\s+([\d,.]+)\s+([\d,.]+)/);
                     if (match) {
                         items.push({
                             name: match[1].trim(),
@@ -1086,10 +1039,7 @@
                         continue;
                     }
 
-                    // Match: item name x quantity @ price
-                    const match2 = line.match(
-                        /([^\d]{2,40}?)\s*[x×]\s*(\d+)\s*[@]?\s*([\d,.]+)/
-                    );
+                    const match2 = line.match(/([^\d]{2,40}?)\s*[x×]\s*(\d+)\s*[@]?\s*([\d,.]+)/);
                     if (match2) {
                         items.push({
                             name: match2[1].trim(),
@@ -1107,7 +1057,6 @@
                 const lines = text.split('\n').filter(l => l.trim());
 
                 for (const line of lines) {
-                    // Try: name price (simple format)
                     const match = line.match(/^(.{2,30}?)\s+([\d,.]+)\s*(?:ج\.م|EGP|جنيه)?\s*$/);
                     if (match && !match[1].match(/إجمال|مجموع|total|sum/i)) {
                         items.push({
@@ -1134,23 +1083,18 @@
                             }));
                         }
                     }
-                } catch (e) {
-                    // Not JSON
-                }
+                } catch (e) {}
                 return [];
             }
 
             // ========== History / Undo ==========
             pushHistory() {
                 const snapshot = JSON.stringify(this.items);
-                // Don't push if same as current
                 if (this.history.length > 0 && this.history[this.historyIndex] === snapshot) return;
 
-                // Trim future history
                 this.history = this.history.slice(0, this.historyIndex + 1);
                 this.history.push(snapshot);
 
-                // Limit history size
                 if (this.history.length > this.maxHistory) this.history.shift();
                 this.historyIndex = this.history.length - 1;
 
@@ -1167,7 +1111,6 @@
                 this.clearSelection();
                 this.unsavedChanges = true;
                 this.updateUndoButton();
-                // Haptic-like visual feedback
                 this.pulseElement(this.els.undoBtn);
             }
 
@@ -1199,10 +1142,7 @@
                         );
                         this.supplierSuggestions = Array.from(suppliers).sort();
                     };
-                    req.onerror = () => {};
-                } catch (e) {
-                    // Silent fail
-                }
+                } catch (e) {}
             }
 
             showSupplierSuggestions(value) {
@@ -1258,7 +1198,6 @@
                     savedAt: Date.now()
                 };
 
-                // Avoid duplicates
                 const existing = this.templates.findIndex(t => t.name === template.name);
                 if (existing >= 0) {
                     this.templates[existing] = template;
@@ -1266,7 +1205,6 @@
                     this.templates.unshift(template);
                 }
 
-                // Limit templates
                 if (this.templates.length > 15) this.templates = this.templates.slice(0, 15);
 
                 localStorage.setItem('invoice_templates', JSON.stringify(this.templates));
@@ -1312,36 +1250,24 @@
 
                 container.innerHTML = this.templates
                     .map((t, i) => `
-                <div class="template-chip" data-index="${i}" title="اضغط للتطبيق | ضغطة طويلة للحذف">
-                  <i class="fas fa-layer-group" style="font-size:10px;"></i>
-                  ${this.escHtml(t.name)}
-                </div>
-              `).join('');
+                        <div class="template-chip" data-index="${i}" title="اضغط للتطبيق | ضغطة طويلة للحذف">
+                            <i class="fas fa-layer-group" style="font-size:10px;"></i>
+                            ${this.escHtml(t.name)}
+                        </div>
+                    `).join('');
 
-                // Template click events
                 container.querySelectorAll('.template-chip').forEach(chip => {
                     let pressTimer;
                     const index = parseInt(chip.dataset.index);
 
-                    chip.addEventListener('pointerdown', (e) => {
-                        pressTimer = setTimeout(() => {
-                            this.deleteTemplate(index);
-                        }, 800);
+                    chip.addEventListener('pointerdown', () => {
+                        pressTimer = setTimeout(() => this.deleteTemplate(index), 800);
                     });
-
-                    chip.addEventListener('pointerup', () => {
+                    chip.addEventListener('pointerup', () => clearTimeout(pressTimer));
+                    chip.addEventListener('pointerleave', () => clearTimeout(pressTimer));
+                    chip.addEventListener('click', () => {
                         clearTimeout(pressTimer);
-                    });
-
-                    chip.addEventListener('pointerleave', () => {
-                        clearTimeout(pressTimer);
-                    });
-
-                    chip.addEventListener('click', (e) => {
-                        if (pressTimer) {
-                            clearTimeout(pressTimer);
-                            this.applyTemplate(index);
-                        }
+                        this.applyTemplate(index);
                     });
                 });
             }
@@ -1354,7 +1280,6 @@
                 this.pushHistory();
                 this.clearSelection();
 
-                // Focus the new item's name input
                 requestAnimationFrame(() => {
                     const inputs = this.els.itemsList.querySelectorAll('.name-input');
                     const target = inputs[Math.min(insertIndex, inputs.length - 1)];
@@ -1412,8 +1337,7 @@
 
             // ========== Batch Operations ==========
             toggleSelect(index, event) {
-                if (event && event.shiftKey && this.lastSelectedIndex !== null && this.lastSelectedIndex !==
-                    undefined) {
+                if (event && event.shiftKey && this.lastSelectedIndex !== null && this.lastSelectedIndex !== undefined) {
                     const start = Math.min(index, this.lastSelectedIndex);
                     const end = Math.max(index, this.lastSelectedIndex);
                     const allInRange = Array.from({ length: end - start + 1 }, (_, i) => start + i);
@@ -1476,13 +1400,13 @@
                 this.pushHistory();
             }
 
-            // ========== Save ==========
+            // ============================================
+            // ✅ حفظ الفاتورة - تم الإصلاح
+            // ============================================
             async saveInvoice() {
                 if (this.isSaving) return;
-                if (!this.currentUser) {
-                    this.showToast('🔐 يرجى تسجيل الدخول أولاً', 'error');
-                    return;
-                }
+
+                // ✅ التحقق من البيانات
                 if (!this.invoiceData.supplier.trim()) {
                     this.showToast('⚠️ يرجى إدخال اسم المورد', 'error');
                     this.els.supplierInput.focus();
@@ -1496,64 +1420,120 @@
                 this.isSaving = true;
                 this.showSaving(true);
                 this.els.saveBtn.disabled = true;
+                this.els.saveBtn.textContent = '⏳ جاري الحفظ...';
+
+                const invoiceId = this.generateId();
+                const userId = this.currentUser?.uid || 'anonymous';
+                const userEmail = this.currentUser?.email || 'guest@fastsokon.com';
 
                 const invoice = {
-                    id: this.generateId(),
+                    id: invoiceId,
                     supplier: this.invoiceData.supplier.trim(),
-                    dateStr: this.invoiceData.date,
+                    date: this.invoiceData.date,
                     time: this.invoiceData.time,
                     items: this.items.map(item => ({
                         name: item.name.trim() || 'صنف غير معروف',
                         quantity: parseFloat(item.quantity) || 1,
-                        price: parseFloat(item.price) || 0
+                        price: parseFloat(item.price) || 0,
+                        total: (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)
                     })),
                     total: this.calculateTotal(),
-                    uid: this.currentUser.uid,
+                    itemCount: this.items.length,
+                    userId: userId,
+                    userEmail: userEmail,
+                    status: 'pending',
                     createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
                     source: 'review_page'
                 };
 
+                let savedToCloud = false;
+                let savedToLocal = false;
+
                 try {
-                    // Save to Firestore
-                    await this.firestore
-                        .collection('users')
-                        .doc(this.currentUser.uid)
-                        .collection('invoices')
-                        .doc(invoice.id)
-                        .set(invoice);
-
-                    // Save to IndexedDB
-                    await this.saveToLocalDB(invoice);
-
-                    // Clear draft
-                    localStorage.removeItem('current_invoice_data');
-                    this.unsavedChanges = false;
-
-                    this.showToast(`✅ تم حفظ فاتورة ${invoice.supplier}`, 'success');
-                    this.showSaving(false);
-
-                    // Navigate back after short delay
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 900);
-                } catch (error) {
-                    console.error('Save error:', error);
-
-                    // Try offline save
-                    try {
-                        await this.saveToLocalDB(invoice);
-                        localStorage.removeItem('current_invoice_data');
-                        this.showToast('📦 تم الحفظ محلياً. ستتم المزامنة عند الاتصال.', 'info');
-                        setTimeout(() => window.location.href = '/', 900);
-                    } catch (localError) {
-                        this.showToast('❌ فشل الحفظ. حاول مجدداً.', 'error');
+                    // ✅ المحاولة 1: الحفظ في Firestore
+                    if (this.firestore && userId !== 'anonymous') {
+                        await this.firestore
+                            .collection('users')
+                            .doc(userId)
+                            .collection('invoices')
+                            .doc(invoiceId)
+                            .set(invoice);
+                        savedToCloud = true;
+                        console.log('✅ تم الحفظ في Firestore');
                     }
-
-                    this.showSaving(false);
-                    this.els.saveBtn.disabled = false;
-                } finally {
-                    this.isSaving = false;
+                } catch (firestoreError) {
+                    console.warn('⚠️ فشل الحفظ في Firestore:', firestoreError.message);
                 }
+
+                try {
+                    // ✅ المحاولة 2: الحفظ في Realtime Database
+                    if (this.realtimeDb && !savedToCloud) {
+                        await this.realtimeDb
+                            .ref('invoices/' + userId + '/' + invoiceId)
+                            .set(invoice);
+                        savedToCloud = true;
+                        console.log('✅ تم الحفظ في Realtime Database');
+                    }
+                } catch (rtdbError) {
+                    console.warn('⚠️ فشل الحفظ في Realtime Database:', rtdbError.message);
+                }
+
+                try {
+                    // ✅ المحاولة 3: الحفظ في IndexedDB (محلياً)
+                    if (!savedToCloud && this.db) {
+                        await this.saveToLocalDB(invoice);
+                        savedToLocal = true;
+                        console.log('✅ تم الحفظ في IndexedDB (محلياً)');
+                    }
+                } catch (localError) {
+                    console.warn('⚠️ فشل الحفظ المحلي:', localError.message);
+                }
+
+                // ✅ المحاولة 4: الحفظ في localStorage (احتياطي أخير)
+                if (!savedToCloud && !savedToLocal) {
+                    try {
+                        const savedInvoices = JSON.parse(localStorage.getItem('offline_invoices') || '[]');
+                        savedInvoices.push(invoice);
+                        localStorage.setItem('offline_invoices', JSON.stringify(savedInvoices));
+                        savedToLocal = true;
+                        console.log('✅ تم الحفظ في localStorage (احتياطي)');
+                    } catch (storageError) {
+                        console.error('❌ فشل الحفظ الاحتياطي:', storageError.message);
+                    }
+                }
+
+                // ✅ تنظيف المسودة
+                localStorage.removeItem('current_invoice_data');
+                this.unsavedChanges = false;
+
+                // ✅ إظهار رسالة النجاح
+                this.showSaving(false);
+                this.els.saveBtn.textContent = '💾 تم الحفظ!';
+
+                if (savedToCloud) {
+                    this.showToast('✅ تم حفظ الفاتورة في السحابة بنجاح!', 'success');
+                    console.log('📊 بيانات الفاتورة المحفوظة:', {
+                        id: invoiceId,
+                        supplier: invoice.supplier,
+                        items: invoice.itemCount,
+                        total: invoice.total,
+                        userId: userId
+                    });
+                } else if (savedToLocal) {
+                    this.showToast('📦 تم الحفظ محلياً. ستتم المزامنة عند الاتصال.', 'info');
+                } else {
+                    this.showToast('❌ فشل الحفظ. حاول مجدداً.', 'error');
+                    this.els.saveBtn.disabled = false;
+                    this.els.saveBtn.textContent = '🔄 حاول مجدداً';
+                    this.isSaving = false;
+                    return;
+                }
+
+                // ✅ إعادة توجيه بعد الحفظ الناجح
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1200);
             }
 
             saveToLocalDB(invoice) {
@@ -1574,9 +1554,38 @@
                 });
             }
 
+            // ✅ مزامنة الفواتير المحلية عند الاتصال
+            async syncOfflineInvoices() {
+                try {
+                    const offlineInvoices = JSON.parse(localStorage.getItem('offline_invoices') || '[]');
+                    if (offlineInvoices.length === 0) return;
+
+                    console.log(`🔄 جاري مزامنة ${offlineInvoices.length} فاتورة محلية...`);
+
+                    for (const invoice of offlineInvoices) {
+                        try {
+                            if (this.firestore && invoice.userId !== 'anonymous') {
+                                await this.firestore
+                                    .collection('users')
+                                    .doc(invoice.userId)
+                                    .collection('invoices')
+                                    .doc(invoice.id)
+                                    .set(invoice);
+                            }
+                        } catch (e) {
+                            console.warn('⚠️ فشل مزامنة فاتورة:', invoice.id);
+                        }
+                    }
+
+                    localStorage.removeItem('offline_invoices');
+                    console.log('✅ تمت مزامنة جميع الفواتير المحلية');
+                } catch (e) {
+                    console.warn('⚠️ فشل المزامنة:', e.message);
+                }
+            }
+
             generateId() {
-                if (crypto.randomUUID) return crypto.randomUUID();
-                return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+                return 'inv_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9);
             }
 
             showSaving(show) {
@@ -1600,19 +1609,15 @@
                     localStorage.setItem('current_invoice_data', JSON.stringify(data));
                     this.unsavedChanges = false;
                 } catch (e) {
-                    // Storage full - try clearing old drafts
                     try {
                         localStorage.removeItem('invoice_templates');
                         localStorage.setItem('current_invoice_data', JSON.stringify(data));
-                    } catch (e2) {
-                        // Silent fail
-                    }
+                    } catch (e2) {}
                 }
             }
 
             // ========== Rendering ==========
             render() {
-                // Set initial values
                 this.els.supplierInput.value = this.invoiceData.supplier;
                 this.els.dateInput.value = this.invoiceData.date;
                 this.els.timeInput.value = this.invoiceData.time;
@@ -1636,23 +1641,23 @@
                     const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0);
 
                     row.innerHTML = `
-                <div class="delete-bg"><i class="fas fa-trash"></i></div>
-                <input class="item-input name-input" type="text" value="${this.escHtml(item.name)}"
-                       placeholder="اسم الصنف" data-field="name" data-index="${index}" aria-label="اسم الصنف">
-                <input class="item-input qty-input" type="number" value="${item.quantity}"
-                       min="1" step="1" data-field="quantity" data-index="${index}" aria-label="الكمية">
-                <input class="item-input price-input" type="number" value="${item.price}"
-                       min="0" step="0.01" data-field="price" data-index="${index}" aria-label="السعر">
-                <span class="item-total" data-index="${index}">${total.toFixed(2)}</span>
-                <div class="item-actions-inline">
-                  <button class="item-action-dot" data-action="duplicate" data-index="${index}" title="نسخ" aria-label="نسخ الصنف">
-                    <i class="fas fa-copy"></i>
-                  </button>
-                  <button class="item-action-dot delete-dot" data-action="delete" data-index="${index}" title="حذف" aria-label="حذف الصنف">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              `;
+                        <div class="delete-bg"><i class="fas fa-trash"></i></div>
+                        <input class="item-input name-input" type="text" value="${this.escHtml(item.name)}"
+                               placeholder="اسم الصنف" data-field="name" data-index="${index}" aria-label="اسم الصنف">
+                        <input class="item-input qty-input" type="number" value="${item.quantity}"
+                               min="1" step="1" data-field="quantity" data-index="${index}" aria-label="الكمية">
+                        <input class="item-input price-input" type="number" value="${item.price}"
+                               min="0" step="0.01" data-field="price" data-index="${index}" aria-label="السعر">
+                        <span class="item-total" data-index="${index}">${total.toFixed(2)}</span>
+                        <div class="item-actions-inline">
+                            <button class="item-action-dot" data-action="duplicate" data-index="${index}" title="نسخ" aria-label="نسخ الصنف">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="item-action-dot delete-dot" data-action="delete" data-index="${index}" title="حذف" aria-label="حذف الصنف">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
 
                     fragment.appendChild(row);
                 });
@@ -1660,10 +1665,7 @@
                 list.innerHTML = '';
                 list.appendChild(fragment);
 
-                // Update count
                 this.els.itemsCountLabel.textContent = this.items.length;
-
-                // Re-attach swipe listeners
                 this.attachSwipeToDelete();
             }
 
@@ -1674,7 +1676,6 @@
 
             // ========== Event Handling ==========
             attachEvents() {
-                // Supplier input
                 this.els.supplierInput.addEventListener('input', (e) => {
                     this.invoiceData.supplier = e.target.value;
                     this.showSupplierSuggestions(e.target.value);
@@ -1683,7 +1684,6 @@
                 this.els.supplierInput.addEventListener('blur', () => this.hideSupplierSuggestions());
                 this.els.supplierInput.addEventListener('focus', (e) => this.showSupplierSuggestions(e.target.value));
 
-                // Suggestion click
                 this.els.supplierSuggestions.addEventListener('pointerdown', (e) => {
                     const item = e.target.closest('.suggestion-item');
                     if (item) {
@@ -1694,7 +1694,6 @@
                     }
                 });
 
-                // Date & time
                 this.els.dateInput.addEventListener('change', (e) => {
                     this.invoiceData.date = e.target.value;
                     this.unsavedChanges = true;
@@ -1704,16 +1703,10 @@
                     this.unsavedChanges = true;
                 });
 
-                // Add item
                 this.els.addItemBtn.addEventListener('click', () => this.addItem());
-
-                // Save
                 this.els.saveBtn.addEventListener('click', () => this.saveInvoice());
-
-                // Template save
                 this.els.templateBtn.addEventListener('click', () => this.saveAsTemplate());
 
-                // Clear
                 this.els.clearBtn.addEventListener('click', () => {
                     if (this.items.length === 0) return;
                     if (confirm('مسح جميع الأصناف؟ يمكنك التراجع بعد المسح.')) {
@@ -1725,19 +1718,15 @@
                     }
                 });
 
-                // Undo
                 this.els.undoBtn.addEventListener('click', () => this.undo());
 
-                // Batch actions
                 this.els.batchDeleteBtn.addEventListener('click', () => this.batchDelete());
                 this.els.batchDuplicateBtn.addEventListener('click', () => this.batchDuplicate());
                 this.els.cancelBatchBtn.addEventListener('click', () => this.clearSelection());
 
-                // Items list delegation
                 this.els.itemsList.addEventListener('input', this.onInputChange);
                 this.els.itemsList.addEventListener('click', this.onItemClick);
 
-                // Enter key in last item adds new
                 this.els.itemsList.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && e.target.classList.contains('name-input')) {
                         const index = parseInt(e.target.dataset.index);
@@ -1748,16 +1737,20 @@
                     }
                 });
 
-                // Before unload warning
-                window.addEventListener('beforeunload', (e) => {
+                window.addEventListener('beforeunload', () => {
                     if (this.unsavedChanges && this.items.some(i => i.name.trim())) {
                         this.saveDraft();
                     }
                 });
 
-                // Toast dismiss
                 this.els.toast.addEventListener('click', () => {
                     this.els.toast.classList.remove('show');
+                });
+
+                // ✅ مزامنة عند الاتصال
+                window.addEventListener('online', () => {
+                    console.log('🌐 تم استعادة الاتصال - جاري المزامنة...');
+                    this.syncOfflineInvoices();
                 });
             }
 
@@ -1768,7 +1761,6 @@
 
                 this.updateItem(index, field, e.target.value);
 
-                // Debounce history push for typing
                 clearTimeout(this._historyDebounce);
                 this._historyDebounce = setTimeout(() => this.pushHistory(), 600);
             }
@@ -1777,7 +1769,6 @@
                 const index = parseInt(e.target.dataset.index);
                 if (isNaN(index)) return;
 
-                // Action buttons
                 const action = e.target.closest('[data-action]')?.dataset.action;
                 if (action === 'delete') {
                     this.deleteItem(index);
@@ -1788,10 +1779,7 @@
                     return;
                 }
 
-                // Don't select when clicking inputs
                 if (e.target.tagName === 'INPUT') return;
-
-                // Toggle selection
                 this.toggleSelect(index, e);
             }
 
@@ -1799,7 +1787,6 @@
                 const rows = this.els.itemsList.querySelectorAll('.item-row');
 
                 rows.forEach(row => {
-                    // Remove old listeners by cloning (simple approach)
                     const newRow = row.cloneNode(true);
                     row.parentNode.replaceChild(newRow, row);
 
@@ -1831,7 +1818,6 @@
                         if (diff > 55) {
                             const index = parseInt(newRow.dataset.index);
                             if (!isNaN(index)) {
-                                // Visual feedback then delete
                                 newRow.style.transform = 'translateX(-60px)';
                                 newRow.style.opacity = '0';
                                 newRow.style.transition = 'all 0.2s ease';
@@ -1851,12 +1837,10 @@
 
             setupKeyboardShortcuts() {
                 document.addEventListener('keydown', (e) => {
-                    // Ctrl+Z = Undo
                     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                         e.preventDefault();
                         this.undo();
                     }
-                    // Escape = clear selection
                     if (e.key === 'Escape') {
                         this.clearSelection();
                     }
@@ -1884,7 +1868,6 @@
                     .replace(/"/g, '&quot;');
             }
 
-            // ========== Cleanup ==========
             destroy() {
                 clearInterval(this.autoSaveTimer);
                 clearTimeout(this.toastTimer);

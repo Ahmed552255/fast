@@ -610,7 +610,7 @@
             <div class="preview-title">✨ معاينة الفاتورة</div>
             <canvas id="enhancedResultCanvas" width="600" height="450"></canvas>
             <div class="quality-badge" id="qualityBadge">
-                ✔ تم التقاط الصورة بنجاح
+                ✔ تم تحميل الصورة بنجاح
             </div>
             <textarea id="userPrompt" class="user-prompt" rows="3"
             placeholder="توجيه خاص بالتحليل؟ أو اتركه فارغاً لاستخراج الجدول تلقائياً..."></textarea>
@@ -647,6 +647,9 @@
                 this.broadcastChannel = null;
                 this.loadingStates = new Set();
                 this.db = null; // IndexedDB reference
+
+                // OpenCV Mats tracking for guaranteed cleanup
+                this.activeMats = [];
 
                 // Retry & Timeout
                 this.maxRetries = 3;
@@ -1037,6 +1040,7 @@
                 if (opencvScript) {
                     opencvScript.addEventListener('load', () => {
                         clearInterval(interval);
+                        // Give it a moment for the WASM to initialize
                         setTimeout(() => {
                             if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
                                 this.openCVReady = true;
@@ -1165,13 +1169,15 @@
             // ========== ✅ EXIF Orientation - معالجة اتجاه الصورة ==========
             getEXIFOrientation(file) {
                 return new Promise((resolve) => {
+                    // نقرأ أول 128 كيلوبايت من الملف (كافية لبيانات EXIF)
                     const blob = file.slice(0, 128 * 1024);
                     const reader = new FileReader();
 
                     reader.onload = function(e) {
                         const view = new DataView(e.target.result);
-                        let orientation = 1;
+                        let orientation = 1; // افتراضي: بدون دوران
 
+                        // التحقق من توقيع JPEG
                         if (view.getUint16(0, false) !== 0xFFD8) {
                             resolve(orientation);
                             return;
@@ -1186,8 +1192,9 @@
                                 continue;
                             }
 
+                            // وجدنا قسم EXIF
                             const exifOffset = offset + 4;
-                            if (view.getUint32(exifOffset, false) !== 0x45786966) {
+                            if (view.getUint32(exifOffset, false) !== 0x45786966) { // "Exif"
                                 resolve(orientation);
                                 return;
                             }
@@ -1202,7 +1209,7 @@
                                 const entryOffset = ifdOffset + 2 + i * 12;
                                 const tag = view.getUint16(entryOffset, isLittleEndian);
 
-                                if (tag === 0x0112) {
+                                if (tag === 0x0112) { // Orientation tag
                                     orientation = view.getUint16(entryOffset + 8, isLittleEndian);
                                     resolve(orientation);
                                     return;
@@ -1222,15 +1229,16 @@
             }
 
             applyEXIFRotation(canvas, ctx, img, orientation) {
+                // تطبيق الدوران بناءً على قيمة EXIF Orientation
                 const orientations = {
-                    1: { rotate: 0, flip: false },
-                    2: { rotate: 0, flip: true },
-                    3: { rotate: 180, flip: false },
-                    4: { rotate: 180, flip: true },
-                    5: { rotate: 90, flip: true },
-                    6: { rotate: 90, flip: false },
-                    7: { rotate: 270, flip: true },
-                    8: { rotate: 270, flip: false }
+                    1: { rotate: 0, flip: false }, // Normal
+                    2: { rotate: 0, flip: true }, // Flip horizontal
+                    3: { rotate: 180, flip: false }, // Rotate 180
+                    4: { rotate: 180, flip: true }, // Flip vertical
+                    5: { rotate: 90, flip: true }, // Rotate 90 + flip horizontal
+                    6: { rotate: 90, flip: false }, // Rotate 90 CW
+                    7: { rotate: 270, flip: true }, // Rotate 270 + flip horizontal
+                    8: { rotate: 270, flip: false } // Rotate 270 CW
                 };
 
                 const o = orientations[orientation] || orientations[1];
@@ -1265,13 +1273,15 @@
                 const targetMB = targetMaxSizeMB || this.TARGET_UPLOAD_SIZE_MB;
                 let quality = 0.85;
                 let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                const maxBytes = targetMB * 1024 * 1024 * 1.33;
+                const maxBytes = targetMB * 1024 * 1024 * 1.33; // base64 ~33% overhead
 
+                // تقليل الجودة تدريجياً حتى نصل للحجم المطلوب
                 while (dataUrl.length > maxBytes && quality > 0.5) {
                     quality -= 0.08;
                     dataUrl = canvas.toDataURL('image/jpeg', quality);
                 }
 
+                // لو الصورة لسه كبيرة جداً، نقلل الأبعاد
                 if (dataUrl.length > maxBytes && canvas.width > 1200) {
                     const scaleFactor = Math.sqrt(maxBytes / dataUrl.length);
                     const scaledCanvas = document.createElement('canvas');
@@ -1291,30 +1301,32 @@
                 return /^data:image\/(jpeg|png|webp|jpg);base64,[A-Za-z0-9+/=]+$/.test(str);
             }
 
-            // ========== 🚀 معالجة الصورة بشكل مبسط (بدون تحسين OpenCV) ==========
-            async processImageAndShow(canvas, img, mat) {
+            // ========== Direct Image Processing (No Enhancement) ==========
+            async processAndShowDirectly(imageSource) {
                 try {
-                    const resultCanvas = this.elements.enhancedResultCanvas;
+                    const canvas = this.elements.enhancedResultCanvas;
                     
-                    if (resultCanvas) {
-                        // ببساطة نرسم الصورة الأصلية على canvas النتيجة
-                        resultCanvas.width = canvas.width;
-                        resultCanvas.height = canvas.height;
-                        const resultCtx = resultCanvas.getContext('2d', { willReadFrequently: true });
-                        resultCtx.drawImage(canvas, 0, 0);
+                    if (canvas && imageSource) {
+                        const ctx = canvas.getContext('2d');
                         
-                        // ضغط ذكي للصورة
-                        this.base64EnhancedImage = await this.smartCompress(resultCanvas);
+                        // If imageSource is a canvas or video, draw it directly
+                        if (imageSource instanceof HTMLCanvasElement || imageSource instanceof HTMLVideoElement) {
+                            canvas.width = imageSource.width || imageSource.videoWidth;
+                            canvas.height = imageSource.height || imageSource.videoHeight;
+                            ctx.drawImage(imageSource, 0, 0);
+                        } else if (imageSource instanceof HTMLImageElement) {
+                            canvas.width = imageSource.width;
+                            canvas.height = imageSource.height;
+                            ctx.drawImage(imageSource, 0, 0);
+                        }
+                        
+                        // ✅ استخدام ضغط JPEG ذكي
+                        this.base64EnhancedImage = await this.smartCompress(canvas);
                     }
 
                     const badge = this.elements.qualityBadge;
                     if (badge) {
-                        badge.innerHTML = '✔ تم التقاط الصورة بنجاح';
-                    }
-
-                    // تنظيف OpenCV mat إذا كان موجوداً
-                    if (mat && !mat.isDeleted()) {
-                        mat.delete();
+                        badge.innerHTML = '✔ تم تحميل الصورة بنجاح | ضغط ذكي مُطبّق';
                     }
 
                     this.stopCamera();
@@ -1326,12 +1338,27 @@
                     const retryBtn = this.elements.retryBtn;
                     if (retryBtn) retryBtn.classList.remove('visible');
 
+                    this.cleanupAllMats();
+
                     return true;
                 } catch (e) {
                     console.error('Process error:', e);
                     this.showToast('فشل معالجة الصورة. حاول مرة أخرى.', 'error');
                     return false;
                 }
+            }
+
+            cleanupAllMats() {
+                this.activeMats.forEach(mat => {
+                    try {
+                        if (mat && !mat.isDeleted()) {
+                            mat.delete();
+                        }
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
+                });
+                this.activeMats = [];
             }
 
             // ========== Capture & Upload ==========
@@ -1349,10 +1376,7 @@
                     const ctx = canvas.getContext('2d', { willReadFrequently: true });
                     ctx.drawImage(video, 0, 0);
 
-                    // استخدام OpenCV فقط للقراءة (بدون تحسين)
-                    const mat = cv.imread(canvas);
-                    
-                    await this.processImageAndShow(canvas, null, mat);
+                    await this.processAndShowDirectly(canvas);
                 } catch (e) {
                     console.error('Capture error:', e);
                     this.showToast('حدث خطأ أثناء التصوير.', 'error');
@@ -1379,17 +1403,15 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = new Image();
-                    img.onload = async () => {
+                    img.onload = () => {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
                         // ✅ تطبيق تصحيح الاتجاه
                         this.applyEXIFRotation(canvas, ctx, img, orientation);
-
-                        // استخدام OpenCV فقط للقراءة (بدون تحسين)
-                        const mat = cv.imread(canvas);
                         
-                        await this.processImageAndShow(canvas, img, mat);
+                        // عرض الصورة مباشرة بدون تحسين
+                        this.processAndShowDirectly(canvas);
                     };
                     img.onerror = () => {
                         this.showToast('فشل تحميل الصورة. جرب ملفاً آخر.', 'error');
@@ -1754,6 +1776,7 @@
             // ========== Cleanup ==========
             destroy() {
                 this.stopCamera();
+                this.cleanupAllMats();
 
                 if (this.broadcastChannel) {
                     this.broadcastChannel.close();

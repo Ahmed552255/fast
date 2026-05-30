@@ -1,1823 +1,959 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="csrf-token" content="">
-    <title>Sokoon Cam | معالجة ذكية للفاتورة</title>
-
-    <!-- Preload critical resources -->
-    <link rel="preconnect" href="https://www.gstatic.com">
-    <link rel="preconnect" href="https://docs.opencv.org">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-
-    <!-- Cairo Font - متوافق مع باقي الصفحات -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
-
-    <!-- ✅ OpenCV.js - المعالج الأساسي للصور (تمت إضافته) -->
-    <script id="opencv-script"
-    src="https://docs.opencv.org/4.8.0/opencv.js"
-    async
-    onload="console.log('✅ OpenCV loaded')"
-    onerror="console.error('❌ OpenCV failed to load')"
-    defer>
-</script>
-
-<!-- Firebase SDKs - deferred loading -->
-<script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
-<script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
-<script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
-<script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js" defer></script>
-<script is:inline src="/firebase-config.js" defer></script>
-
-<style is:global>
-    :root {
-        --bg: #060411;
-        --bg-card: rgba(13, 9, 31, 0.75);
-        --card-inner: rgba(255, 255, 255, 0.02);
-        --purple: #c3b0ff;
-        --purple-dark: #582fff;
-        --purple-glow: rgba(88, 47, 255, 0.2);
-        --gold: #ffc400;
-        --gold-light: #ffe082;
-        --text: #e5e1f5;
-        --text-dim: rgba(229, 225, 245, 0.7);
-        --text-muted: rgba(229, 225, 245, 0.4);
-        --border: rgba(255, 255, 255, 0.06);
-        --border-hover: rgba(114, 92, 255, 0.25);
-        --danger: #ff5252;
-        --success: #2ecc71;
-        --radius-xl: 24px;
-        --radius-lg: 20px;
-        --radius-md: 16px;
-        --radius-sm: 12px;
-        --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-        --transition-normal: 0.25s ease;
-        --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
-    }
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>لحظة | كاميرا مباشرة</title>
+  <style>
     * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
     body {
-        background: radial-gradient(circle at 50% 15%, #130d35 0%, var(--bg) 75%);
-        font-family: var(--font-family);
-        height: 100vh;
-        height: 100dvh;
-        width: 100vw;
-        position: fixed;
-        color: var(--text);
-        overflow: hidden;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
+      font-family: 'Segoe UI', 'Tajawal', sans-serif;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      color: white;
+      direction: rtl;
     }
 
-    /* Auth Wall */
-    .auth-wall {
-        position: fixed;
-        inset: 0;
-        background: rgba(6, 4, 17, 0.95);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 20px;
-        text-align: center;
-        padding: 20px;
-        visibility: visible;
-        opacity: 1;
-        pointer-events: auto;
-        transition: opacity var(--transition-normal), visibility var(--transition-normal);
-    }
-    .auth-wall.hidden {
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-    }
-    .auth-wall h2 {
-        color: var(--text);
-        font-size: 1.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #ffffff 40%, var(--purple) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    .auth-wall p {
-        color: var(--text-dim);
-        max-width: 320px;
-        font-size: 0.9rem;
+    .app-container {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      background: #000;
+      display: flex;
+      flex-direction: column;
     }
 
-    .auth-btn {
-        background: linear-gradient(135deg, var(--purple-dark) 0%, #441ece 100%);
-        border: none;
-        padding: 14px 32px;
-        border-radius: 50px;
-        color: #fff;
-        font-size: 1rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: var(--transition-fast);
-        font-family: var(--font-family);
-        transform: translateZ(0);
-        will-change: transform;
-        box-shadow: 0 4px 15px var(--purple-glow);
-    }
-    .auth-btn:active {
-        transform: scale(0.96);
-    }
-
-    /* Camera Screen */
-    .camera-screen {
-        position: fixed;
-        inset: 0;
-        background: #000;
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-    }
-    .camera-screen.active {
-        visibility: visible;
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    .video-full {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        z-index: 1;
-    }
-
-    .overlay-ui {
-        position: relative;
-        z-index: 20;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        height: 100%;
-        padding: 24px 20px 40px;
-        background: linear-gradient(to bottom,
-                rgba(6, 4, 17, 0.5) 0%,
-                transparent 20%,
-                transparent 80%,
-                rgba(6, 4, 17, 0.7) 100%);
-    }
-
-    .top-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 92%;
-        margin: 0 auto;
-        gap: 12px;
-    }
-
-    .icon-btn {
-        background: var(--bg-card);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--border);
-        color: var(--text);
-        padding: 14px;
-        border-radius: var(--radius-xl);
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-        transition: var(--transition-fast);
-        height: 54px;
-        width: 54px;
-        transform: translateZ(0);
-        will-change: transform;
-        font-family: var(--font-family);
-    }
-    .icon-btn:active {
-        transform: scale(0.92);
-        background: rgba(88, 47, 255, 0.2);
-        border-color: var(--purple-dark);
-    }
-
-    .instruction-box {
-        background: var(--bg-card);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: var(--radius-xl);
-        padding: 16px 24px;
-        text-align: center;
-        color: var(--text);
-        font-weight: 600;
-        font-size: 0.9rem;
-        border: 1px solid var(--border);
-        border-right: 4px solid var(--purple);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-        flex: 1;
-        height: 54px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.4s ease;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .buttons-bottom {
-        display: flex;
-        justify-content: center;
-        gap: 32px;
-        align-items: center;
-        background: rgba(13, 9, 31, 0.7);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        padding: 18px 32px;
-        border-radius: var(--radius-lg);
-        width: fit-content;
-        margin: 0 auto 10px;
-        border: 1px solid var(--border);
-        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
-    }
-
-    .capture-btn {
-        width: 76px;
-        height: 76px;
-        border-radius: 50%;
-        border: 5px solid #fff;
-        box-shadow: 0 0 0 5px var(--purple-glow), 0 12px 25px rgba(0, 0, 0, 0.5);
-        cursor: pointer;
-        transition: transform var(--transition-fast);
-        background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 100%);
-        transform: translateZ(0);
-        will-change: transform;
-    }
-    .capture-btn:active {
-        transform: scale(0.88);
-    }
-    .capture-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        filter: grayscale(30%);
-    }
-
-    .gallery-btn {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: var(--text);
-        font-weight: 600;
-        padding: 12px 26px;
-        border-radius: 50px;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: var(--transition-fast);
-        font-family: var(--font-family);
-        transform: translateZ(0);
-        will-change: transform;
-    }
-    .gallery-btn:active {
-        background: rgba(255, 255, 255, 0.15);
-        transform: scale(0.95);
-    }
-
-    /* Preview Screen */
-    .preview-screen {
-        position: fixed;
-        inset: 0;
-        background: radial-gradient(circle at top, #130d35 0%, var(--bg) 100%);
-        z-index: 30;
-        display: flex;
-        flex-direction: column;
-        padding: 24px 20px;
-        overflow-y: auto;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-        -webkit-overflow-scrolling: touch;
-    }
-    .preview-screen.active {
-        visibility: visible;
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    .preview-header {
-        display: flex;
-        justify-content: flex-start;
-        margin-bottom: 20px;
+    /* شريط الحالة العلوي */
+    .status-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
     }
 
     .back-btn {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid var(--border);
-        color: var(--text-dim);
-        padding: 10px 24px;
-        border-radius: 50px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: var(--transition-fast);
-        font-family: var(--font-family);
-        transform: translateZ(0);
-    }
-    .back-btn:active {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--text);
-        transform: translateX(3px);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
     }
 
-    .preview-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        width: 100%;
-        max-width: 500px;
-        margin: 0 auto;
+    .back-btn:hover {
+      background: rgba(255,255,255,0.25);
     }
 
-    .preview-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, var(--purple), var(--gold));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+    .grid-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: none;
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
     }
 
-    canvas#enhancedResultCanvas {
-        max-width: 100%;
-        max-height: 40vh;
-        border-radius: var(--radius-xl);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-        border: 1px solid var(--border);
+    .grid-btn:hover {
+      background: rgba(255,255,255,0.25);
     }
 
-    .quality-badge {
-        font-size: 0.85rem;
-        color: var(--text-dim);
-        background: rgba(13, 9, 31, 0.7);
-        padding: 8px 18px;
-        border-radius: 50px;
-        border: 1px solid var(--border);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        text-align: center;
+    /* منطقة الكاميرا */
+    .camera-view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
     }
 
-    textarea.user-prompt {
-        width: 100%;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 16px;
-        color: var(--text);
-        font-size: 0.95rem;
-        font-family: var(--font-family);
-        resize: none;
-        outline: none;
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
-        user-select: text;
-        -webkit-user-select: text;
-    }
-    textarea.user-prompt:focus {
-        border-color: var(--purple);
-        background: rgba(0, 0, 0, 0.4);
-        box-shadow: 0 0 0 3px var(--purple-glow);
+    #cameraVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
-    .submit-btn {
-        background: linear-gradient(135deg, var(--purple-dark) 0%, #441ece 100%);
-        border: none;
-        padding: 16px 32px;
-        border-radius: 50px;
-        color: #fff;
-        font-size: 1.1rem;
-        font-weight: 700;
-        cursor: pointer;
-        width: 100%;
-        box-shadow: 0 10px 25px -5px var(--purple-glow);
-        transition: var(--transition-fast);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        font-family: var(--font-family);
-        transform: translateZ(0);
-        will-change: transform;
+    #imagePreview {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      background: #000;
     }
-    .submit-btn:active {
-        transform: scale(0.97);
+
+    /* شبكة التصوير */
+    .grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 3;
+      display: none;
     }
-    .submit-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-        filter: grayscale(20%);
+
+    .grid-overlay.active {
+      display: block;
+    }
+
+    .grid-line {
+      position: absolute;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .grid-line.horizontal {
+      left: 0;
+      width: 100%;
+      height: 1px;
+    }
+
+    .grid-line.vertical {
+      top: 0;
+      width: 1px;
+      height: 100%;
+    }
+
+    /* رسالة تنبيهية */
+    .toast {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(20px);
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      z-index: 25;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .toast.error {
+      border-color: #ff5252;
+      color: #ffb3b3;
+    }
+
+    .toast.success {
+      border-color: #2ecc71;
+      color: #b3ffe0;
+    }
+
+    /* زر التقاط الصورة */
+    .capture-zone {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .capture-btn {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: white;
+      border: 4px solid rgba(255,255,255,0.5);
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.15);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .capture-btn:active {
+      transform: scale(0.85);
+      box-shadow: 0 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    .capture-btn::after {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .capture-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ركن المعرض */
+    .gallery-preview {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .gallery-preview:hover {
+      border-color: rgba(255,255,255,0.6);
+    }
+
+    .gallery-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* البانل السفلي */
+    .bottom-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 5, 20, 0.85);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 16px 20px 24px;
+      z-index: 10;
+      border-radius: 25px 25px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* مربع الكتابة */
+    .message-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 25px;
+      padding: 4px 16px 4px 4px;
+    }
+
+    .attach-icon {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 8px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attach-icon:hover {
+      color: white;
+      transform: scale(1.1);
+    }
+
+    #messageBox {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 12px 4px;
+      font-size: 15px;
+      color: white;
+      font-family: inherit;
+      resize: none;
+      height: 44px;
+      line-height: 1.4;
+    }
+
+    #messageBox::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      background: linear-gradient(135deg, #8b5cf6, #c084fc);
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.6);
+    }
+
+    .send-btn:active {
+      transform: scale(0.9);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* مؤشر الصورة المرفقة */
+    .image-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124, 58, 237, 0.2);
+      border: 1px solid rgba(124, 58, 237, 0.4);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+    }
+
+    .image-indicator.active {
+      display: flex;
+    }
+
+    .remove-image {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Progress Bar */
     .progress-container {
-        width: 100%;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 2px;
-        overflow: hidden;
-        margin-top: 8px;
-        display: none;
-    }
-    .progress-container.active {
-        display: block;
-    }
-    .progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, var(--purple), var(--gold));
-        border-radius: 2px;
-        width: 0%;
-        transition: width 0.3s ease;
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
     }
 
-    /* Toast Notification */
-    .toast {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%) translateY(100px);
-        background: rgba(13, 9, 31, 0.95);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 12px 24px;
-        color: var(--text);
-        font-family: var(--font-family);
-        font-weight: 600;
-        font-size: 0.9rem;
-        z-index: 200;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        transition: transform var(--transition-normal);
-        text-align: center;
-        max-width: 90vw;
+    .progress-container.active {
+      display: block;
     }
-    .toast.show {
-        transform: translateX(-50%) translateY(0);
-    }
-    .toast.error {
-        border-color: var(--danger);
-        color: #ffb3b3;
-    }
-    .toast.success {
-        border-color: var(--success);
-        color: #b3ffe0;
-    }
-    .toast.info {
-        border-color: var(--purple);
-        color: var(--purple);
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
     }
 
     /* Loader */
     .loader {
-        display: inline-block;
-        width: 22px;
-        height: 22px;
-        border: 3px solid rgba(255, 255, 255, .2);
-        border-radius: 50%;
-        border-top-color: #fff;
-        animation: spin 0.8s linear infinite;
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
     }
+
     @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
+      to { transform: rotate(360deg); }
     }
 
-    /* Retry Button */
-    .retry-btn {
-        background: rgba(255, 196, 0, 0.1);
-        border: 1px solid rgba(255, 196, 0, 0.3);
-        color: var(--gold-light);
-        padding: 8px 20px;
-        border-radius: 50px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        font-family: var(--font-family);
-        transition: var(--transition-fast);
-        display: none;
-    }
-    .retry-btn.visible {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .retry-btn:active {
-        background: rgba(255, 196, 0, 0.2);
-        transform: scale(0.96);
+    #imageInput {
+      display: none;
     }
 
-    /* Responsive */
-    @media (max-width: 480px) {
-        .buttons-bottom {
-            gap: 20px;
-            padding: 14px 26px;
-        }
-        .capture-btn {
-            width: 68px;
-            height: 68px;
-        }
-        .gallery-btn {
-            padding: 10px 22px;
-            font-size: 0.85rem;
-        }
-        .instruction-box {
-            font-size: 0.8rem;
-            padding: 12px 16px;
-        }
+    @media (max-width: 400px) {
+      .capture-btn {
+        width: 65px;
+        height: 65px;
+      }
+      
+      .bottom-sheet {
+        padding: 12px 16px 20px;
+      }
     }
-
-    @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-            animation-duration: 0.01ms !important;
-            transition-duration: 0.01ms !important;
-        }
-    }
-
-    .hidden {
-        display: none !important;
-    }
-</style>
+  </style>
 </head>
 <body>
-    <!-- Auth Wall -->
-    <div id="authWall" class="auth-wall">
-        <h2>🔐 يلزم تسجيل الدخول</h2>
-        <p>يجب أن تكون مسجلاً لمعالجة الفواتير وحفظها في سحابة Fast Sokon</p>
-        <button id="goToProfileBtn" class="auth-btn">
-            <i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول أو إنشاء حساب
+  <div class="app-container">
+    <!-- شريط الحالة -->
+    <div class="status-bar">
+      <button class="back-btn" id="backButton" title="رجوع">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      
+      <button class="grid-btn" id="gridBtn" title="شبكة التصوير">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- منطقة الكاميرا -->
+    <div class="camera-view" id="cameraView">
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <img id="imagePreview" alt="معاينة الصورة" />
+      
+      <!-- شبكة التصوير -->
+      <div class="grid-overlay" id="gridOverlay">
+        <div class="grid-line horizontal" style="top: 33.33%"></div>
+        <div class="grid-line horizontal" style="top: 66.66%"></div>
+        <div class="grid-line vertical" style="left: 33.33%"></div>
+        <div class="grid-line vertical" style="left: 66.66%"></div>
+      </div>
+    </div>
+
+    <!-- رسالة تنبيه -->
+    <div class="toast" id="toast"></div>
+
+    <!-- منطقة الالتقاط -->
+    <div class="capture-zone">
+      <label for="imageInput" class="gallery-preview" id="galleryPreview" title="آخر صورة">
+        <img src="" alt="معرض" id="galleryThumb" style="display:none;">
+      </label>
+      
+      <button class="capture-btn" id="captureButton" title="التقاط صورة"></button>
+      
+      <div style="width:45px;"></div>
+    </div>
+
+    <!-- البانل السفلي -->
+    <div class="bottom-sheet">
+      <!-- مؤشر الصورة المرفقة -->
+      <div class="image-indicator" id="imageIndicator">
+        <span>📸 تم التقاط صورة</span>
+        <button class="remove-image" id="removeImageBtn">✕</button>
+      </div>
+
+      <!-- شريط التقدم -->
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <!-- مربع الكتابة -->
+      <div class="message-container">
+        <button class="attach-icon" id="attachBtn" title="اختيار من المعرض">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+          </svg>
         </button>
+        
+        <textarea 
+          id="messageBox" 
+          placeholder="اكتب تعليقك هنا..."
+          maxlength="500"
+        ></textarea>
+        
+        <button class="send-btn" id="sendButton" title="إرسال">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <!-- Camera Screen -->
-    <div id="cameraScreen" class="camera-screen">
-        <video id="video" class="video-full" autoplay playsinline muted></video>
-        <canvas id="hiddenCanvas" style="display:none;"></canvas>
-        <div class="overlay-ui">
-            <div class="top-bar">
-                <button id="homeBtn" class="icon-btn" title="العودة للرئيسية" aria-label="العودة للصفحة الرئيسية">
-                    <i class="fa-solid fa-house" style="font-size: 22px;"></i>
-                </button>
-                <div id="instructionBox" class="instruction-box" role="status" aria-live="polite">
-                    ⏳ جارٍ تحميل معالج الصور...
-                </div>
-            </div>
-            <div class="buttons-bottom">
-                <button id="galleryBtn" class="gallery-btn" aria-label="رفع ملف صورة">
-                    <i class="fa-solid fa-folder-open"></i> رفع ملف
-                </button>
-                <button id="captureBtn" class="capture-btn" disabled aria-label="التقاط صورة"></button>
-            </div>
-        </div>
-        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg,image/webp" style="display: none;">
-    </div>
-
-    <!-- Preview Screen -->
-    <div id="previewScreen" class="preview-screen">
-        <div class="preview-header">
-            <button id="backToCameraBtn" class="back-btn" aria-label="العودة للكاميرا">
-                <i class="fa-solid fa-arrow-right"></i> إلغاء والتقاط مجدداً
-            </button>
-        </div>
-        <div class="preview-wrapper">
-            <div class="preview-title">✨ معاينة الفاتورة</div>
-            <canvas id="enhancedResultCanvas" width="600" height="450"></canvas>
-            <div class="quality-badge" id="qualityBadge">
-                ✔ تم تحميل الصورة بنجاح
-            </div>
-            <textarea id="userPrompt" class="user-prompt" rows="3"
-            placeholder="توجيه خاص بالتحليل؟ أو اتركه فارغاً لاستخراج الجدول تلقائياً..."></textarea>
-            <button id="submitBtn" class="submit-btn">
-                <i class="fa-solid fa-cloud-upload-alt"></i> إرسال للمعالجة واستخراج البيانات
-            </button>
-            <div class="progress-container" id="progressContainer">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <button id="retryBtn" class="retry-btn">
-                <i class="fa-solid fa-rotate-right"></i> إعادة المحاولة
-            </button>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
-
-    <script is:inline>
-        // ============================================
-        // Sokoon Cam v4.0 - نسخة إنتاجية كاملة
-        // جميع التحسينات الأمنية والأداء مطبّقة
-        // ============================================
-
-        class SokoonCam {
-            constructor() {
-                // State
-                this.openCVReady = false;
-                this.videoStream = null;
-                this.base64EnhancedImage = null;
-                this.qualityInterval = null;
-                this.currentUser = null;
-                this.auth = null;
-                this.broadcastChannel = null;
-                this.loadingStates = new Set();
-                this.db = null; // IndexedDB reference
-
-                // OpenCV Mats tracking for guaranteed cleanup
-                this.activeMats = [];
-
-                // Retry & Timeout
-                this.maxRetries = 3;
-                this.retryCount = 0;
-                this.maxQueueRetries = 5; // 🛡️ حد أقصى للمحاولات لكل فاتورة
-                this.requestTimeout = 60000; // 60 seconds
-                this.uploadStartTime = null;
-
-                // Constants
-                this.DB_NAME = 'FastSokonDB';
-                this.DB_VERSION = 8;
-                this.MAX_SESSION_STORAGE_SIZE = 3 * 1024 * 1024; // 3MB safe limit
-                this.TARGET_UPLOAD_SIZE_MB = 1.5; // 🎯 حجم الرفع المستهدف
-
-                // DOM Elements cache
-                this.elements = {};
-
-                // Event handlers (for cleanup)
-                this.eventHandlers = new Map();
-
-                // Bind methods
-                this.handleCaptureClick = this.handleCaptureClick.bind(this);
-                this.handleSubmitClick = this.handleSubmitClick.bind(this);
-                this.syncPendingQueue = this.syncPendingQueue.bind(this);
-
-                // Initialize
-                this.init();
-            }
-
-            async init() {
-                try {
-                    this.cacheElements();
-                    this.setupBroadcastChannel();
-                    await this.openIndexedDB(); // ✅ فتح قاعدة البيانات أولاً
-                    await this.waitForFirebase();
-                    this.setupFirebase();
-                    this.setupAuthListener();
-                    this.setupEventListeners();
-                    this.setupKeyboardShortcuts();
-                    this.setupOnlineListener(); // ✅ مراقبة الاتصال بالإنترنت
-                    console.log('✅ Sokoon Cam v4.0 initialized');
-                } catch (error) {
-                    console.error('❌ Initialization failed:', error);
-                    this.showToast('حدث خطأ في تهيئة التطبيق. يرجى تحديث الصفحة.', 'error');
-                }
-            }
-
-            // ========== DOM Cache ==========
-            cacheElements() {
-                const ids = [
-                    'authWall', 'cameraScreen', 'previewScreen', 'video',
-                    'captureBtn', 'galleryBtn', 'homeBtn', 'fileInput',
-                    'backToCameraBtn', 'submitBtn', 'instructionBox',
-                    'enhancedResultCanvas', 'userPrompt', 'qualityBadge',
-                    'progressContainer', 'progressBar', 'retryBtn', 'toast',
-                    'goToProfileBtn', 'hiddenCanvas'
-                ];
-                ids.forEach(id => {
-                    this.elements[id] = document.getElementById(id);
-                });
-            }
-
-            // ========== ✅ IndexedDB - قاعدة البيانات للمزامنة دون اتصال ==========
-            openIndexedDB() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        // إنشاء مخزن للفواتير المعلقة إذا لم يكن موجوداً
-                        if (!db.objectStoreNames.contains('pendingQueue')) {
-                            const store = db.createObjectStore('pendingQueue', {
-                                keyPath: 'id',
-                                autoIncrement: true
-                            });
-                            store.createIndex('timestamp', 'timestamp', { unique: false });
-                            store.createIndex('retries', 'retries', { unique: false });
-                            console.log('✅ pendingQueue object store created');
-                        }
-                    };
-
-                    request.onsuccess = (event) => {
-                        this.db = event.target.result;
-                        console.log('✅ IndexedDB opened successfully');
-                        // محاولة مزامنة أي فواتير معلقة عند الفتح
-                        this.syncPendingQueue();
-                        resolve(this.db);
-                    };
-
-                    request.onerror = (event) => {
-                        console.error('❌ IndexedDB error:', event.target.error);
-                        this.db = null;
-                        resolve(null); // نستمر بدون قاعدة البيانات
-                    };
-
-                    request.onblocked = () => {
-                        console.warn('⚠️ IndexedDB blocked - closing other connections');
-                        this.db = null;
-                        resolve(null);
-                    };
-                });
-            }
-
-            async saveToPendingQueue(invoiceData) {
-                if (!this.db) {
-                    console.warn('⚠️ IndexedDB not available, cannot save pending invoice');
-                    return false;
-                }
-
-                return new Promise((resolve) => {
-                    try {
-                        const transaction = this.db.transaction(['pendingQueue'], 'readwrite');
-                        const store = transaction.objectStore('pendingQueue');
-
-                        const record = {
-                            ...invoiceData,
-                            timestamp: Date.now(),
-                            retries: invoiceData.retries || 0,
-                            status: 'pending'
-                        };
-
-                        const request = store.add(record);
-
-                        request.onsuccess = () => {
-                            console.log('📦 فاتورة محفوظة في قائمة الانتظار:', request.result);
-                            resolve(true);
-                        };
-
-                        request.onerror = (e) => {
-                            console.error('❌ فشل حفظ الفاتورة في قائمة الانتظار:', e.target.error);
-                            resolve(false);
-                        };
-
-                        transaction.oncomplete = () => {
-                            console.log('✅ معاملة IndexedDB اكتملت');
-                        };
-                    } catch (error) {
-                        console.error('❌ استثناء في saveToPendingQueue:', error);
-                        resolve(false);
-                    }
-                });
-            }
-
-            async getPendingQueueItems() {
-                if (!this.db) return [];
-
-                return new Promise((resolve) => {
-                    try {
-                        const transaction = this.db.transaction(['pendingQueue'], 'readonly');
-                        const store = transaction.objectStore('pendingQueue');
-                        const request = store.getAll();
-
-                        request.onsuccess = () => {
-                            resolve(request.result || []);
-                        };
-
-                        request.onerror = () => {
-                            console.error('❌ فشل قراءة قائمة الانتظار');
-                            resolve([]);
-                        };
-                    } catch (error) {
-                        console.error('❌ استثناء في getPendingQueueItems:', error);
-                        resolve([]);
-                    }
-                });
-            }
-
-            async removeFromPendingQueue(id) {
-                if (!this.db) return false;
-
-                return new Promise((resolve) => {
-                    try {
-                        const transaction = this.db.transaction(['pendingQueue'], 'readwrite');
-                        const store = transaction.objectStore('pendingQueue');
-                        const request = store.delete(id);
-
-                        request.onsuccess = () => resolve(true);
-                        request.onerror = () => resolve(false);
-                    } catch (error) {
-                        console.error('❌ استثناء في removeFromPendingQueue:', error);
-                        resolve(false);
-                    }
-                });
-            }
-
-            async updateQueueItemRetries(id, retries) {
-                if (!this.db) return false;
-
-                return new Promise((resolve) => {
-                    try {
-                        const transaction = this.db.transaction(['pendingQueue'], 'readwrite');
-                        const store = transaction.objectStore('pendingQueue');
-                        const request = store.get(id);
-
-                        request.onsuccess = () => {
-                            const item = request.result;
-                            if (item) {
-                                item.retries = retries;
-                                const updateRequest = store.put(item);
-                                updateRequest.onsuccess = () => resolve(true);
-                                updateRequest.onerror = () => resolve(false);
-                            } else {
-                                resolve(false);
-                            }
-                        };
-
-                        request.onerror = () => resolve(false);
-                    } catch (error) {
-                        console.error('❌ استثناء في updateQueueItemRetries:', error);
-                        resolve(false);
-                    }
-                });
-            }
-
-            async syncPendingQueue() {
-                if (!navigator.onLine) {
-                    console.log('📴 غير متصل بالإنترنت - تخطي المزامنة');
-                    return;
-                }
-
-                if (!this.auth || !this.currentUser) {
-                    console.log('🔐 لا يوجد مستخدم مسجل - تخطي المزامنة');
-                    return;
-                }
-
-                const pendingItems = await this.getPendingQueueItems();
-                if (pendingItems.length === 0) {
-                    console.log('✅ قائمة الانتظار فارغة');
-                    return;
-                }
-
-                console.log(`🔄 بدء مزامنة ${pendingItems.length} عنصر من قائمة الانتظار`);
-
-                for (const item of pendingItems) {
-                    // 🛡️ تخطي العناصر التي تجاوزت الحد الأقصى للمحاولات
-                    if (item.retries >= this.maxQueueRetries) {
-                        console.warn(`⚠️ العنصر ${item.id} تجاوز الحد الأقصى للمحاولات (${this.maxQueueRetries}) - سيتم تخطيه`);
-                        await this.removeFromPendingQueue(item.id);
-                        this.showToast('⚠️ تم تخطي فاتورة قديمة بعد 5 محاولات فاشلة. يرجى إعادة تصويرها.',
-                            'error', 6000);
-                        continue;
-                    }
-
-                    try {
-                        const token = await this.currentUser.getIdToken();
-                        const response = await fetch('/api/analyze', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`,
-                                ...(this._csrfToken && { 'X-CSRF-Token': this._csrfToken })
-                            },
-                            body: JSON.stringify({
-                                text: item.text || '',
-                                image: item.image || '',
-                                timestamp: item.timestamp,
-                                isRetry: true
-                            })
-                        });
-
-                        if (response.ok) {
-                            await this.removeFromPendingQueue(item.id);
-                            console.log(`✅ العنصر ${item.id} تمت مزامنته بنجاح`);
-                        } else {
-                            await this.updateQueueItemRetries(item.id, item.retries + 1);
-                            console.warn(`⚠️ فشلت مزامنة العنصر ${item.id} - محاولة ${item.retries + 1}`);
-                        }
-                    } catch (error) {
-                        await this.updateQueueItemRetries(item.id, item.retries + 1);
-                        console.error(`❌ خطأ في مزامنة العنصر ${item.id}:`, error);
-                    }
-                }
-
-                const remaining = await this.getPendingQueueItems();
-                if (remaining.length === 0) {
-                    this.showToast('✅ تمت مزامنة جميع الفواتير المعلقة بنجاح', 'success', 3000);
-                } else {
-                    this.showToast(`📦 ${remaining.length} فاتورة في انتظار المزامنة`, 'info', 3000);
-                }
-            }
-
-            setupOnlineListener() {
-                window.addEventListener('online', () => {
-                    console.log('🌐 تم استعادة الاتصال بالإنترنت');
-                    this.showToast('🌐 تم استعادة الاتصال - جاري مزامنة الفواتير المعلقة...', 'info', 3000);
-                    this.syncPendingQueue();
-                });
-
-                window.addEventListener('offline', () => {
-                    console.log('📴 تم فقدان الاتصال بالإنترنت');
-                    this.showToast('📴 أنت غير متصل حالياً. سيتم حفظ الفواتير للمزامنة لاحقاً.', 'info', 4000);
-                });
-            }
-
-            // ========== Firebase ==========
-            waitForFirebase() {
-                return new Promise((resolve) => {
-                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                        resolve();
-                        return;
-                    }
-                    let attempts = 0;
-                    const maxAttempts = 100;
-                    const check = () => {
-                        attempts++;
-                        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                            resolve();
-                        } else if (attempts < maxAttempts) {
-                            requestAnimationFrame(() => setTimeout(check, 50));
-                        } else {
-                            console.warn('Firebase not loaded, continuing without auth');
-                            resolve();
-                        }
-                    };
-                    check();
-                });
-            }
-
-            setupFirebase() {
-                if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                    if (!firebase.apps.length) {
-                        firebase.initializeApp(firebaseConfig);
-                    }
-                    this.auth = firebase.auth();
-                }
-                // 🛡️ قراءة CSRF Token
-                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                this._csrfToken = csrfMeta ? csrfMeta.content : null;
-            }
-
-            setupBroadcastChannel() {
-                try {
-                    this.broadcastChannel = new BroadcastChannel('fast_sokon_updates');
-                } catch (e) {
-                    // BroadcastChannel not supported - silent fallback
-                }
-            }
-
-            setupAuthListener() {
-                if (!this.auth) {
-                    this.hideAuthWall();
-                    this.showCameraScreen();
-                    this.initOpenCV();
-                    return;
-                }
-
-                this.auth.onAuthStateChanged((user) => {
-                    this.currentUser = user;
-                    if (user) {
-                        this.hideAuthWall();
-                        this.showCameraScreen();
-                        this.initOpenCV();
-                        // محاولة مزامنة الفواتير المعلقة بعد تسجيل الدخول
-                        this.syncPendingQueue();
-                    } else {
-                        this.showAuthWall();
-                        this.hideCameraScreen();
-                        this.stopCamera();
-                    }
-                });
-            }
-
-            // ========== OpenCV Initialization ==========
-            initOpenCV() {
-                if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
-                    this.openCVReady = true;
-                    this.onOpenCVReady();
-                    return;
-                }
-
-                // Wait for OpenCV to load
-                let attempts = 0;
-                const maxAttempts = 50; // 10 seconds max
-                const interval = setInterval(() => {
-                    attempts++;
-                    if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
-                        clearInterval(interval);
-                        this.openCVReady = true;
-                        this.onOpenCVReady();
-                    } else if (attempts >= maxAttempts) {
-                        clearInterval(interval);
-                        this.showOpenCVError();
-                    }
-                }, 200);
-
-                // Also listen for script load event
-                const opencvScript = document.getElementById('opencv-script');
-                if (opencvScript) {
-                    opencvScript.addEventListener('load', () => {
-                        clearInterval(interval);
-                        // Give it a moment for the WASM to initialize
-                        setTimeout(() => {
-                            if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
-                                this.openCVReady = true;
-                                this.onOpenCVReady();
-                            } else {
-                                this.showOpenCVError();
-                            }
-                        }, 500);
-                    });
-
-                    opencvScript.addEventListener('error', () => {
-                        clearInterval(interval);
-                        this.showOpenCVError();
-                    });
-                }
-            }
-
-            showOpenCVError() {
-                const box = this.elements.instructionBox;
-                if (box) {
-                    box.innerHTML = '❌ فشل تحميل معالج الصور. تأكد من الاتصال وأعد التحميل.';
-                    box.style.borderRightColor = 'var(--danger)';
-                }
-                if (this.elements.retryBtn) {
-                    this.elements.retryBtn.classList.add('visible');
-                    this.elements.retryBtn.onclick = () => {
-                        window.location.reload();
-                    };
-                }
-            }
-
-            onOpenCVReady() {
-                const box = this.elements.instructionBox;
-                if (box) {
-                    box.innerHTML = '⚡ النظام جاهز. وجه الكاميرا نحو الفاتورة';
-                }
-                if (this.elements.captureBtn) {
-                    this.elements.captureBtn.disabled = false;
-                }
-                this.startCamera();
-            }
-
-            // ========== Screen Management ==========
-            showAuthWall() {
-                const el = this.elements.authWall;
-                if (el) el.classList.remove('hidden');
-            }
-
-            hideAuthWall() {
-                const el = this.elements.authWall;
-                if (el) el.classList.add('hidden');
-            }
-
-            showCameraScreen() {
-                const cam = this.elements.cameraScreen;
-                const prev = this.elements.previewScreen;
-                if (cam) cam.classList.add('active');
-                if (prev) prev.classList.remove('active');
-            }
-
-            hideCameraScreen() {
-                const el = this.elements.cameraScreen;
-                if (el) el.classList.remove('active');
-            }
-
-            showPreviewScreen() {
-                const cam = this.elements.cameraScreen;
-                const prev = this.elements.previewScreen;
-                if (cam) cam.classList.remove('active');
-                if (prev) prev.classList.add('active');
-            }
-
-            // ========== Toast Notifications ==========
-            showToast(message, type = 'info', duration = 4000) {
-                const toast = this.elements.toast;
-                if (!toast) return;
-
-                toast.textContent = message;
-                toast.className = `toast show ${type}`;
-
-                clearTimeout(this._toastTimeout);
-                this._toastTimeout = setTimeout(() => {
-                    toast.className = 'toast';
-                }, duration);
-            }
-
-            // ========== Camera Management ==========
-            async startCamera() {
-                await this.stopCamera();
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: "environment",
-                            width: { ideal: 1920 },
-                            height: { ideal: 1080 }
-                        },
-                        audio: false
-                    });
-                    this.videoStream = stream;
-                    const video = this.elements.video;
-                    if (video) {
-                        video.srcObject = stream;
-                        await video.play();
-                    }
-                } catch (e) {
-                    const box = this.elements.instructionBox;
-                    if (box) {
-                        box.innerHTML = '❌ تعذر الوصول للكاميرا. تأكد من الصلاحيات.';
-                        box.style.borderRightColor = 'var(--danger)';
-                    }
-                    this.showToast('تعذر الوصول للكاميرا. تحقق من صلاحيات المتصفح.', 'error');
-                }
-            }
-
-            stopCamera() {
-                if (this.videoStream) {
-                    this.videoStream.getTracks().forEach(track => track.stop());
-                    this.videoStream = null;
-                }
-                if (this.qualityInterval) {
-                    clearInterval(this.qualityInterval);
-                    this.qualityInterval = null;
-                }
-            }
-
-            // ========== ✅ EXIF Orientation - معالجة اتجاه الصورة ==========
-            getEXIFOrientation(file) {
-                return new Promise((resolve) => {
-                    // نقرأ أول 128 كيلوبايت من الملف (كافية لبيانات EXIF)
-                    const blob = file.slice(0, 128 * 1024);
-                    const reader = new FileReader();
-
-                    reader.onload = function(e) {
-                        const view = new DataView(e.target.result);
-                        let orientation = 1; // افتراضي: بدون دوران
-
-                        // التحقق من توقيع JPEG
-                        if (view.getUint16(0, false) !== 0xFFD8) {
-                            resolve(orientation);
-                            return;
-                        }
-
-                        const length = view.byteLength;
-                        let offset = 2;
-
-                        while (offset < length) {
-                            if (view.getUint16(offset, false) !== 0xFFE1) {
-                                offset += 2 + view.getUint16(offset + 2, false);
-                                continue;
-                            }
-
-                            // وجدنا قسم EXIF
-                            const exifOffset = offset + 4;
-                            if (view.getUint32(exifOffset, false) !== 0x45786966) { // "Exif"
-                                resolve(orientation);
-                                return;
-                            }
-
-                            const tiffOffset = exifOffset + 6;
-                            const isLittleEndian = view.getUint16(tiffOffset, false) === 0x4949;
-
-                            const ifdOffset = tiffOffset + 4 + view.getUint32(tiffOffset + 4, isLittleEndian);
-                            const entries = view.getUint16(ifdOffset, isLittleEndian);
-
-                            for (let i = 0; i < entries; i++) {
-                                const entryOffset = ifdOffset + 2 + i * 12;
-                                const tag = view.getUint16(entryOffset, isLittleEndian);
-
-                                if (tag === 0x0112) { // Orientation tag
-                                    orientation = view.getUint16(entryOffset + 8, isLittleEndian);
-                                    resolve(orientation);
-                                    return;
-                                }
-                            }
-
-                            resolve(orientation);
-                            return;
-                        }
-
-                        resolve(orientation);
-                    };
-
-                    reader.onerror = () => resolve(1);
-                    reader.readAsDataURL(blob);
-                });
-            }
-
-            applyEXIFRotation(canvas, ctx, img, orientation) {
-                // تطبيق الدوران بناءً على قيمة EXIF Orientation
-                const orientations = {
-                    1: { rotate: 0, flip: false }, // Normal
-                    2: { rotate: 0, flip: true }, // Flip horizontal
-                    3: { rotate: 180, flip: false }, // Rotate 180
-                    4: { rotate: 180, flip: true }, // Flip vertical
-                    5: { rotate: 90, flip: true }, // Rotate 90 + flip horizontal
-                    6: { rotate: 90, flip: false }, // Rotate 90 CW
-                    7: { rotate: 270, flip: true }, // Rotate 270 + flip horizontal
-                    8: { rotate: 270, flip: false } // Rotate 270 CW
-                };
-
-                const o = orientations[orientation] || orientations[1];
-
-                if (o.rotate === 90 || o.rotate === 270) {
-                    canvas.width = img.height;
-                    canvas.height = img.width;
-                } else {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                }
-
-                ctx.save();
-
-                if (o.rotate) {
-                    ctx.translate(canvas.width / 2, canvas.height / 2);
-                    ctx.rotate(o.rotate * Math.PI / 180);
-                    ctx.translate(-img.width / 2, -img.height / 2);
-                }
-
-                if (o.flip) {
-                    ctx.scale(-1, 1);
-                    ctx.translate(-img.width, 0);
-                }
-
-                ctx.drawImage(img, 0, 0);
-                ctx.restore();
-            }
-
-            // ========== ✅ ضغط ذكي للصورة ==========
-            async smartCompress(canvas, targetMaxSizeMB = null) {
-                const targetMB = targetMaxSizeMB || this.TARGET_UPLOAD_SIZE_MB;
-                let quality = 0.85;
-                let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                const maxBytes = targetMB * 1024 * 1024 * 1.33; // base64 ~33% overhead
-
-                // تقليل الجودة تدريجياً حتى نصل للحجم المطلوب
-                while (dataUrl.length > maxBytes && quality > 0.5) {
-                    quality -= 0.08;
-                    dataUrl = canvas.toDataURL('image/jpeg', quality);
-                }
-
-                // لو الصورة لسه كبيرة جداً، نقلل الأبعاد
-                if (dataUrl.length > maxBytes && canvas.width > 1200) {
-                    const scaleFactor = Math.sqrt(maxBytes / dataUrl.length);
-                    const scaledCanvas = document.createElement('canvas');
-                    scaledCanvas.width = Math.round(canvas.width * scaleFactor);
-                    scaledCanvas.height = Math.round(canvas.height * scaleFactor);
-                    const scaledCtx = scaledCanvas.getContext('2d', { willReadFrequently: true });
-                    scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-                    dataUrl = scaledCanvas.toDataURL('image/jpeg', 0.75);
-                }
-
-                return dataUrl;
-            }
-
-            // ========== 🛡️ التحقق من صحة Base64 ==========
-            isValidBase64Image(str) {
-                if (!str || typeof str !== 'string') return false;
-                return /^data:image\/(jpeg|png|webp|jpg);base64,[A-Za-z0-9+/=]+$/.test(str);
-            }
-
-            // ========== Direct Image Processing (No Enhancement) ==========
-            async processAndShowDirectly(imageSource) {
-                try {
-                    const canvas = this.elements.enhancedResultCanvas;
-                    
-                    if (canvas && imageSource) {
-                        const ctx = canvas.getContext('2d');
-                        
-                        // If imageSource is a canvas or video, draw it directly
-                        if (imageSource instanceof HTMLCanvasElement || imageSource instanceof HTMLVideoElement) {
-                            canvas.width = imageSource.width || imageSource.videoWidth;
-                            canvas.height = imageSource.height || imageSource.videoHeight;
-                            ctx.drawImage(imageSource, 0, 0);
-                        } else if (imageSource instanceof HTMLImageElement) {
-                            canvas.width = imageSource.width;
-                            canvas.height = imageSource.height;
-                            ctx.drawImage(imageSource, 0, 0);
-                        }
-                        
-                        // ✅ استخدام ضغط JPEG ذكي
-                        this.base64EnhancedImage = await this.smartCompress(canvas);
-                    }
-
-                    const badge = this.elements.qualityBadge;
-                    if (badge) {
-                        badge.innerHTML = '✔ تم تحميل الصورة بنجاح | ضغط ذكي مُطبّق';
-                    }
-
-                    this.stopCamera();
-                    this.showPreviewScreen();
-
-                    const prompt = this.elements.userPrompt;
-                    if (prompt) prompt.value = '';
-
-                    const retryBtn = this.elements.retryBtn;
-                    if (retryBtn) retryBtn.classList.remove('visible');
-
-                    this.cleanupAllMats();
-
-                    return true;
-                } catch (e) {
-                    console.error('Process error:', e);
-                    this.showToast('فشل معالجة الصورة. حاول مرة أخرى.', 'error');
-                    return false;
-                }
-            }
-
-            cleanupAllMats() {
-                this.activeMats.forEach(mat => {
-                    try {
-                        if (mat && !mat.isDeleted()) {
-                            mat.delete();
-                        }
-                    } catch (e) {
-                        // Ignore cleanup errors
-                    }
-                });
-                this.activeMats = [];
-            }
-
-            // ========== Capture & Upload ==========
-            async handleCaptureClick() {
-                const video = this.elements.video;
-                if (!this.openCVReady || !video || !video.videoWidth) return;
-                if (this.isLoading('captureBtn')) return;
-
-                this.setLoading('captureBtn', true);
-
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    ctx.drawImage(video, 0, 0);
-
-                    await this.processAndShowDirectly(canvas);
-                } catch (e) {
-                    console.error('Capture error:', e);
-                    this.showToast('حدث خطأ أثناء التصوير.', 'error');
-                } finally {
-                    this.setLoading('captureBtn', false);
-                }
-            }
-
-            async handleUpload(file) {
-                if (!file || !file.type.startsWith('image/')) {
-                    this.showToast('الرجاء اختيار ملف صورة صالح.', 'error');
-                    return;
-                }
-
-                if (file.size > 20 * 1024 * 1024) {
-                    this.showToast('حجم الملف كبير جداً. الحد الأقصى 20 ميجابايت.', 'error');
-                    return;
-                }
-
-                // ✅ قراءة EXIF Orientation قبل المعالجة
-                const orientation = await this.getEXIFOrientation(file);
-                console.log(`📷 EXIF Orientation: ${orientation}`);
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-                        // ✅ تطبيق تصحيح الاتجاه
-                        this.applyEXIFRotation(canvas, ctx, img, orientation);
-                        
-                        // عرض الصورة مباشرة بدون تحسين
-                        this.processAndShowDirectly(canvas);
-                    };
-                    img.onerror = () => {
-                        this.showToast('فشل تحميل الصورة. جرب ملفاً آخر.', 'error');
-                    };
-                    img.src = e.target.result;
-                };
-                reader.onerror = () => {
-                    this.showToast('فشل قراءة الملف.', 'error');
-                };
-                reader.readAsDataURL(file);
-            }
-
-            // ========== Submit with Retry & Offline Support ==========
-            async handleSubmitClick() {
-                // 🛡️ التحقق من صحة الصورة قبل الإرسال
-                if (!this.isValidBase64Image(this.base64EnhancedImage)) {
-                    this.showToast('❌ بيانات الصورة غير صالحة. أعد التصوير من فضلك.', 'error');
-                    return;
-                }
-
-                if (this.isLoading('submitBtn')) return;
-
-                // ✅ التحقق من الاتصال بالإنترنت
-                if (!navigator.onLine) {
-                    await this.handleOfflineSubmit();
-                    return;
-                }
-
-                this.retryCount = 0;
-                await this.submitWithRetry();
-            }
-
-            async handleOfflineSubmit() {
-                const userText = this.elements.userPrompt?.value?.trim() || '';
-                const promptText = userText ||
-                    "استخرج الجدول من الفاتورة: اسم الصنف، السعر، الكمية، الإجمالي.";
-
-                const pendingInvoice = {
-                    text: promptText,
-                    image: this.base64EnhancedImage,
-                    timestamp: Date.now(),
-                    retries: 0
-                };
-
-                const saved = await this.saveToPendingQueue(pendingInvoice);
-
-                if (saved) {
-                    this.showToast('📦 تم حفظ الفاتورة للمزامنة التلقائية عند عودة الإنترنت', 'info', 5000);
-                    // العودة للكاميرا لتصوير فاتورة أخرى
-                    this.showCameraScreen();
-                    this.base64EnhancedImage = null;
-                    this.retryCount = 0;
-                    this.showProgress(false);
-                    const retryBtn = this.elements.retryBtn;
-                    if (retryBtn) retryBtn.classList.remove('visible');
-                    this.startCamera();
-                } else {
-                    this.showToast('❌ فشل حفظ الفاتورة محلياً. تأكد من توفر مساحة تخزين كافية.', 'error', 6000);
-                }
-            }
-
-            async submitWithRetry() {
-                this.setLoading('submitBtn', true);
-                this.showProgress(true);
-                this.updateProgress(10);
-
-                let userText = this.elements.userPrompt?.value?.trim() || '';
-                if (!userText) {
-                    userText = "استخرج الجدول من الفاتورة: اسم الصنف، السعر، الكمية، الإجمالي.";
-                }
-
-                this.uploadStartTime = Date.now();
-
-                try {
-                    const result = await this.sendRequest(userText);
-                    this.handleSubmitSuccess(result);
-                } catch (error) {
-                    console.error('Submit error:', error);
-
-                    // ✅ إذا كان الخطأ بسبب انقطاع الإنترنت، احفظ في قائمة الانتظار
-                    if (!navigator.onLine || error.message?.includes('NetworkError') || error.message
-                        ?.includes('Failed to fetch')) {
-                        await this.handleOfflineSubmit();
-                        this.setLoading('submitBtn', false);
-                        this.showProgress(false);
-                        return;
-                    }
-
-                    if (this.retryCount < this.maxRetries) {
-                        this.retryCount++;
-                        this.updateProgress(20 + (this.retryCount * 20));
-                        this.showToast(`محاولة ${this.retryCount} من ${this.maxRetries}...`, 'info', 2000);
-
-                        const delay = Math.min(1000 * Math.pow(2, this.retryCount - 1), 8000);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-
-                        await this.submitWithRetry();
-                    } else {
-                        this.handleSubmitFailure(error);
-                    }
-                }
-            }
-
-            async sendRequest(userText) {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-
-                try {
-                    let token = null;
-                    if (this.auth && this.currentUser) {
-                        token = await this.currentUser.getIdToken();
-                    }
-
-                    // ✅ استخدام الصورة المضغوطة مسبقاً
-                    let imageData = this.base64EnhancedImage;
-
-                    // 🛡️ تحقق إضافي من الحجم
-                    const imageSizeMB = imageData.length / (1024 * 1024);
-                    if (imageSizeMB > 3) {
-                        const canvas = this.elements.enhancedResultCanvas;
-                        if (canvas) {
-                            imageData = await this.smartCompress(canvas, 1.0);
-                        }
-                    }
-
-                    const payload = {
-                        text: userText,
-                        image: imageData,
-                        timestamp: Date.now()
-                    };
-
-                    this.updateProgress(30);
-
-                    const headers = {
-                        'Content-Type': 'application/json',
-                        ...(token && { 'Authorization': `Bearer ${token}` }),
-                        // 🛡️ إضافة CSRF Token
-                        ...(this._csrfToken && { 'X-CSRF-Token': this._csrfToken })
-                    };
-
-                    const response = await fetch('/api/analyze', {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify(payload),
-                        signal: controller.signal
-                    });
-
-                    this.updateProgress(70);
-
-                    if (!response.ok) {
-                        const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.error || `خطأ في الخادم (${response.status})`);
-                    }
-
-                    const result = await response.json();
-                    this.updateProgress(90);
-
-                    return result;
-                } finally {
-                    clearTimeout(timeoutId);
-                }
-            }
-
-            handleSubmitSuccess(result) {
-                this.updateProgress(100);
-
-                try {
-                    const storageData = {
-                        text: result.text || '',
-                        meta: result.meta || {},
-                        timestamp: Date.now()
-                    };
-
-                    const dataStr = JSON.stringify(storageData);
-
-                    if (dataStr.length < this.MAX_SESSION_STORAGE_SIZE) {
-                        sessionStorage.setItem('analysis_result', dataStr);
-                    } else {
-                        sessionStorage.setItem('analysis_result', JSON.stringify({
-                            text: (result.text || '').substring(0, 5000),
-                            truncated: true
-                        }));
-                        this.showToast('تم تقليص النتيجة لحفظها. بعض التفاصيل قد تكون مختصرة.',
-                        'info');
-                    }
-                } catch (storageError) {
-                    console.warn('sessionStorage error:', storageError);
-                    try {
-                        sessionStorage.setItem('analysis_result', JSON.stringify({
-                            text: 'تم معالجة الفاتورة بنجاح',
-                            minimal: true
-                        }));
-                    } catch (e) {
-                        this.showToast('لا يمكن حفظ النتيجة محلياً. سيتم التوجيه للمراجعة.', 'info');
-                    }
-                }
-
-                this.showToast('✅ تمت المعالجة بنجاح!', 'success', 2000);
-
-                setTimeout(() => {
-                    window.location.href = '/review';
-                }, 500);
-            }
-
-            handleSubmitFailure(error) {
-                this.showProgress(false);
-                this.setLoading('submitBtn', false);
-
-                let errorMsg = 'فشل الاتصال بالخادم. ';
-                if (error.name === 'AbortError') {
-                    errorMsg += 'انتهت مهلة الاتصال. تحقق من سرعة الإنترنت.';
-                } else if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
-                    errorMsg += 'تعذر الاتصال بالإنترنت. سيتم حفظ الفاتورة للمزامنة التلقائية.';
-                    // حفظ تلقائي عند فشل الشبكة
-                    this.handleOfflineSubmit();
-                    return;
-                } else {
-                    errorMsg += error.message || 'خطأ غير معروف';
-                }
-
-                this.showToast(errorMsg, 'error', 6000);
-
-                const retryBtn = this.elements.retryBtn;
-                if (retryBtn) {
-                    retryBtn.classList.add('visible');
-                    retryBtn.onclick = () => {
-                        retryBtn.classList.remove('visible');
-                        this.retryCount = 0;
-                        this.handleSubmitClick();
-                    };
-                }
-            }
-
-            // ========== Progress Bar ==========
-            showProgress(show) {
-                const container = this.elements.progressContainer;
-                const bar = this.elements.progressBar;
-                if (container) {
-                    container.classList.toggle('active', show);
-                }
-                if (bar && !show) {
-                    bar.style.width = '0%';
-                }
-            }
-
-            updateProgress(percent) {
-                const bar = this.elements.progressBar;
-                if (bar) {
-                    bar.style.width = `${Math.min(100, percent)}%`;
-                }
-            }
-
-            // ========== Loading States ==========
-            setLoading(btnId, loading) {
-                const btn = document.getElementById(btnId);
-                if (!btn) return;
-
-                if (loading) {
-                    if (!btn.dataset.originalHTML) {
-                        btn.dataset.originalHTML = btn.innerHTML;
-                    }
-                    btn.disabled = true;
-
-                    if (btnId === 'submitBtn') {
-                        btn.innerHTML = '<span class="loader"></span> جاري الإرسال...';
-                    }
-
-                    this.loadingStates.add(btnId);
-                } else {
-                    btn.disabled = false;
-                    btn.innerHTML = btn.dataset.originalHTML || btn.innerHTML;
-                    delete btn.dataset.originalHTML;
-                    this.loadingStates.delete(btnId);
-                }
-            }
-
-            isLoading(btnId) {
-                return this.loadingStates.has(btnId);
-            }
-
-            // ========== Event Listeners ==========
-            setupEventListeners() {
-                this.addListener('homeBtn', 'click', () => {
-                    window.location.href = '/';
-                });
-
-                this.addListener('captureBtn', 'click', this.handleCaptureClick);
-
-                this.addListener('galleryBtn', 'click', () => {
-                    this.elements.fileInput?.click();
-                });
-
-                this.addListener('fileInput', 'change', (e) => {
-                    if (e.target.files[0]) {
-                        this.handleUpload(e.target.files[0]);
-                        e.target.value = '';
-                    }
-                });
-
-                this.addListener('backToCameraBtn', 'click', () => {
-                    this.showCameraScreen();
-                    this.base64EnhancedImage = null;
-                    this.retryCount = 0;
-                    this.showProgress(false);
-
-                    const retryBtn = this.elements.retryBtn;
-                    if (retryBtn) retryBtn.classList.remove('visible');
-
-                    this.startCamera();
-                });
-
-                this.addListener('submitBtn', 'click', this.handleSubmitClick);
-
-                this.addListener('goToProfileBtn', 'click', () => {
-                    window.location.href = '/profile';
-                });
-
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.addEventListener('click', (e) => {
-                        if (e.target === modal) {
-                            modal.classList.remove('active');
-                        }
-                    });
-                });
-            }
-
-            addListener(id, event, handler) {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.addEventListener(event, handler);
-                    const key = `${id}:${event}`;
-                    this.eventHandlers.set(key, { element, event, handler });
-                }
-            }
-
-            setupKeyboardShortcuts() {
-                const keyboardHandler = (e) => {
-                    if (e.key === 'Escape') {
-                        const preview = this.elements.previewScreen;
-                        if (preview && preview.classList.contains('active')) {
-                            this.showCameraScreen();
-                            this.base64EnhancedImage = null;
-                            this.showProgress(false);
-                            this.startCamera();
-                        }
-                    }
-                    if (e.key === ' ' || e.code === 'Space') {
-                        const cam = this.elements.cameraScreen;
-                        if (cam && cam.classList.contains('active') &&
-                            document.activeElement === document.body) {
-                            e.preventDefault();
-                            this.handleCaptureClick();
-                        }
-                    }
-                };
-
-                document.addEventListener('keydown', keyboardHandler);
-                this.eventHandlers.set('keyboard', { element: document, event: 'keydown',
-                    handler: keyboardHandler });
-            }
-
-            // ========== Cleanup ==========
-            destroy() {
-                this.stopCamera();
-                this.cleanupAllMats();
-
-                if (this.broadcastChannel) {
-                    this.broadcastChannel.close();
-                    this.broadcastChannel = null;
-                }
-
-                if (this.db) {
-                    this.db.close();
-                    this.db = null;
-                }
-
-                this.eventHandlers.forEach(({ element, event, handler }) => {
-                    element.removeEventListener(event, handler);
-                });
-                this.eventHandlers.clear();
-
-                clearTimeout(this._toastTimeout);
-                this.base64EnhancedImage = null;
-
-                console.log('✅ Sokoon Cam destroyed');
-            }
+    <input type="file" id="imageInput" accept="image/*" capture="environment">
+  </div>
+
+  <script>
+    // ============================================
+    // لحظة كام - الإصدار النهائي
+    // ============================================
+
+    class LahzaCam {
+      constructor() {
+        // العناصر
+        this.cameraVideo = document.getElementById('cameraVideo');
+        this.imagePreview = document.getElementById('imagePreview');
+        this.imageInput = document.getElementById('imageInput');
+        this.captureButton = document.getElementById('captureButton');
+        this.backButton = document.getElementById('backButton');
+        this.sendButton = document.getElementById('sendButton');
+        this.messageBox = document.getElementById('messageBox');
+        this.attachBtn = document.getElementById('attachBtn');
+        this.removeImageBtn = document.getElementById('removeImageBtn');
+        this.imageIndicator = document.getElementById('imageIndicator');
+        this.galleryThumb = document.getElementById('galleryThumb');
+        this.gridBtn = document.getElementById('gridBtn');
+        this.gridOverlay = document.getElementById('gridOverlay');
+        this.toast = document.getElementById('toast');
+        this.progressContainer = document.getElementById('progressContainer');
+        this.progressBar = document.getElementById('progressBar');
+
+        // الحالة
+        this.currentStream = null;
+        this.facingMode = 'environment';
+        this.capturedImageData = null;
+        this.isSubmitting = false;
+        this.maxRetries = 3;
+        this.retryCount = 0;
+        this.requestTimeout = 30000; // 30 ثانية
+
+        // بدء التشغيل
+        this.init();
+      }
+
+      init() {
+        this.setupEventListeners();
+        this.startCamera('environment');
+      }
+
+      // ========== وظائف مساعدة ==========
+      showToast(message, type = 'info', duration = 3000) {
+        const toast = this.toast;
+        if (!toast) return;
+
+        toast.textContent = message;
+        toast.className = `toast show ${type}`;
+
+        clearTimeout(this._toastTimeout);
+        this._toastTimeout = setTimeout(() => {
+          toast.className = 'toast';
+        }, duration);
+      }
+
+      showProgress(show) {
+        if (this.progressContainer) {
+          this.progressContainer.classList.toggle('active', show);
+        }
+        if (this.progressBar && !show) {
+          this.progressBar.style.width = '0%';
+        }
+      }
+
+      updateProgress(percent) {
+        if (this.progressBar) {
+          this.progressBar.style.width = `${Math.min(100, percent)}%`;
+        }
+      }
+
+      setSubmitting(loading) {
+        this.isSubmitting = loading;
+        const btn = this.sendButton;
+        if (!btn) return;
+
+        if (loading) {
+          btn.disabled = true;
+          btn.dataset.originalHTML = btn.innerHTML;
+          btn.innerHTML = '<span class="loader"></span>';
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = btn.dataset.originalHTML || btn.innerHTML;
+          delete btn.dataset.originalHTML;
+        }
+      }
+
+      // ========== الكاميرا ==========
+      async startCamera(mode = 'environment') {
+        if (this.currentStream) {
+          this.currentStream.getTracks().forEach(track => track.stop());
+        }
+        
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              facingMode: mode, 
+              width: { ideal: 1280 }, 
+              height: { ideal: 720 } 
+            },
+            audio: false
+          });
+          
+          this.cameraVideo.srcObject = stream;
+          this.currentStream = stream;
+          this.facingMode = mode;
+          
+          this.cameraVideo.style.display = 'block';
+          this.imagePreview.style.display = 'none';
+        } catch (err) {
+          console.error('خطأ في الكاميرا:', err);
+          this.showToast('⚠️ تعذر الوصول إلى الكاميرا', 'error');
+          this.cameraVideo.style.display = 'none';
+        }
+      }
+
+      // ========== التقاط الصورة ==========
+      captureImage() {
+        if (!this.currentStream || this.cameraVideo.videoWidth === 0) {
+          this.showToast('الكاميرا غير جاهزة بعد', 'error');
+          return;
         }
 
-        // Initialize application
-        let app;
-        document.addEventListener('DOMContentLoaded', () => {
-            app = new SokoonCam();
-            window.camApp = app;
+        const canvas = document.createElement('canvas');
+        canvas.width = this.cameraVideo.videoWidth;
+        canvas.height = this.cameraVideo.videoHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // عكس الصورة إذا كانت الكاميرا الأمامية
+        if (this.facingMode === 'user') {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        }
+        
+        ctx.drawImage(this.cameraVideo, 0, 0, canvas.width, canvas.height);
+        
+        // ضغط الصورة للحجم المناسب
+        this.capturedImageData = this.compressImage(canvas);
+        
+        // عرض الصورة
+        this.imagePreview.src = this.capturedImageData;
+        this.imagePreview.style.display = 'block';
+        this.cameraVideo.style.display = 'none';
+        
+        // تحديث المعرض المصغر
+        this.galleryThumb.src = this.capturedImageData;
+        this.galleryThumb.style.display = 'block';
+        
+        // إظهار مؤشر الصورة
+        this.imageIndicator.classList.add('active');
+        
+        this.showToast('📸 تم الالتقاط!', 'success');
+      }
+
+      // ========== ضغط الصورة ==========
+      compressImage(canvas, targetSizeMB = 1.5) {
+        let quality = 0.85;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const maxBytes = targetSizeMB * 1024 * 1024 * 1.33; // base64 overhead
+
+        while (dataUrl.length > maxBytes && quality > 0.5) {
+          quality -= 0.08;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        if (dataUrl.length > maxBytes && canvas.width > 1200) {
+          const scaleFactor = Math.sqrt(maxBytes / dataUrl.length);
+          const scaledCanvas = document.createElement('canvas');
+          scaledCanvas.width = Math.round(canvas.width * scaleFactor);
+          scaledCanvas.height = Math.round(canvas.height * scaleFactor);
+          const scaledCtx = scaledCanvas.getContext('2d');
+          scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+          dataUrl = scaledCanvas.toDataURL('image/jpeg', 0.75);
+        }
+
+        return dataUrl;
+      }
+
+      // ========== رفع من المعرض ==========
+      handleFileUpload(file) {
+        if (!file || !file.type.startsWith('image/')) {
+          this.showToast('الرجاء اختيار ملف صورة صالح', 'error');
+          return;
+        }
+
+        if (file.size > 20 * 1024 * 1024) {
+          this.showToast('حجم الملف كبير جداً. الحد الأقصى 20 ميجابايت', 'error');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          // عرض الصورة كما هي بدون تحسين
+          this.capturedImageData = e.target.result;
+          
+          this.imagePreview.src = this.capturedImageData;
+          this.imagePreview.style.display = 'block';
+          this.cameraVideo.style.display = 'none';
+          
+          this.galleryThumb.src = this.capturedImageData;
+          this.galleryThumb.style.display = 'block';
+          
+          this.imageIndicator.classList.add('active');
+          this.showToast('🖼️ تم تحميل الصورة', 'success');
+        };
+        reader.onerror = () => {
+          this.showToast('فشل قراءة الملف', 'error');
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // ========== العودة للكاميرا ==========
+      returnToCamera() {
+        this.imagePreview.style.display = 'none';
+        this.cameraVideo.style.display = 'block';
+        this.imageIndicator.classList.remove('active');
+        this.capturedImageData = null;
+        this.imageInput.value = '';
+        
+        if (!this.currentStream || this.currentStream.getVideoTracks()[0].readyState === 'ended') {
+          this.startCamera(this.facingMode);
+        }
+      }
+
+      // ========== الإرسال - المهمة الأساسية ==========
+      async handleSend() {
+        if (this.isSubmitting) return;
+
+        const message = this.messageBox.value.trim();
+        const hasImage = this.capturedImageData ? true : false;
+        
+        if (!hasImage && message === '') {
+          this.showToast('✨ التقط صورة أو اكتب رسالة', 'info');
+          return;
+        }
+
+        // تجهيز البيانات للإرسال
+        const payload = {
+          text: message || 'استخراج بيانات الفاتورة',
+          image: hasImage ? this.capturedImageData : null,
+          timestamp: Date.now()
+        };
+
+        // بدء عملية الإرسال مع إعادة المحاولة
+        this.retryCount = 0;
+        await this.submitWithRetry(payload);
+      }
+
+      async submitWithRetry(payload) {
+        this.setSubmitting(true);
+        this.showProgress(true);
+        this.updateProgress(10);
+
+        try {
+          const result = await this.sendToAI(payload);
+          this.handleSubmitSuccess(result);
+        } catch (error) {
+          console.error('Submit error:', error);
+
+          if (this.retryCount < this.maxRetries) {
+            this.retryCount++;
+            this.updateProgress(20 + (this.retryCount * 20));
+            this.showToast(`محاولة ${this.retryCount} من ${this.maxRetries}...`, 'info', 2000);
+
+            const delay = Math.min(1000 * Math.pow(2, this.retryCount - 1), 8000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+
+            await this.submitWithRetry(payload);
+          } else {
+            this.handleSubmitFailure(error);
+          }
+        }
+      }
+
+      async sendToAI(payload) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
+
+        try {
+          this.updateProgress(30);
+
+          const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+
+          this.updateProgress(70);
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `خطأ في الخادم (${response.status})`);
+          }
+
+          const result = await response.json();
+          this.updateProgress(90);
+
+          return result;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      handleSubmitSuccess(result) {
+        this.updateProgress(100);
+        this.showToast('✅ تمت المعالجة بنجاح!', 'success', 2000);
+
+        // حفظ النتيجة في sessionStorage
+        try {
+          const storageData = {
+            text: result.text || '',
+            meta: result.meta || {},
+            timestamp: Date.now()
+          };
+          sessionStorage.setItem('analysis_result', JSON.stringify(storageData));
+        } catch (e) {
+          console.warn('sessionStorage error:', e);
+        }
+
+        // التوجيه لصفحة المراجعة بعد الإرسال الناجح
+        setTimeout(() => {
+          window.location.href = '/review';
+        }, 500);
+      }
+
+      handleSubmitFailure(error) {
+        this.showProgress(false);
+        this.setSubmitting(false);
+
+        let errorMsg = 'فشل الاتصال بالخادم. ';
+        if (error.name === 'AbortError') {
+          errorMsg += 'انتهت مهلة الاتصال. تحقق من سرعة الإنترنت.';
+        } else if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
+          errorMsg += 'تعذر الاتصال بالإنترنت. حاول مرة أخرى.';
+        } else {
+          errorMsg += error.message || 'خطأ غير معروف';
+        }
+
+        this.showToast(errorMsg, 'error', 6000);
+      }
+
+      // ========== إعداد المستمعين ==========
+      setupEventListeners() {
+        // التقاط الصورة
+        this.captureButton.addEventListener('click', () => this.captureImage());
+
+        // رفع من المعرض
+        this.attachBtn.addEventListener('click', () => this.imageInput.click());
+        
+        this.imageInput.addEventListener('change', (e) => {
+          if (e.target.files[0]) {
+            this.handleFileUpload(e.target.files[0]);
+            e.target.value = '';
+          }
         });
 
-        // Cleanup on page unload
-        const cleanup = () => {
-            if (app) app.destroy();
-        };
-        window.addEventListener('beforeunload', cleanup);
-        window.addEventListener('pagehide', cleanup);
-        window.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') {
-                if (app) app.stopCamera();
-            }
+        // النقر على الصورة للعودة للكاميرا
+        this.imagePreview.addEventListener('click', () => this.returnToCamera());
+
+        // إزالة الصورة
+        this.removeImageBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.returnToCamera();
+          this.showToast('🗑️ تمت إزالة الصورة', 'info');
         });
-    </script>
+
+        // تبديل الشبكة
+        this.gridBtn.addEventListener('click', () => {
+          this.gridOverlay.classList.toggle('active');
+          this.showToast(
+            this.gridOverlay.classList.contains('active') ? '🔲 الشبكة مفعلة' : '🔲 الشبكة معطلة',
+            'info', 1500
+          );
+        });
+
+        // زر الرجوع
+        this.backButton.addEventListener('click', () => {
+          if (this.capturedImageData) {
+            if (confirm('لديك صورة غير مرسلة. هل تريد المغادرة؟')) {
+              window.location.href = '/';
+            }
+          } else {
+            window.location.href = '/';
+          }
+        });
+
+        // زر الإرسال
+        this.sendButton.addEventListener('click', () => this.handleSend());
+
+        // إرسال بـ Enter
+        this.messageBox.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.handleSend();
+          }
+        });
+
+        // النقر المزدوج للتبديل بين الكاميرات
+        this.cameraVideo.addEventListener('dblclick', () => {
+          const newMode = this.facingMode === 'environment' ? 'user' : 'environment';
+          this.startCamera(newMode);
+          this.showToast(
+            `📷 ${newMode === 'environment' ? 'الكاميرا الخلفية' : 'الكاميرا الأمامية'}`,
+            'info', 1500
+          );
+        });
+
+        // تنظيف عند المغادرة
+        window.addEventListener('beforeunload', () => {
+          if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+          }
+        });
+      }
+
+      // ========== تدمير ==========
+      destroy() {
+        if (this.currentStream) {
+          this.currentStream.getTracks().forEach(track => track.stop());
+          this.currentStream = null;
+        }
+        clearTimeout(this._toastTimeout);
+        this.capturedImageData = null;
+      }
+    }
+
+    // بدء التطبيق
+    let app;
+    document.addEventListener('DOMContentLoaded', () => {
+      app = new LahzaCam();
+      window.camApp = app;
+    });
+
+    // تنظيف عند المغادرة
+    window.addEventListener('beforeunload', () => {
+      if (app) app.destroy();
+    });
+  </script>
 </body>
 </html>

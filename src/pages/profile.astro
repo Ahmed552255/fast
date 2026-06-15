@@ -1,929 +1,534 @@
+---
+// src/pages/profile.astro
+---
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>مراجعة ذكية وتحسين الأداء | Fast Sokon AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>الملف الشخصي | Fast Sokon</title>
     
+    <!-- Critical CSS inline -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    
+    <!-- Firebase SDKs - deferred loading -->
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js" defer></script>
+    <script is:inline src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js" defer></script>
+    <script is:inline src="/firebase-config.js" defer></script>
 
-    <!-- Firebase SDKs - deferred -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
-    <script src="/firebase-config.js" defer></script>
-
-    <style>
+    <style is:global>
         :root {
-            --bg-app: #060411;
-            --bg-surface: rgba(13, 9, 31, 0.65);
-            --bg-input: rgba(255, 255, 255, 0.04);
-            --bg-input-hover: rgba(255, 255, 255, 0.08);
-            --bg-input-focus: rgba(88, 47, 255, 0.12);
-            --bg-input-error: rgba(255, 82, 82, 0.08);
-            --bg-input-warning: rgba(255, 196, 0, 0.06);
-            --color-primary: #c3b0ff;
-            --color-primary-dark: #582fff;
-            --color-primary-glow: rgba(88, 47, 255, 0.15);
-            --color-gold: #ffc400;
-            --color-gold-light: #ffe082;
-            --color-text: #e5e1f5;
-            --color-text-muted: rgba(229, 225, 245, 0.45);
-            --color-border: rgba(255, 255, 255, 0.06);
-            --color-border-hover: rgba(195, 176, 255, 0.3);
-            --color-border-focus: rgba(114, 92, 255, 0.6);
-            --color-danger: #ff5252;
-            --color-success: #2ecc71;
-            --color-warning: #ffc400;
-            --color-info: #2196f3;
+            --bg: #060411;
+            --card: rgba(13, 9, 31, 0.65);
+            --card-inner: rgba(255, 255, 255, 0.02);
+            --purple: #c3b0ff;
+            --purple-dark: #582fff;
+            --purple-glow: rgba(88, 47, 255, 0.2);
+            --gold: #ffc400;
+            --gold-light: #ffe082;
+            --text: #e5e1f5;
+            --text-dim: rgba(229, 225, 245, 0.4);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(114, 92, 255, 0.25);
+            --border-gold: rgba(255, 196, 0, 0.2);
+            --danger: #ff5252;
+            --success: #2ecc71;
             --radius-lg: 24px;
             --radius-md: 16px;
             --radius-sm: 12px;
             --blur: blur(16px);
             --transition-fast: 0.15s ease;
-            --font-family: 'Cairo', 'Segoe UI', sans-serif;
+            --transition-normal: 0.25s ease;
+            --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: var(--font-family);
-            background: radial-gradient(circle at 50% 15%, #130d35 0%, var(--bg-app) 75%);
-            color: var(--color-text);
-            margin: 0;
+            background: radial-gradient(circle at 50% 15%, #130d35 0%, var(--bg) 75%);
+            min-height: 100vh; min-height: 100dvh;
+            color: var(--text);
+            display: flex; align-items: center; justify-content: center;
             padding: 1rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            min-height: 100dvh;
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        .review-card {
-            width: 100%;
-            max-width: 1300px;
-            background: var(--bg-surface);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5), 0 0 30px var(--color-primary-glow);
-            position: relative;
-            box-sizing: border-box;
-            backdrop-filter: var(--blur);
+        .container {
+            width: 100%; max-width: 410px; background: var(--card);
+            border-radius: var(--radius-lg); padding: 2rem 1.5rem;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), 0 0 30px var(--purple-glow);
+            border: 1px solid var(--border); backdrop-filter: var(--blur);
             -webkit-backdrop-filter: var(--blur);
+            position: relative; z-index: 1;
+            will-change: transform;
+            transform: translateZ(0);
         }
 
-        .ai-pulse {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            width: 10px;
-            height: 10px;
-            background: var(--color-success);
-            border-radius: 50%;
-            animation: aiPulse 2s infinite;
-        }
-
-        @keyframes aiPulse {
-            0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--color-success); }
-            50% { opacity: 0.5; box-shadow: 0 0 20px var(--color-success); }
-        }
-
-        .review-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--color-border);
-            padding-bottom: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .title-zone {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            flex: 1;
-        }
-
-        .review-header h1 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff, var(--color-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 0;
-        }
-
-        .badge-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .storage-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            white-space: nowrap;
-            transition: all 0.3s ease;
-        }
-
-        .storage-badge.cloud {
-            background: rgba(88, 47, 255, 0.1);
-            border: 1px solid rgba(88, 47, 255, 0.2);
-            color: var(--color-primary);
-        }
-
-        .storage-badge.saving {
-            background: rgba(255, 196, 0, 0.1);
-            border-color: rgba(255, 196, 0, 0.2);
-            color: var(--color-gold-light);
-            animation: pulse 1.5s infinite;
-        }
-
-        .storage-badge.error {
-            background: rgba(255, 82, 82, 0.1);
-            border: 1px solid rgba(255, 82, 82, 0.2);
-            color: var(--color-danger);
-        }
-
-        .storage-badge.local {
-            background: rgba(46, 204, 113, 0.1);
-            border: 1px solid rgba(46, 204, 113, 0.2);
-            color: var(--color-success);
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .health-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.75rem;
-            color: var(--color-text-muted);
-            padding: 0.3rem 0.8rem;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--color-border);
-        }
-
-        .health-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--color-success);
-        }
-
-        .health-dot.warning { background: var(--color-warning); }
-        .health-dot.error { background: var(--color-danger); }
-
-        .undo-redo {
-            display: flex;
-            gap: 0.4rem;
-        }
-
-        .icon-btn {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--color-border);
-            border-radius: 10px;
-            color: var(--color-text);
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            position: relative;
-        }
-        .icon-btn:disabled { opacity: 0.35; cursor: default; }
-        .icon-btn:not(:disabled):hover { background: rgba(255,255,255,0.08); border-color: var(--color-border-hover); }
-        .icon-btn:not(:disabled):active { transform: scale(0.95); }
-        .icon-btn.has-tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: -30px;
-            background: #1a1430;
-            border: 1px solid var(--color-border);
-            border-radius: 6px;
-            padding: 0.3rem 0.6rem;
-            font-size: 0.7rem;
-            white-space: nowrap;
-            z-index: 10;
-        }
-        /* Fix date/time placeholder color */
-        input[type="date"]::-webkit-calendar-picker-indicator,
-        input[type="time"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.8);
-            cursor: pointer;
-        }
-
-        /* Supplier suggestions */
-        .suggestions-wrap {
-            position: relative;
-        }
-        .meta-box:focus-within {
-            border-color: var(--color-border-focus);
-            background: var(--bg-input-focus);
-        }
-        .meta-box.error {
-            border-color: rgba(255, 82, 82, 0.4);
-            background: var(--bg-input-error);
-        }
-        .meta-box.warning {
-            border-color: rgba(255, 196, 0, 0.3);
-            background: var(--bg-input-warning);
-        }
-        .meta-box label {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--color-primary);
-            font-weight: 700;
-            margin-bottom: 0.4rem;
-        }
-        .meta-box input, .meta-box select {
-            width: 100%;
-            background: transparent !important;
-            border: none !important;
-            color: #fff !important;
-            font-size: 1.05rem;
-            font-weight: 700;
-            outline: none;
-            padding: 0.2rem 0;
-            font-family: var(--font-family);
-        }
-        .meta-box select {
-            cursor: pointer;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23c3b0ff' viewBox='0 0 16 16'><path d='M8 11L3 6h10z'/></svg>");
-            background-repeat: no-repeat;
-            background-position: left 0.5rem center;
-            padding-left: 2rem;
-        }
-        .meta-box select option {
-            background: #1a1430;
-            color: #fff;
-        }
-        .meta-box .validation-hint {
-            font-size: 0.7rem;
-            color: var(--color-danger);
-            margin-top: 0.3rem;
-            display: none;
-            position: absolute;
-        }
-        .meta-box.error .validation-hint { display: block; }
-
-        .smart-suggestions {
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: rgba(33, 150, 243, 0.05);
-            border: 1px solid rgba(33, 150, 243, 0.15);
-            border-radius: var(--radius-md);
-            display: none;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .smart-suggestions.visible { display: block; }
-
-        .smart-suggestions .suggestion-header {
-            color: var(--color-info);
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .suggestion-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .suggestion-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all var(--transition-fast);
-            color: var(--color-text);
-            font-size: 0.85rem;
-        }
-        .suggestion-item:hover {
-            background: rgba(33, 150, 243, 0.1);
-        }
-        .suggestion-item .action-btn {
-            margin-right: auto;
-            font-size: 0.7rem;
-            padding: 0.3rem 0.8rem;
-            border-radius: 12px;
-            border: 1px solid rgba(33, 150, 243, 0.3);
-            background: rgba(33, 150, 243, 0.1);
-            color: var(--color-info);
-            cursor: pointer;
-        }
-
-        .table-wrapper {
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
-            overflow-x: auto;
-            background: transparent;
-            margin-bottom: 1.5rem;
-            -webkit-overflow-scrolling: touch;
-            position: relative;
-        }
-
-        .scroll-indicator {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 30px;
-            background: linear-gradient(to left, transparent, rgba(88, 47, 255, 0.05));
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 2;
-        }
-        .scroll-indicator.visible { opacity: 1; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: right;
-            min-width: 700px;
-        }
-
-        th {
-            background: rgba(255,255,255,0.02);
-            color: var(--color-primary);
-            font-weight: 700;
-            font-size: 0.85rem;
-            padding: 1.2rem 0.8rem;
-            border-bottom: 1px solid var(--color-border);
-            border-left: 1px solid var(--color-border);
-            white-space: nowrap;
-            text-align: center;
-        }
-        th:last-child { border-left: none; }
-        th.col-name { text-align: right; padding-right: 1rem; min-width: 150px; }
-        th.col-numeric { min-width: 90px; }
-        th.col-date { min-width: 130px; }
-        th.col-actions { min-width: 80px; }
-
-        td {
-            padding: 0.6rem 0.5rem;
-            border-bottom: 1px solid var(--color-border);
-            border-left: 1px solid var(--color-border);
-            vertical-align: middle;
-            position: relative;
-        }
-        td:last-child { border-left: none; }
-
-        tbody tr:nth-child(even) { background: rgba(255,255,255,0.005); }
-        tbody tr:hover { background: rgba(255,255,255,0.02); }
-        
-        /* صفوف الأخطاء */
-        tbody tr.row-error {
-            background: rgba(255, 82, 82, 0.05) !important;
-            border-right: 2px solid rgba(255, 82, 82, 0.3);
-        }
-        tbody tr.row-warning {
-            background: rgba(255, 196, 0, 0.03) !important;
-            border-right: 2px solid rgba(255, 196, 0, 0.2);
-        }
-
-        .cell-input {
-            width: 100% !important;
-            background: var(--bg-input) !important;
-            border: 1px solid var(--color-border) !important;
-            border-radius: var(--radius-sm) !important;
-            color: #ffffff !important;
-            padding: 0.7rem 0.8rem !important;
-            font-size: 0.95rem !important;
-            font-weight: 600 !important;
-            box-sizing: border-box !important;
-            outline: none !important;
-            transition: all var(--transition-fast) !important;
-            text-align: center;
-            font-family: var(--font-family);
-            min-width: 70px;
-        }
-        
-        .cell-input.name-input { text-align: right !important; font-weight: 700 !important; padding-right: 1rem !important; min-width: 140px; }
-        .cell-input:hover { border-color: var(--color-border-hover) !important; background: var(--bg-input-hover) !important; }
-        .cell-input:focus { border-color: var(--color-border-focus) !important; background: var(--bg-input-focus) !important; box-shadow: 0 0 8px var(--color-primary-glow) !important; }
-        
-        /* مدخلات الأخطاء */
-        .cell-input.error {
-            border-color: rgba(255, 82, 82, 0.4) !important;
-            background: var(--bg-input-error) !important;
-            animation: shake 0.3s ease;
-        }
-        .cell-input.warning {
-            border-color: rgba(255, 196, 0, 0.3) !important;
-            background: var(--bg-input-warning) !important;
-        }
-        .cell-input.auto-corrected {
-            border-color: rgba(33, 150, 243, 0.4) !important;
-            background: rgba(33, 150, 243, 0.05) !important;
-            animation: correctPulse 0.5s ease;
-        }
-        .batch-bar.active {
-            display: flex;
-        }
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .batch-bar .batch-count {
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: var(--purple);
-            white-space: nowrap;
-            z-index: 5;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-        }
-        td:hover .cell-tooltip { opacity: 1; }
-
-        input[type="date"] { cursor: pointer; }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.85) sepia(100%) saturate(400%) hue-rotate(220deg);
-            cursor: pointer;
-            opacity: 0.6;
-        }
-
-        .subtotal-cell {
-            font-variant-numeric: tabular-nums;
-            font-weight: 700;
-            color: var(--color-gold-light);
-            text-align: center;
-            font-size: 1rem;
-            padding: 0 0.5rem;
-        }
-
-        .action-cell {
-            display: flex;
-            gap: 0.3rem;
-            justify-content: center;
-        }
-
-        .action-btn {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--color-border);
-            border-radius: 8px;
-            color: var(--color-text-muted);
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: 0.85rem;
-        }
-        .action-btn:active { transform: scale(0.92); }
-        .action-btn.delete-btn { color: var(--color-danger); border-color: rgba(255,82,82,0.15); }
-        .action-btn.delete-btn:hover { background: rgba(255,82,82,0.15); }
-        .action-btn.split-btn { color: var(--color-primary); border-color: rgba(195,176,255,0.15); }
-        .action-btn.split-btn:hover { background: rgba(88,47,255,0.15); }
-        .action-btn.duplicate-btn { color: var(--color-info); border-color: rgba(33,150,243,0.15); }
-        .action-btn.duplicate-btn:hover { background: rgba(33,150,243,0.15); }
-
-        .add-row-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin: 0.8rem 0;
-            background: rgba(255,196,0,0.01);
-            border: 1px dashed rgba(255,196,0,0.2);
-            border-radius: var(--radius-sm);
-            padding: 0.8rem;
-            cursor: pointer;
-            color: var(--color-gold-light);
-            font-weight: 700;
-            font-size: 0.95rem;
-            transition: all var(--transition-fast);
-            width: 100%;
-            font-family: inherit;
-        }
-        .add-row-btn:hover { background: rgba(255,196,0,0.05); border-color: var(--color-gold); }
-        .add-row-btn:active { transform: scale(0.98); }
-
-        .summary-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255,255,255,0.01);
-            padding: 1.5rem 2rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--color-border);
-            margin-bottom: 2rem;
-        }
-        .summary-footer .total-label { font-weight: 700; color: var(--color-primary); }
-        .summary-footer .total-amount {
-            font-size: 1.7rem;
-            font-weight: 900;
-            color: var(--color-gold);
-            font-variant-numeric: tabular-nums;
-        }
-
-        .stats-mini {
-            display: flex;
-            gap: 1.5rem;
-            margin-right: auto;
-            font-size: 0.8rem;
-            color: var(--color-text-muted);
-        }
-
-        .action-bar {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            padding: 4px 0;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .templates-wrap::-webkit-scrollbar {
-            display: none;
-        }
-        .template-chip {
-            flex-shrink: 0;
-            padding: 8px 14px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            color: var(--text-dim);
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: var(--font);
-            white-space: nowrap;
+        .back-btn {
+            position: absolute; top: 1.3rem; left: 1.3rem; width: 36px; height: 36px;
+            border-radius: 50%; background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border); color: var(--text);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; text-decoration: none;
             transition: var(--transition-fast);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
+        }
+        .back-btn:active { background: var(--purple-dark); border-color: transparent; transform: scale(1.05); }
+
+        h2 {
+            text-align: center; font-weight: 800; font-size: 1.45rem; margin-bottom: 1.8rem;
+            background: linear-gradient(135deg, #ffffff 40%, var(--purple) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
         }
 
-        .save-status {
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-right: auto;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            opacity: 0;
-            transition: opacity 0.3s;
+        .profile-card {
+            background: var(--card-inner); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 1.4rem 1.1rem;
+            margin-bottom: 1rem; text-align: center; position: relative; overflow: hidden;
         }
-        .save-status.visible { opacity: 1; }
-        .save-status.success { color: var(--color-success); background: rgba(46, 204, 113, 0.1); }
-        .save-status.error { color: var(--color-danger); background: rgba(255, 82, 82, 0.1); }
-        .save-status.saving { color: var(--color-gold); background: rgba(255, 196, 0, 0.1); }
+        .profile-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, var(--purple-dark), var(--purple));
+        }
+
+        .avatar {
+            width: 84px; height: 84px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple-dark), #3b19b8);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.3rem; font-weight: 800; color: #fff;
+            margin: 0 auto 0.8rem; border: 2px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            cursor: pointer; overflow: hidden; position: relative;
+            transition: var(--transition-fast); transform: translateZ(0);
+        }
+        .avatar:active { transform: scale(1.04); border-color: var(--purple); }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar .cam-icon {
+            position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; opacity: 0; transition: opacity var(--transition-fast);
+        }
+        .avatar:active .cam-icon { opacity: 1; }
+
+        .label { color: var(--purple); font-size: 0.78rem; font-weight: 700; margin-top: 0.7rem; letter-spacing: 0.3px; }
+        .value { color: #fff; font-size: 1rem; font-weight: 700; }
+        
+        .key-row { 
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem; 
+            margin: 0.25rem 0; 
+        }
+        .key-row .value {
+            font-size: 0.82rem; color: #fff; background: rgba(255,255,255,0.04);
+            padding: 0.25rem 0.7rem; border-radius: 10px;
+            max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
 
         .btn {
-            font-family: inherit;
-            cursor: pointer;
-            border: none;
-            padding: 0.8rem 1.8rem;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition-fast);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
-            text-decoration: none;
-            box-sizing: border-box;
+            width: 100%; padding: 0.75rem 1.2rem; border-radius: 14px;
+            font-family: var(--font-family); font-weight: 700; font-size: 0.9rem;
+            cursor: pointer; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03); color: var(--text);
+            margin-bottom: 0.5rem; display: flex; align-items: center;
+            justify-content: center; gap: 0.4rem;
+            transition: var(--transition-fast); transform: translateZ(0);
+            -webkit-user-select: none; user-select: none;
         }
-        .btn:active {
-            transform: scale(0.96);
+        .btn:active { background: rgba(255,255,255,0.06); border-color: var(--border-hover); transform: scale(0.98); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        
+        .btn.primary { 
+            background: linear-gradient(135deg, var(--purple-dark) 0%, #441ece 100%); 
+            border: none; box-shadow: 0 4px 15px var(--purple-glow); color: #fff; 
         }
-        .btn.primary {
-            background: linear-gradient(135deg, var(--purple-dark), #441ece);
-            border: none;
-            color: #fff;
-            box-shadow: 0 4px 15px var(--color-primary-glow);
-        }
-        .btn-primary:hover:not(:disabled) { 
-            box-shadow: 0 6px 25px rgba(88, 47, 255, 0.4);
-            transform: translateY(-1px);
-        }
-        .btn:disabled {
-            opacity: 0.45;
-            pointer-events: none;
-            filter: grayscale(30%);
+        .btn.primary:active { transform: translateY(-1px) scale(0.98); box-shadow: 0 6px 20px rgba(88, 47, 255, 0.4); }
+        .btn.gold { background: rgba(255,196,0,0.05); border-color: var(--border-gold); color: var(--gold-light); }
+        .btn.gold:active { background: rgba(255,196,0,0.12); color: var(--gold); }
+        .btn.danger { background: rgba(255, 82, 82, 0.05); border-color: rgba(255, 82, 82, 0.18); color: #ffbcbc; }
+        .btn.danger:active { background: rgba(255, 82, 82, 0.12); border-color: var(--danger); }
+        
+        .btn.small { 
+            width: 30px; height: 30px; padding: 0; border-radius: 8px; 
+            margin-bottom: 0; font-size: 0.75rem; flex-shrink: 0;
         }
 
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 110px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: var(--bg-elevated);
-            border: 1px solid var(--purple);
-            padding: 10px 20px;
-            border-radius: 25px;
-            color: #fff;
-            font-weight: 600;
-            font-size: 0.82rem;
-            z-index: 200;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.25s ease;
-            text-align: center;
-            max-width: 85vw;
-            white-space: nowrap;
-            font-family: var(--font);
+        input, .input-field {
+            width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
+            color: #fff; padding: 0.75rem 1.1rem; border-radius: 14px;
+            font-family: var(--font-family); font-size: 0.9rem; outline: none;
+            text-align: center; margin-bottom: 0.6rem;
+            transition: var(--transition-fast); transform: translateZ(0);
         }
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-            pointer-events: auto;
-        }
-        .toast.error {
-            border-color: var(--danger);
-            background: rgba(30, 5, 10, 0.95);
-        }
-        .toast.success {
-            border-color: var(--success);
-            background: rgba(5, 20, 15, 0.95);
+        input:focus { 
+            border-color: var(--purple); box-shadow: 0 0 10px var(--purple-glow); 
+            background: rgba(0,0,0,0.3); 
         }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-            animation: fadeIn 0.3s ease;
+        .msg { 
+            padding: 0.5rem 0.9rem; border-radius: 10px; text-align: center; 
+            font-size: 0.78rem; font-weight: 600; margin-top: 0.4rem;
+            visibility: hidden; opacity: 0; transition: var(--transition-normal);
         }
-        .saving-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .saving-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            border-top-color: var(--purple);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        .msg.show { visibility: visible; opacity: 1; }
+        .msg.error { background: rgba(255, 82, 82, 0.1); border: 1px solid rgba(255, 82, 82, 0.2); color: #ffb3b3; }
+        .msg.success { background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.2); color: #b3ffe0; }
+        .msg.info { background: rgba(88, 47, 255, 0.1); border: 1px solid rgba(88, 47, 255, 0.2); color: #c3b0ff; }
 
-        /* Haptic feedback hint (visual only) */
-        @media (hover: none) and (pointer: coarse) {
-            .btn:active,
-            .nav-btn:active,
-            .btn-icon:active,
-            .template-chip:active {
-                transition: transform 0.05s ease;
-            }
+        .data-summary {
+            background: rgba(255,255,255,0.01); border: 1px solid var(--border);
+            border-radius: 12px; padding: 0.7rem 1rem; margin-bottom: 0.7rem;
+            font-size: 0.78rem; color: var(--text-dim); text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
         }
+        .data-summary strong { color: var(--gold); }
+        
+        #imageUploadInput { display: none; }
 
-        /* Reduced motion */
+        /* Modals - محسنة للأداء */
+        .modal {
+            position: fixed; inset: 0; background: rgba(4, 3, 11, 0.82);
+            z-index: 100; display: flex; align-items: center; justify-content: center;
+            padding: 1rem; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            visibility: hidden; opacity: 0; pointer-events: none;
+            transition: opacity var(--transition-normal), visibility var(--transition-normal);
+            will-change: opacity;
+        }
+        .modal.active { 
+            visibility: visible; opacity: 1; pointer-events: auto; 
+        }
+        .modal-box {
+            background: #0f0a24; border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius-lg); padding: 1.6rem; width: 100%;
+            max-width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            transform: scale(0.96); transition: transform var(--transition-normal);
+        }
+        .modal.active .modal-box { transform: scale(1); }
+        
+        .modal-box h3 { 
+            text-align: center; color: var(--gold-light); margin-bottom: 1rem; 
+            font-size: 1.15rem; font-weight: 700; 
+        }
+        .modal-actions { 
+            display: flex; gap: 0.5rem; margin-top: 0.8rem; 
+        }
+        .modal-actions .btn { flex: 1; margin-bottom: 0; }
+
+        .accounts-list-container { 
+            max-height: 180px; overflow-y: auto; margin-bottom: 1rem; 
+            padding-right: 0.2rem; -webkit-overflow-scrolling: touch;
+        }
+        .accounts-list-container::-webkit-scrollbar { width: 4px; }
+        .accounts-list-container::-webkit-scrollbar-thumb { 
+            background: rgba(255,255,255,0.1); border-radius: 4px; 
+        }
+        
+        .account-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.65rem 0.8rem; background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            margin-bottom: 0.4rem; cursor: pointer; transition: var(--transition-fast);
+            transform: translateZ(0);
+        }
+        .account-item:active { background: rgba(88, 47, 255, 0.1); border-color: var(--border-hover); }
+        .account-item.active { border-color: var(--gold); background: rgba(255, 196, 0, 0.03); }
+        
+        .acc-info { display: flex; align-items: center; gap: 0.6rem; text-align: right; max-width: 80%; }
+        .acc-avatar-mini {
+            width: 32px; height: 32px; border-radius: 50%; background: var(--purple-dark);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: #fff; font-size: 0.85rem;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .acc-avatar-mini img { width: 100%; height: 100%; object-fit: cover; }
+        .acc-meta { display: flex; flex-direction: column; overflow: hidden; }
+        .acc-meta .acc-alias { font-size: 0.85rem; font-weight: 700; color: #fff; }
+        .acc-meta .acc-email { font-size: 0.7rem; color: var(--text-dim); }
+        
+        .active-dot { 
+            width: 8px; height: 8px; background: var(--gold); border-radius: 50%; 
+            box-shadow: 0 0 8px var(--gold); 
+        }
+        .add-account-option { 
+            border: 1px dashed rgba(255, 196, 0, 0.3); background: transparent; 
+            color: var(--gold-light); 
+        }
+        .add-account-option:active { background: rgba(255, 196, 0, 0.05); border-color: var(--gold); }
+        
+        .hidden { display: none !important; }
+        
+        /* تحسينات للهواتف الضعيفة */
+        @media (max-width: 360px) {
+            .container { padding: 1.5rem 1rem; }
+            h2 { font-size: 1.3rem; }
+            .btn { font-size: 0.85rem; padding: 0.65rem 1rem; }
+        }
+        
         @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
+            *, *::before, *::after {
                 animation-duration: 0.01ms !important;
                 transition-duration: 0.01ms !important;
-            }
-        }
-
-        /* Small screens adjustments */
-        @media (max-width: 360px) {
-            .item-row {
-                grid-template-columns: 1fr 55px 65px 48px auto;
-                gap: 2px;
-                padding: 6px 6px;
-            }
-            .item-input {
-                font-size: 0.75rem;
-                padding: 6px 3px;
-            }
-            .item-total {
-                font-size: 0.75rem;
-                min-width: 40px;
-            }
-            .btn {
-                font-size: 0.78rem;
-                padding: 11px 8px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="review-card">
-        <div class="ai-pulse" title="نظام المراجعة الذكي نشط"></div>
-        
-        <header class="review-header">
-            <div class="title-zone">
-                <h1><i class="fas fa-clipboard-check"></i> مراجعة ذكية وتحسين الأداء</h1>
-                <div class="badge-group">
-                    <div class="storage-badge cloud" id="storage-badge">
-                        <i class="fas fa-cloud"></i>
-                        <span id="storage-badge-text">تخزين سحابي</span>
-                    </div>
-                    <div class="health-indicator">
-                        <span class="health-dot" id="health-dot"></span>
-                        <span id="health-text">متصل</span>
-                    </div>
+    <div class="container">
+        <a class="back-btn" href="/" title="الرئيسية" aria-label="العودة للرئيسية">
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <h2><i class="fa-solid fa-id-card-clip"></i> الملف الشخصي</h2>
+
+        <!-- Login Panel -->
+        <div id="loginPanel">
+            <div style="text-align: center; margin-bottom: 1.2rem; padding: 0.8rem; background: rgba(88, 47, 255, 0.04); border-radius: 12px; border: 1px dashed rgba(88, 47, 255, 0.2);">
+                <p style="color: var(--purple); font-size: 0.85rem; font-weight: 700;">
+                    <i class="fa-solid fa-shield-halved"></i> تسجيل الدخول الآمن
+                </p>
+                <small style="color: var(--text-dim); font-size: 0.72rem;">قم بالدخول لإدارة بيانات سكون الخاصة بك</small>
+            </div>
+            <input type="email" id="emailInput" placeholder="البريد الإلكتروني" autocomplete="email" dir="ltr">
+            <input type="password" id="passwordInput" placeholder="كلمة المرور" autocomplete="current-password">
+            <button class="btn primary" id="loginBtn">
+                <i class="fa-solid fa-right-to-bracket"></i> دخول المنظومة
+            </button>
+            <button class="btn gold" id="showRegisterBtn">
+                <i class="fa-solid fa-user-plus"></i> فتح حساب جديد
+            </button>
+            <button class="btn hidden" id="quickSwitchLoginBtn">
+                <i class="fa-solid fa-users-gear"></i> تبديل إلى حساب محفوظ
+            </button>
+            <div class="msg" id="loginMsg" role="alert"></div>
+        </div>
+
+        <!-- Profile Panel -->
+        <div id="profilePanel" class="hidden">
+            <div class="profile-card">
+                <div class="avatar" id="avatarContainer" role="button" aria-label="تغيير الصورة الشخصية" tabindex="0">
+                    <span id="avatarInitial">?</span>
+                    <img id="avatarImage" src="" alt="الصورة الشخصية" style="display:none;" loading="lazy">
+                    <div class="cam-icon"><i class="fa-solid fa-camera"></i></div>
+                </div>
+                <input type="file" id="imageUploadInput" accept="image/*" capture="user">
+
+                <div class="label">الاسم المستعار</div>
+                <div class="key-row">
+                    <span class="value" id="displayAlias">---</span>
+                    <button class="btn small" id="editAliasBtn" title="تعديل الاسم" aria-label="تعديل الاسم المستعار">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                </div>
+
+                <div class="label">البريد الإلكتروني المتصل</div>
+                <div class="key-row">
+                    <span class="value" id="displayEmail" dir="ltr">---</span>
+                    <button class="btn small" id="switchAccountBtn" style="color: var(--gold);" title="إدارة الحسابات" aria-label="إدارة الحسابات">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                    </button>
+                </div>
+
+                <div class="label">معرف المستخدم (UID)</div>
+                <div class="key-row">
+                    <span class="value" id="displayAccountId">---</span>
+                    <button class="btn small" id="copyIdBtn" title="نسخ المعرف" aria-label="نسخ معرف المستخدم">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
                 </div>
             </div>
-            <div class="undo-redo">
-                <button class="icon-btn has-tooltip" id="undo-btn" disabled title="تراجع (Ctrl+Z)" data-tooltip="Ctrl+Z">
-                    <i class="fas fa-undo"></i>
-                </button>
-                <button class="icon-btn has-tooltip" id="redo-btn" disabled title="إعادة (Ctrl+Y)" data-tooltip="Ctrl+Y">
-                    <i class="fas fa-redo"></i>
-                </button>
-                <button class="icon-btn has-tooltip" id="ai-suggest-btn" title="اقتراحات ذكية" data-tooltip="تحليل">
-                    <i class="fas fa-magic"></i>
-                </button>
+
+            <div class="data-summary" id="dataSummary">
+                <i class="fa-solid fa-boxes-stacked"></i> جاري مزامنة الفواتير والمؤشرات...
             </div>
-        </header>
 
-        <div id="smart-suggestions-box" class="smart-suggestions"></div>
-        <div id="recovery-bar" class="recovery-bar"></div>
+            <!-- زر تغيير كلمة السر الجديد -->
+            <button class="btn gold" id="changePasswordBtn">
+                <i class="fa-solid fa-lock"></i> تغيير كلمة السر
+            </button>
 
-        <div id="render-target">
-            <div class="loading-error-zone">
-                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--color-primary); margin-bottom: 1rem; display: block;"></i>
-                جارٍ بناء بيئة التحرير الذكية...
+            <button class="btn danger" id="logoutBtn">
+                <i class="fa-solid fa-power-off"></i> قطع الاتصال الآمن
+            </button>
+            <div class="msg" id="profileMsg" role="alert"></div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="accountsModal" role="dialog" aria-modal="true" aria-label="إدارة الحسابات النشطة">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-users-gear"></i> إدارة الحسابات النشطة</h3>
+            <p style="font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-bottom: 0.8rem;">
+                اختر الحساب للتبديل السريع
+            </p>
+            <div class="accounts-list-container" id="accountsListContainer"></div>
+            <div class="account-item add-account-option" id="addNewAccountFromModal" role="button" tabindex="0">
+                <div class="acc-info">
+                    <div class="acc-avatar-mini" style="background: rgba(255,196,0,0.2); color: var(--gold);">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div class="acc-meta">
+                        <span class="acc-alias" style="color: var(--gold-light);">ربط حساب آخر</span>
+                        <span class="acc-email">إنشاء حساب جديد فوراً</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-left" style="font-size: 0.8rem; color: var(--gold);"></i>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" id="closeAccountsModalBtn">إغلاق</button>
             </div>
         </div>
     </div>
 
-    <div class="toast-container" id="toast-container"></div>
+    <div class="modal" id="logoutChoiceModal" role="dialog" aria-modal="true" aria-label="خيارات تسجيل الخروج">
+        <div class="modal-box" style="text-align: center;">
+            <h3 style="color: var(--danger);">
+                <i class="fa-solid fa-right-from-bracket"></i> خيارات تسجيل الخروج
+            </h3>
+            <p style="font-size: 0.85rem; margin-bottom: 1.2rem;">كيف ترغب في إنهاء جلستك الحالية؟</p>
+            <button class="btn primary" id="confirmSoftLogoutBtn">
+                <i class="fa-solid fa-user-clock"></i> خروج مؤقت (إبقاء الحساب للتبديل)
+            </button>
+            <button class="btn danger" id="confirmHardLogoutBtn" style="margin-top: 0.5rem;">
+                <i class="fa-solid fa-trash-can"></i> خروج نهائي (مسح الحساب من الجهاز)
+            </button>
+            <div class="modal-actions" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.8rem;">
+                <button class="btn" id="cancelLogoutModalBtn">إلغاء</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- ✅ تم إصلاح السطر ده بس - ضيفنا is:inline -->
-    <script is:inline src="/firebase-config.js"></script>
-    
-    <script>
+    <div class="modal" id="editAliasModal" role="dialog" aria-modal="true" aria-label="تحديث الاسم المستعار">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-signature"></i> تحديث الاسم المستعار</h3>
+            <input type="text" id="aliasInput" placeholder="أدخل الاسم الجديد" maxlength="30" aria-label="الاسم المستعار الجديد">
+            <div class="modal-actions">
+                <button class="btn primary" id="saveAliasBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> حفظ
+                </button>
+                <button class="btn" id="cancelAliasBtn">إلغاء</button>
+            </div>
+            <div class="msg error" id="aliasMsg" role="alert"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="registerModal" role="dialog" aria-modal="true" aria-label="تسجيل حساب جديد">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-user-plus"></i> تسجيل حساب جديد</h3>
+            <input type="email" id="regEmailInput" placeholder="البريد الإلكتروني" dir="ltr" aria-label="البريد الإلكتروني للتسجيل">
+            <input type="password" id="regPasswordInput" placeholder="كلمة المرور (6 خانات أو أكثر)" minlength="6" aria-label="كلمة المرور">
+            <input type="text" id="regAliasInput" placeholder="الاسم المستعار (اختياري)" maxlength="30" aria-label="الاسم المستعار">
+            <div class="modal-actions">
+                <button class="btn primary" id="confirmRegisterBtn">
+                    <i class="fa-solid fa-user-check"></i> إنشاء الحساب
+                </button>
+                <button class="btn" id="cancelRegisterBtn">إلغاء</button>
+            </div>
+            <div class="msg" id="registerMsg" role="alert"></div>
+        </div>
+    </div>
+
+    <!-- مودال تغيير كلمة السر الجديد -->
+    <div class="modal" id="changePasswordModal" role="dialog" aria-modal="true" aria-label="تغيير كلمة السر">
+        <div class="modal-box">
+            <h3><i class="fa-solid fa-lock"></i> تغيير كلمة السر</h3>
+            <p style="font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-bottom: 0.8rem;">
+                أدخل كلمة السر الحالية والجديدة
+            </p>
+            <input type="password" id="currentPasswordInput" placeholder="كلمة السر الحالية" autocomplete="current-password" aria-label="كلمة السر الحالية">
+            <input type="password" id="newPasswordInput" placeholder="كلمة السر الجديدة (6 خانات أو أكثر)" minlength="6" autocomplete="new-password" aria-label="كلمة السر الجديدة">
+            <input type="password" id="confirmNewPasswordInput" placeholder="تأكيد كلمة السر الجديدة" minlength="6" autocomplete="new-password" aria-label="تأكيد كلمة السر الجديدة">
+            <div class="modal-actions">
+                <button class="btn primary" id="savePasswordBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> حفظ
+                </button>
+                <button class="btn" id="cancelPasswordBtn">إلغاء</button>
+            </div>
+            <div class="msg error" id="passwordMsg" role="alert"></div>
+        </div>
+    </div>
+
+    <script is:inline>
         // ============================================
-        // Fast Sokon - مراجعة ذكية للفاتورة v3.0
-        // خفيف، متوافق مع الكاميرا، ومخصص للموبايل
+        // صفحة الملف الشخصي - نسخة محسّنة للأداء
+        // Fast Sokon Profile Manager v2.0
         // ============================================
 
-        class InvoiceReview {
+        class FastSokonProfile {
             constructor() {
-                // Core state
-                this.invoiceData = {
-                    supplier: '',
-                    date: new Date().toISOString().split('T')[0],
-                    time: new Date().toTimeString().slice(0, 5)
-                };
-                this.items = [];
-                this.originalItems = [];
-
-                // History for undo
-                this.history = [];
-                this.historyIndex = -1;
-                this.maxHistory = 25;
-
-                // Selection
-                this.selectedIndices = new Set();
-                this.lastSelectedIndex = null;
-
-                // Templates
-                this.templates = [];
-
-                // Supplier autocomplete
-                this.supplierSuggestions = [];
-
-                // Services
+                // Core services
                 this.db = null;
                 this.auth = null;
-                this.firestore = null;
+                this.rtdb = null;
+                this.storage = null;
+                
+                // State
                 this.currentUser = null;
-
-                // Timers
-                this.autoSaveTimer = null;
-                this.toastTimer = null;
-                this.unsavedChanges = false;
-                this.isSaving = false;
-
-                // Swipe tracking
-                this.swipeState = new Map();
-
-                // Bind methods
-                this.onInputChange = this.onInputChange.bind(this);
-                this.onItemClick = this.onItemClick.bind(this);
-
-                // Init
+                this.profileData = null;
+                this.idb = null;
+                this.idbReady = false;
+                this.broadcastChannel = null;
+                this.unsubscribeAuth = null;
+                
+                // Cache
+                this.savedAccountsCache = null;
+                this.cacheTimestamp = 0;
+                this.CACHE_DURATION = 5000; // 5 seconds
+                
+                // Loading states tracking
+                this.loadingStates = new Set();
+                
+                // Constants
+                this.DB_NAME = 'FastSokonDB';
+                this.DB_VERSION = 8;
+                this.MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+                
+                // Initialize
                 this.init();
             }
 
             async init() {
-                this.cacheDom();
-                await this.waitForFirebase();
-                this.setupFirebase();
-                await this.openDatabase();
-                this.setupAuthListener();
-                this.loadInitialData();
-                this.render();
-                this.attachEvents();
-                this.loadTemplates();
-                this.loadSupplierHistory();
-                this.pushHistory();
-                this.startAutoSave();
-                this.setupKeyboardShortcuts();
-                console.log('✅ مراجعة ذكية v3.0 جاهزة');
+                try {
+                    await this.waitForFirebase();
+                    this.setupFirebase();
+                    this.setupBroadcastChannel();
+                    await this.openIndexedDB();
+                    this.setupAuthListener();
+                    this.setupEventListeners();
+                    this.setupKeyboardShortcuts();
+                    console.log('✅ Fast Sokon Profile initialized');
+                } catch (error) {
+                    console.error('❌ Initialization failed:', error);
+                    this.showMessage('loginMsg', 'حدث خطأ في تهيئة التطبيق. يرجى تحديث الصفحة.', 'error');
+                }
             }
 
-            // ========== DOM Cache ==========
-            cacheDom() {
-                this.els = {
-                    supplierInput: document.getElementById('supplierInput'),
-                    supplierSuggestions: document.getElementById('supplierSuggestions'),
-                    dateInput: document.getElementById('dateInput'),
-                    timeInput: document.getElementById('timeInput'),
-                    itemsList: document.getElementById('itemsList'),
-                    itemsCountLabel: document.getElementById('itemsCountLabel'),
-                    totalDisplay: document.getElementById('totalDisplay'),
-                    templatesContainer: document.getElementById('templatesContainer'),
-                    batchBar: document.getElementById('batchBar'),
-                    selectedCount: document.getElementById('selectedCount'),
-                    undoBtn: document.getElementById('undoBtn'),
-                    toast: document.getElementById('toast'),
-                    savingOverlay: document.getElementById('savingOverlay'),
-                    addItemBtn: document.getElementById('addItemBtn'),
-                    saveBtn: document.getElementById('saveBtn'),
-                    templateBtn: document.getElementById('templateBtn'),
-                    clearBtn: document.getElementById('clearBtn'),
-                    batchDeleteBtn: document.getElementById('batchDeleteBtn'),
-                    batchDuplicateBtn: document.getElementById('batchDuplicateBtn'),
-                    cancelBatchBtn: document.getElementById('cancelBatchBtn'),
-                };
-            }
-
-            // ========== Firebase ==========
+            // ========== Firebase Initialization ==========
             waitForFirebase() {
-                return new Promise(resolve => {
+                return new Promise((resolve, reject) => {
                     if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
                         resolve();
                         return;
                     }
+                    
                     let attempts = 0;
+                    const maxAttempts = 100; // 5 seconds timeout
                     const check = () => {
                         attempts++;
                         if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
                             resolve();
-                        } else if (attempts < 80) {
-                            setTimeout(check, 60);
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error('Firebase SDK failed to load'));
                         } else {
-                            console.warn('⚠️ Firebase لم يتم تحميله - تشغيل بدون مزامنة');
-                            resolve();
+                            requestAnimationFrame(() => setTimeout(check, 50));
                         }
                     };
                     check();
@@ -931,1052 +536,1154 @@
             }
 
             setupFirebase() {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                this.db = firebase.firestore();
+                this.auth = firebase.auth();
+                this.rtdb = firebase.database();
+                this.storage = firebase.storage();
+                
+                // Enable offline persistence for Firestore
+                this.db.enablePersistence({ synchronizeTabs: false }).catch(err => {
+                    console.warn('Firestore persistence failed:', err.code);
+                });
+            }
+
+            setupBroadcastChannel() {
                 try {
-                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-                        this.auth = firebase.auth();
-                        this.firestore = firebase.firestore();
-                    }
+                    this.broadcastChannel = new BroadcastChannel('fast_sokon_updates');
+                    this.broadcastChannel.onmessage = (event) => {
+                        if (event.data.type === 'profile_update' && this.currentUser) {
+                            this.refreshProfileData();
+                        }
+                    };
                 } catch (e) {
-                    console.warn('⚠️ خطأ في إعداد Firebase:', e);
+                    console.warn('BroadcastChannel not supported, using localStorage fallback');
+                    this.setupLocalStorageFallback();
                 }
             }
 
-            setupAuthListener() {
-                if (!this.auth) return;
-                this.auth.onAuthStateChanged(user => {
-                    this.currentUser = user;
-                    if (user) {
-                        this.els.saveBtn.disabled = false;
-                        this.els.saveBtn.title = '';
-                    } else {
-                        this.els.saveBtn.disabled = true;
-                        this.els.saveBtn.title = 'يجب تسجيل الدخول أولاً';
+            setupLocalStorageFallback() {
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'profile_update' && this.currentUser) {
+                        this.refreshProfileData();
                     }
                 });
             }
 
-            // ========== IndexedDB ==========
-            openDatabase() {
-                return new Promise((resolve) => {
-                    const request = indexedDB.open('FastSokonDB', 8);
-                    request.onsuccess = (e) => {
-                        this.db = e.target.result;
-                        resolve();
-                    };
-                    request.onerror = () => {
-                        this.db = null;
-                        resolve();
-                    };
+            // ========== IndexedDB Operations ==========
+            openIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                    
                     request.onupgradeneeded = (e) => {
                         const db = e.target.result;
+                        if (!db.objectStoreNames.contains('profile')) {
+                            db.createObjectStore('profile', { keyPath: 'uid' });
+                        }
+                        if (!db.objectStoreNames.contains('saved_accounts')) {
+                            db.createObjectStore('saved_accounts', { keyPath: 'uid' });
+                        }
                         if (!db.objectStoreNames.contains('invoices')) {
-                            db.createObjectStore('invoices', { keyPath: 'id' });
+                            const store = db.createObjectStore('invoices', { keyPath: 'id' });
+                            store.createIndex('date', 'dateStr');
+                            store.createIndex('supplier', 'supplier');
                         }
+                    };
+                    
+                    request.onsuccess = (e) => {
+                        this.idb = e.target.result;
+                        this.idbReady = true;
+                        
+                        // Handle database closure
+                        this.idb.onclose = () => {
+                            this.idbReady = false;
+                            console.warn('IndexedDB connection closed unexpectedly');
+                        };
+                        
+                        resolve();
+                    };
+                    
+                    request.onerror = (e) => {
+                        console.error('IndexedDB Error:', e.target.error);
+                        reject(e.target.error);
+                    };
+                    
+                    request.onblocked = () => {
+                        console.warn('IndexedDB blocked. Please close other tabs.');
                     };
                 });
             }
 
-            // ========== Data Loading ==========
-            loadInitialData() {
-                // First priority: sessionStorage from camera flow
-                const analysisResult = this.getAnalysisFromCamera();
-                if (analysisResult) {
-                    this.parseAnalysisResult(analysisResult);
-                    return;
+            async idbOperation(store, mode, callback) {
+                if (!this.idbReady) {
+                    await this.openIndexedDB();
                 }
-
-                // Second priority: localStorage draft
-                const draft = this.getDraftFromLocal();
-                if (draft) {
-                    this.invoiceData = {
-                        supplier: draft.supplier || '',
-                        date: draft.date || this.invoiceData.date,
-                        time: draft.time || this.invoiceData.time
-                    };
-                    this.items = draft.items || [];
-                }
-
-                this.originalItems = JSON.parse(JSON.stringify(this.items));
-                this.unsavedChanges = false;
+                
+                return new Promise((resolve, reject) => {
+                    try {
+                        const tx = this.idb.transaction(store, mode);
+                        const storeObj = tx.objectStore(store);
+                        const request = callback(storeObj);
+                        
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                        
+                        tx.oncomplete = () => {
+                            // Transaction completed successfully
+                        };
+                        
+                        tx.onerror = () => reject(tx.error);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
             }
 
-            getAnalysisFromCamera() {
+            async getFromDB(store, key) {
                 try {
-                    const stored = sessionStorage.getItem('analysis_result');
-                    if (!stored) return null;
-                    const data = JSON.parse(stored);
-                    // Clean up after reading
-                    sessionStorage.removeItem('analysis_result');
-                    return data;
-                } catch (e) {
+                    return await this.idbOperation(store, 'readonly', (storeObj) => storeObj.get(key));
+                } catch (error) {
+                    console.warn(`Failed to get from ${store}:`, error);
                     return null;
                 }
             }
 
-            getDraftFromLocal() {
+            async putToDB(store, data) {
                 try {
-                    const stored = localStorage.getItem('current_invoice_data');
-                    return stored ? JSON.parse(stored) : null;
-                } catch (e) {
-                    return null;
+                    await this.idbOperation(store, 'readwrite', (storeObj) => storeObj.put(data));
+                } catch (error) {
+                    console.warn(`Failed to put to ${store}:`, error);
                 }
             }
 
-            parseAnalysisResult(result) {
-                const text = result.text || '';
-                const items = [];
-
-                // Try multiple parsing strategies
-                const strategies = [
-                    this.parseTableFormat,
-                    this.parseLineByLine,
-                    this.parseJsonEmbedded,
-                ];
-
-                for (const strategy of strategies) {
-                    const parsed = strategy.call(this, text);
-                    if (parsed && parsed.length > 0) {
-                        items.push(...parsed);
-                        break;
-                    }
-                }
-
-                // Extract supplier name
-                const supplierMatch = text.match(/(?:مورد|شركة|محل|متجر|بائع|المورد|الشركة)[:\s]*[:\s]+([^\n]{2,40})/i);
-                if (supplierMatch) {
-                    this.invoiceData.supplier = supplierMatch[1].trim();
-                }
-
-                // Extract date
-                const dateMatch = text.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
-                if (dateMatch) {
-                    const d = dateMatch[1].replace(/\//g, '-');
-                    if (!isNaN(Date.parse(d))) this.invoiceData.date = d;
-                }
-
-                this.items = items.length > 0 ? items : [{ name: '', quantity: 1, price: 0 }];
-                this.originalItems = JSON.parse(JSON.stringify(this.items));
-
-                if (items.length > 0) {
-                    this.showToast(`✅ تم استخراج ${items.length} صنف من الفاتورة`, 'success');
-                } else if (text) {
-                    this.showToast('⚠️ لم نتمكن من استخراج أصناف تلقائياً. يمكنك إضافتها يدوياً.', 'error');
-                }
-            }
-
-            parseTableFormat(text) {
-                // Look for table-like patterns: name | quantity | price | total
-                const items = [];
-                const lines = text.split('\n').filter(l => l.trim());
-
-                for (const line of lines) {
-                    // Match: item name ... quantity ... price ... total
-                    const match = line.match(
-                        /([^\d]{2,40}?)\s+(\d+)\s+([\d,.]+)\s+([\d,.]+)/
-                    );
-                    if (match) {
-                        items.push({
-                            name: match[1].trim(),
-                            quantity: parseInt(match[2]) || 1,
-                            price: parseFloat(match[3].replace(/,/g, '')) || 0
-                        });
-                        continue;
-                    }
-
-                    // Match: item name x quantity @ price
-                    const match2 = line.match(
-                        /([^\d]{2,40}?)\s*[x×]\s*(\d+)\s*[@]?\s*([\d,.]+)/
-                    );
-                    if (match2) {
-                        items.push({
-                            name: match2[1].trim(),
-                            quantity: parseInt(match2[2]) || 1,
-                            price: parseFloat(match2[3].replace(/,/g, '')) || 0
-                        });
-                    }
-                }
-
-                return items;
-            }
-
-            parseLineByLine(text) {
-                const items = [];
-                const lines = text.split('\n').filter(l => l.trim());
-
-                for (const line of lines) {
-                    // Try: name price (simple format)
-                    const match = line.match(/^(.{2,30}?)\s+([\d,.]+)\s*(?:ج\.م|EGP|جنيه)?\s*$/);
-                    if (match && !match[1].match(/إجمال|مجموع|total|sum/i)) {
-                        items.push({
-                            name: match[1].trim(),
-                            quantity: 1,
-                            price: parseFloat(match[2].replace(/,/g, '')) || 0
-                        });
-                    }
-                }
-
-                return items;
-            }
-
-            parseJsonEmbedded(text) {
+            async deleteFromDB(store, key) {
                 try {
-                    const jsonMatch = text.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        const data = JSON.parse(jsonMatch[0]);
-                        if (data.items && Array.isArray(data.items)) {
-                            return data.items.map(item => ({
-                                name: item.name || item.product || '',
-                                quantity: item.quantity || item.qty || 1,
-                                price: item.price || item.unit_price || 0
-                            }));
-                        }
-                    }
-                } catch (e) {
-                    // Not JSON
-                }
-                return [];
-            }
-
-            // ========== History / Undo ==========
-            pushHistory() {
-                const snapshot = JSON.stringify(this.items);
-                // Don't push if same as current
-                if (this.history.length > 0 && this.history[this.historyIndex] === snapshot) return;
-
-                // Trim future history
-                this.history = this.history.slice(0, this.historyIndex + 1);
-                this.history.push(snapshot);
-
-                // Limit history size
-                if (this.history.length > this.maxHistory) this.history.shift();
-                this.historyIndex = this.history.length - 1;
-
-                this.unsavedChanges = true;
-                this.updateUndoButton();
-            }
-
-            undo() {
-                if (this.historyIndex <= 0) return;
-                this.historyIndex--;
-                this.items = JSON.parse(this.history[this.historyIndex]);
-                this.renderItems();
-                this.updateTotal();
-                this.clearSelection();
-                this.unsavedChanges = true;
-                this.updateUndoButton();
-                // Haptic-like visual feedback
-                this.pulseElement(this.els.undoBtn);
-            }
-
-            updateUndoButton() {
-                const btn = this.els.undoBtn;
-                if (this.historyIndex > 0) {
-                    btn.classList.remove('undo-disabled');
-                } else {
-                    btn.classList.add('undo-disabled');
+                    await this.idbOperation(store, 'readwrite', (storeObj) => storeObj.delete(key));
+                } catch (error) {
+                    console.warn(`Failed to delete from ${store}:`, error);
                 }
             }
 
-            pulseElement(el) {
-                el.style.transform = 'scale(0.88)';
-                setTimeout(() => el.style.transform = '', 120);
-            }
-
-            // ========== Supplier Autocomplete ==========
-            async loadSupplierHistory() {
-                if (!this.db) return;
+            async getAllFromDB(store) {
                 try {
-                    const tx = this.db.transaction('invoices', 'readonly');
-                    const store = tx.objectStore('invoices');
-                    const req = store.getAll();
-                    req.onsuccess = () => {
-                        const invoices = req.result || [];
-                        const suppliers = new Set(
-                            invoices.map(inv => inv.supplier).filter(Boolean)
-                        );
-                        this.supplierSuggestions = Array.from(suppliers).sort();
-                    };
-                    req.onerror = () => {};
-                } catch (e) {
-                    // Silent fail
+                    return await this.idbOperation(store, 'readonly', (storeObj) => storeObj.getAll()) || [];
+                } catch (error) {
+                    console.warn(`Failed to get all from ${store}:`, error);
+                    return [];
                 }
             }
 
-            showSupplierSuggestions(value) {
-                const dropdown = this.els.supplierSuggestions;
-                if (!dropdown) return;
-
-                const query = value.trim().toLowerCase();
-                if (query.length === 0) {
-                    dropdown.classList.remove('visible');
-                    return;
-                }
-
-                const matches = this.supplierSuggestions
-                    .filter(s => s.toLowerCase().includes(query))
-                    .slice(0, 5);
-
-                if (matches.length === 0) {
-                    dropdown.classList.remove('visible');
-                    return;
-                }
-
-                dropdown.innerHTML = matches
-                    .map(s => `<div class="suggestion-item" role="option">${this.escHtml(s)}</div>`)
-                    .join('');
-                dropdown.classList.add('visible');
-            }
-
-            hideSupplierSuggestions() {
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => {
-                        if (toast.parentNode) toast.parentNode.removeChild(toast);
-                    }, 300);
-                }, duration);
-            }
-
-            // ========== Storage Badge ==========
-            function updateStorageBadge(status = '') {
-                const badge = document.getElementById('storage-badge');
-                const badgeText = document.getElementById('storage-badge-text');
-                if (!badge || !badgeText) return;
+            // ========== Profile Management ==========
+            async saveProfileToLocal(user, additionalData = {}) {
+                if (!user?.uid) return null;
                 
-                const statusConfig = {
-                    'saving': { class: 'saving', text: '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...' },
-                    'cloud': { class: 'cloud', text: '<i class="fas fa-cloud" style="margin-left: 0.3rem;"></i> تخزين سحابي' },
-                    'error': { class: 'error', text: '<i class="fas fa-exclamation-triangle" style="margin-left: 0.3rem;"></i> خطأ في الاتصال' },
-                    'local': { class: 'local', text: '<i class="fas fa-database" style="margin-left: 0.3rem;"></i> تخزين محلي' }
+                const profile = {
+                    uid: user.uid,
+                    email: user.email || '',
+                    alias: user.displayName || additionalData.alias || (user.email?.split('@')[0] || 'مستخدم'),
+                    photoURL: user.photoURL || additionalData.photoURL || '',
+                    lastLogin: Date.now()
                 };
                 
-                const config = statusConfig[status] || statusConfig['cloud'];
-                badge.className = `storage-badge ${config.class}`;
-                badgeText.innerHTML = config.text;
+                await this.putToDB('profile', profile);
+                return profile;
             }
 
-            saveAsTemplate() {
-                const name = prompt('اسم القالب (مثال: مشتريات أسبوعية):');
-                if (!name || !name.trim()) return;
+            async loadProfileFromLocal(uid) {
+                return await this.getFromDB('profile', uid);
+            }
 
-                const template = {
-                    name: name.trim(),
-                    supplier: this.invoiceData.supplier,
-                    items: JSON.parse(JSON.stringify(this.items)),
-                    savedAt: Date.now()
+            async getSavedAccounts(forceRefresh = false) {
+                const now = Date.now();
+                if (!forceRefresh && this.savedAccountsCache && (now - this.cacheTimestamp < this.CACHE_DURATION)) {
+                    return this.savedAccountsCache;
+                }
+                
+                this.savedAccountsCache = await this.getAllFromDB('saved_accounts');
+                this.cacheTimestamp = now;
+                return this.savedAccountsCache;
+            }
+
+            async saveAccountToList(profile) {
+                const accounts = await this.getSavedAccounts(true);
+                const exists = accounts.find(a => a.uid === profile.uid);
+                
+                const accountData = {
+                    uid: profile.uid,
+                    email: profile.email,
+                    alias: profile.alias,
+                    photoURL: profile.photoURL || ''
                 };
-
-                // Avoid duplicates
-                const existing = this.templates.findIndex(t => t.name === template.name);
-                if (existing >= 0) {
-                    this.templates[existing] = template;
+                
+                if (!exists) {
+                    await this.putToDB('saved_accounts', accountData);
                 } else {
-                    this.templates.unshift(template);
+                    await this.putToDB('saved_accounts', { ...exists, ...accountData });
                 }
-
-                // Limit templates
-                if (this.templates.length > 15) this.templates = this.templates.slice(0, 15);
-
-                localStorage.setItem('invoice_templates', JSON.stringify(this.templates));
-                this.renderTemplates();
-                this.showToast(`✅ تم حفظ القالب "${template.name}"`, 'success');
-            }
-
-            // ========== معالجة ذكية للبيانات ==========
-            function getItemDataFromRow(row) {
-                const data = {};
-                activeColumns.forEach(col => {
-                    const input = row.querySelector(`.item-${col.key}`);
-                    if (input) {
-                        let value = input.value;
-                        if (col.type === 'number' || col.type === 'decimal') {
-                            value = value === '' ? 0 : (col.type === 'decimal' ? parseFloat(value) || 0 : parseInt(value, 10) || 0);
-                        }
-                        data[col.key] = value;
-                    }
-                });
-                return data;
-            }
-
-            function getItemsData() {
-                const rows = document.querySelectorAll('#items-tbody .invoice-item-row');
-                return Array.from(rows).map(row => getItemDataFromRow(row));
-            }
-
-            deleteTemplate(index) {
-                const template = this.templates[index];
-                if (!template) return;
-                if (!confirm(`حذف القالب "${template.name}"؟`)) return;
-
-                this.templates.splice(index, 1);
-                localStorage.setItem('invoice_templates', JSON.stringify(this.templates));
-                this.renderTemplates();
-                this.showToast('🗑️ تم حذف القالب');
-            }
-
-            renderTemplates() {
-                const container = this.els.templatesContainer;
-                if (!container) return;
-
-                if (this.templates.length === 0) {
-                    container.innerHTML = '';
-                    return;
-                }
-
-                container.innerHTML = this.templates
-                    .map((t, i) => `
-                <div class="template-chip" data-index="${i}" title="اضغط للتطبيق | ضغطة طويلة للحذف">
-                  <i class="fas fa-layer-group" style="font-size:10px;"></i>
-                  ${this.escHtml(t.name)}
-                </div>
-              `).join('');
-
-                // Template click events
-                container.querySelectorAll('.template-chip').forEach(chip => {
-                    let pressTimer;
-                    const index = parseInt(chip.dataset.index);
-
-                    chip.addEventListener('pointerdown', (e) => {
-                        pressTimer = setTimeout(() => {
-                            this.deleteTemplate(index);
-                        }, 800);
-                    });
-
-                    chip.addEventListener('pointerup', () => {
-                        clearTimeout(pressTimer);
-                    });
-
-                    chip.addEventListener('pointerleave', () => {
-                        clearTimeout(pressTimer);
-                    });
-
-                    chip.addEventListener('click', (e) => {
-                        if (pressTimer) {
-                            clearTimeout(pressTimer);
-                            this.applyTemplate(index);
-                        }
-                    });
-                });
-            }
-
-            // ========== Item Operations ==========
-            addItem(insertIndex = this.items.length) {
-                this.items.splice(insertIndex, 0, { name: '', quantity: 1, price: 0 });
-                this.renderItems();
-                this.updateTotal();
-                this.pushHistory();
-                this.clearSelection();
-
-                // Focus the new item's name input
-                requestAnimationFrame(() => {
-                    const inputs = this.els.itemsList.querySelectorAll('.name-input');
-                    const target = inputs[Math.min(insertIndex, inputs.length - 1)];
-                    if (target) target.focus();
-                });
-            }
-
-            // ========== إنشاء رأس الجدول ==========
-            function createTableHeader() {
-                const thead = document.createElement('thead');
-                const headerRow = document.createElement('tr');
                 
-                activeColumns.forEach(col => {
-                    const th = document.createElement('th');
-                    th.className = col.columnClass || '';
-                    th.style.textAlign = col.align || 'center';
-                    if (col.width && col.width !== 'auto') th.style.width = col.width;
-                    th.innerHTML = `<i class="fas ${col.icon}"></i> ${col.label}`;
-                    headerRow.appendChild(th);
-                });
-
-                const totalTh = document.createElement('th');
-                totalTh.style.textAlign = 'center';
-                totalTh.style.width = '100px';
-                totalTh.innerHTML = '<i class="fas fa-calculator"></i> الإجمالي';
-                headerRow.appendChild(totalTh);
-
-                const actionTh = document.createElement('th');
-                actionTh.style.textAlign = 'center';
-                actionTh.style.width = '110px';
-                actionTh.innerHTML = '<i class="fas fa-cog"></i> إجراءات';
-                headerRow.appendChild(actionTh);
-
-                thead.appendChild(headerRow);
-                return thead;
+                // Update cache
+                this.savedAccountsCache = null;
             }
 
-            // ========== إعادة حساب الإجمالي ==========
-            function recalculateTotal() {
-                let total = 0;
-                const rows = document.querySelectorAll('#items-tbody .invoice-item-row');
+            async removeSavedAccount(uid) {
+                await this.deleteFromDB('saved_accounts', uid);
+                await this.deleteFromDB('profile', uid);
+                this.savedAccountsCache = null;
+            }
+
+            // ========== Cloud Sync ==========
+            async syncProfileToCloud(uid, data) {
+                if (!this.rtdb) return;
                 
-                rows.forEach(row => {
-                    let rowTotal = 1;
-                    totalMultiplierFields.forEach(fieldKey => {
-                        const input = row.querySelector(`.item-${fieldKey}`);
-                        if (input) {
-                            let value = input.value || '0';
-                            value = parseFloat(value) || 0;
-                            rowTotal *= value;
-                        }
+                try {
+                    await this.rtdb.ref(`users/${uid}/profile`).update({
+                        alias: data.alias || '',
+                        photoURL: data.photoURL || '',
+                        updatedAt: firebase.database.ServerValue.TIMESTAMP
                     });
                     
-                    const subtotalEl = row.querySelector('.subtotal-val');
-                    if (subtotalEl) subtotalEl.textContent = rowTotal.toFixed(2);
-                    total += rowTotal;
-                });
-                
-                const grandTotalEl = document.getElementById('grand-total-val');
-                if (grandTotalEl) grandTotalEl.textContent = total.toFixed(2);
-                
-                // تحديث الإحصائيات
-                const countEl = document.getElementById('item-count');
-                if (countEl) countEl.textContent = rows.length;
-                
-                return total;
-            }
-
-            function updateIndices() {
-                const rows = document.querySelectorAll('#items-tbody .invoice-item-row');
-                rows.forEach((row, idx) => row.dataset.index = idx);
-            }
-
-            // ========== Batch Operations ==========
-            toggleSelect(index, event) {
-                if (event && event.shiftKey && this.lastSelectedIndex !== null && this.lastSelectedIndex !==
-                    undefined) {
-                    const start = Math.min(index, this.lastSelectedIndex);
-                    const end = Math.max(index, this.lastSelectedIndex);
-                    const allInRange = Array.from({ length: end - start + 1 }, (_, i) => start + i);
-                    const allSelected = allInRange.every(i => this.selectedIndices.has(i));
-
-                    if (allSelected) {
-                        allInRange.forEach(i => this.selectedIndices.delete(i));
-                    } else {
-                        allInRange.forEach(i => this.selectedIndices.add(i));
-                    }
-                } else {
-                    if (this.selectedIndices.has(index)) {
-                        this.selectedIndices.delete(index);
-                    } else {
-                        this.selectedIndices.add(index);
-                    }
-                }
-
-                this.lastSelectedIndex = index;
-                this.renderSelection();
-            }
-
-            clearSelection() {
-                this.selectedIndices.clear();
-                this.lastSelectedIndex = null;
-                this.renderSelection();
-            }
-
-            renderSelection() {
-                const rows = this.els.itemsList.querySelectorAll('.item-row');
-                rows.forEach(row => {
-                    const idx = parseInt(row.dataset.index);
-                    row.classList.toggle('selected', this.selectedIndices.has(idx));
-                });
-
-                const count = this.selectedIndices.size;
-                this.els.selectedCount.textContent = `${count} مختار`;
-                this.els.batchBar.classList.toggle('active', count > 0);
-            }
-
-            function redo() {
-                if (historyIndex >= historyStack.length - 1) return;
-                isUndoRedoAction = true;
-                historyIndex++;
-                restoreState(historyStack[historyIndex]);
-                updateUndoRedoButtons();
-                isUndoRedoAction = false;
-            }
-
-            function updateUndoRedoButtons() {
-                const undoBtn = document.getElementById('undo-btn');
-                const redoBtn = document.getElementById('redo-btn');
-                if (undoBtn) undoBtn.disabled = historyIndex <= 0;
-                if (redoBtn) redoBtn.disabled = historyIndex >= historyStack.length - 1;
-            }
-
-            function restoreItemsFromArray(items) {
-                const tbody = document.getElementById('items-tbody');
-                if (tbody) {
-                    tbody.innerHTML = '';
-                    items.forEach((item, idx) => tbody.appendChild(createItemRow(item, idx)));
-                    recalculateTotal();
-                    captureState();
-                }
-            }
-
-            // ========== Save ==========
-            async saveInvoice() {
-                if (this.isSaving) return;
-                if (!this.currentUser) {
-                    this.showToast('🔐 يرجى تسجيل الدخول أولاً', 'error');
-                    return;
-                }
-                if (!this.invoiceData.supplier.trim()) {
-                    this.showToast('⚠️ يرجى إدخال اسم المورد', 'error');
-                    this.els.supplierInput.focus();
-                    return;
-                }
-
-                // التحقق من وجود مستخدم مسجل
-                if (!currentUser) {
-                    showToast('يجب تسجيل الدخول للحفظ السحابي', 'error');
-                    return;
-                }
-
-                this.isSaving = true;
-                this.showSaving(true);
-                this.els.saveBtn.disabled = true;
-
-                const invoice = {
-                    id: this.generateId(),
-                    supplier: this.invoiceData.supplier.trim(),
-                    dateStr: this.invoiceData.date,
-                    time: this.invoiceData.time,
-                    items: this.items.map(item => ({
-                        name: item.name.trim() || 'صنف غير معروف',
-                        quantity: parseFloat(item.quantity) || 1,
-                        price: parseFloat(item.price) || 0
-                    })),
-                    total: this.calculateTotal(),
-                    uid: this.currentUser.uid,
-                    createdAt: new Date().toISOString(),
-                    source: 'review_page'
-                };
-
-                let savedToCloud = false;
-                let savedToLocal = false;
-
-                try {
-                    // Save to Firestore
-                    await this.firestore
-                        .collection('users')
-                        .doc(this.currentUser.uid)
-                        .collection('invoices')
-                        .doc(invoice.id)
-                        .set(invoice);
-
-                    // Save to IndexedDB
-                    await this.saveToLocalDB(invoice);
-
-                    // Clear draft
-                    localStorage.removeItem('current_invoice_data');
-                    this.unsavedChanges = false;
-
-                    this.showToast(`✅ تم حفظ فاتورة ${invoice.supplier}`, 'success');
-                    this.showSaving(false);
-
-                    // Navigate back after short delay
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 900);
+                    this.notifyProfileUpdate();
                 } catch (error) {
-                    console.error('Save error:', error);
-
-                    // Try offline save
-                    try {
-                        await this.saveToLocalDB(invoice);
-                        localStorage.removeItem('current_invoice_data');
-                        this.showToast('📦 تم الحفظ محلياً. ستتم المزامنة عند الاتصال.', 'info');
-                        setTimeout(() => window.location.href = '/', 900);
-                    } catch (localError) {
-                        this.showToast('❌ فشل الحفظ. حاول مجدداً.', 'error');
-                    }
-
-                    this.showSaving(false);
-                    this.els.saveBtn.disabled = false;
-                } finally {
-                    this.isSaving = false;
+                    console.warn('Cloud sync failed:', error);
                 }
             }
 
-            saveToLocalDB(invoice) {
+            async fetchProfileFromCloud(uid) {
+                if (!this.rtdb) return null;
+                
+                try {
+                    const snapshot = await this.rtdb.ref(`users/${uid}/profile`).once('value');
+                    return snapshot.exists() ? snapshot.val() : null;
+                } catch (error) {
+                    console.warn('Cloud fetch failed:', error);
+                    return null;
+                }
+            }
+
+            notifyProfileUpdate() {
+                try {
+                    if (this.broadcastChannel) {
+                        this.broadcastChannel.postMessage({
+                            type: 'profile_update',
+                            timestamp: Date.now()
+                        });
+                    } else {
+                        // Fallback for older browsers
+                        const current = localStorage.getItem('profile_update');
+                        const timestamp = Date.now().toString();
+                        if (current !== timestamp) {
+                            localStorage.setItem('profile_update', timestamp);
+                        }
+                    }
+                } catch (e) {
+                    // Silently fail - non-critical feature
+                }
+            }
+
+            async refreshProfileData() {
+                if (!this.currentUser) return;
+                
+                try {
+                    await this.currentUser.reload();
+                    const cloudProfile = await this.fetchProfileFromCloud(this.currentUser.uid);
+                    
+                    this.profileData = await this.saveProfileToLocal(this.currentUser, {
+                        alias: cloudProfile?.alias || this.currentUser.displayName,
+                        photoURL: cloudProfile?.photoURL || this.currentUser.photoURL
+                    });
+                    
+                    this.updateProfileDisplay();
+                } catch (error) {
+                    console.warn('Failed to refresh profile:', error);
+                }
+            }
+
+            // ========== Image Handling ==========
+            async uploadAvatarToStorage(file, uid) {
+                try {
+                    // Compress image first
+                    const dataUrl = await this.compressImage(file);
+                    
+                    // Try Firebase Storage upload
+                    const storageRef = this.storage.ref(`avatars/${uid}`);
+                    const response = await fetch(dataUrl);
+                    const blob = await response.blob();
+                    
+                    await storageRef.put(blob, {
+                        contentType: 'image/jpeg',
+                        cacheControl: 'public, max-age=3600'
+                    });
+                    
+                    return await storageRef.getDownloadURL();
+                } catch (error) {
+                    console.warn('Storage upload failed, using dataURL:', error);
+                    return await this.compressImage(file);
+                }
+            }
+
+            compressImage(file) {
                 return new Promise((resolve, reject) => {
-                    if (!this.db) {
-                        resolve();
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                        reject(new Error('الملف المحدد ليس صورة'));
                         return;
                     }
-                    try {
-                        const tx = this.db.transaction('invoices', 'readwrite');
-                        const store = tx.objectStore('invoices');
-                        store.put(invoice);
-                        tx.oncomplete = () => resolve();
-                        tx.onerror = () => reject(tx.error);
-                    } catch (e) {
-                        reject(e);
-                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            // Use OffscreenCanvas if available for better performance
+                            const canvas = document.createElement('canvas');
+                            const MAX_SIZE = 200;
+                            let { width, height } = img;
+                            
+                            // Calculate new dimensions
+                            if (width > height) {
+                                if (width > MAX_SIZE) {
+                                    height = Math.round((height * MAX_SIZE) / width);
+                                    width = MAX_SIZE;
+                                }
+                            } else {
+                                if (height > MAX_SIZE) {
+                                    width = Math.round((width * MAX_SIZE) / height);
+                                    height = MAX_SIZE;
+                                }
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d', { 
+                                alpha: false,
+                                willReadFrequently: false 
+                            });
+                            
+                            // Use imageSmoothingQuality for better performance
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'medium';
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // Always use JPEG for better compatibility and smaller size
+                            resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        };
+                        
+                        img.onerror = () => reject(new Error('فشل تحميل الصورة'));
+                        img.src = e.target.result;
+                    };
+                    
+                    reader.onerror = () => reject(new Error('فشل قراءة الملف'));
+                    reader.readAsDataURL(file);
                 });
             }
 
-            // ✅ مزامنة الفواتير المحلية عند الاتصال
-            async syncOfflineInvoices() {
+            // ========== Authentication ==========
+            async login(email, password) {
                 try {
-                    const offlineInvoices = JSON.parse(localStorage.getItem('offline_invoices') || '[]');
-                    if (offlineInvoices.length === 0) return;
-
-                    console.log(`🔄 جاري مزامنة ${offlineInvoices.length} فاتورة محلية...`);
-
-                    for (const invoice of offlineInvoices) {
-                        try {
-                            if (this.firestore && invoice.userId !== 'anonymous') {
-                                await this.firestore
-                                    .collection('users')
-                                    .doc(invoice.userId)
-                                    .collection('invoices')
-                                    .doc(invoice.id)
-                                    .set(invoice);
-                            }
-                        } catch (e) {
-                            console.warn('⚠️ فشل مزامنة فاتورة:', invoice.id);
-                        }
-                    }
-
-                    localStorage.removeItem('offline_invoices');
-                    console.log('✅ تمت مزامنة جميع الفواتير المحلية');
-                } catch (e) {
-                    console.warn('⚠️ فشل المزامنة:', e.message);
+                    const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
+                    return { success: true, user: userCredential.user };
+                } catch (error) {
+                    console.error('Login error:', error.code);
+                    return { success: false, message: this.getAuthErrorMessage(error.code) };
                 }
             }
 
-            generateId() {
-                if (crypto.randomUUID) return crypto.randomUUID();
-                return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+            async register(email, password, alias) {
+                try {
+                    const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
+                    
+                    if (alias?.trim() && userCredential.user) {
+                        await userCredential.user.updateProfile({ displayName: alias.trim() });
+                        await userCredential.user.reload();
+                    }
+                    
+                    return { success: true, user: userCredential.user };
+                } catch (error) {
+                    console.error('Register error:', error.code);
+                    return { success: false, message: this.getAuthErrorMessage(error.code) };
+                }
             }
 
-            showSaving(show) {
-                this.els.savingOverlay.classList.toggle('active', show);
+            async logout(removeFromDevice = false) {
+                try {
+                    if (removeFromDevice && this.currentUser) {
+                        await this.removeSavedAccount(this.currentUser.uid);
+                    }
+                    
+                    await this.auth.signOut();
+                    return { success: true };
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    return { success: false, message: 'حدث خطأ أثناء تسجيل الخروج.' };
+                }
             }
 
-            // ========== Auto-save Draft ==========
-            startAutoSave() {
-                this.autoSaveTimer = setInterval(() => {
-                    if (this.unsavedChanges) this.saveDraft();
-                }, 2500);
+            // ========== تغيير كلمة السر ==========
+            async changePassword(currentPassword, newPassword) {
+                if (!this.currentUser) {
+                    return { success: false, message: 'لا يوجد مستخدم نشط.' };
+                }
+
+                if (!currentPassword || !newPassword) {
+                    return { success: false, message: 'جميع الحقول مطلوبة.' };
+                }
+
+                if (newPassword.length < 6) {
+                    return { success: false, message: 'كلمة السر الجديدة يجب أن تكون 6 خانات على الأقل.' };
+                }
+
+                if (currentPassword === newPassword) {
+                    return { success: false, message: 'كلمة السر الجديدة يجب أن تكون مختلفة عن الحالية.' };
+                }
+
+                try {
+                    // إعادة المصادقة أولاً
+                    const credential = firebase.auth.EmailAuthProvider.credential(
+                        this.currentUser.email,
+                        currentPassword
+                    );
+                    
+                    await this.currentUser.reauthenticateWithCredential(credential);
+                    
+                    // تغيير كلمة السر
+                    await this.currentUser.updatePassword(newPassword);
+                    
+                    return { success: true, message: 'تم تغيير كلمة السر بنجاح.' };
+                } catch (error) {
+                    console.error('Change password error:', error.code);
+                    
+                    let errorMessage = 'فشل تغيير كلمة السر.';
+                    switch (error.code) {
+                        case 'auth/wrong-password':
+                            errorMessage = 'كلمة السر الحالية غير صحيحة.';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = 'كلمة السر الجديدة ضعيفة جداً.';
+                            break;
+                        case 'auth/requires-recent-login':
+                            errorMessage = 'يجب تسجيل الدخول مرة أخرى لتغيير كلمة السر.';
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage = 'تم تعطيل الحساب مؤقتاً بسبب محاولات كثيرة. حاول لاحقاً.';
+                            break;
+                    }
+                    
+                    return { success: false, message: errorMessage };
+                }
             }
 
-            saveDraft() {
-                const data = {
-                    ...this.invoiceData,
-                    items: this.items,
-                    savedAt: Date.now()
+            getAuthErrorMessage(code) {
+                const messages = {
+                    'auth/user-not-found': 'البريد الإلكتروني غير مسجل.',
+                    'auth/wrong-password': 'كلمة المرور غير صحيحة.',
+                    'auth/invalid-email': 'البريد الإلكتروني غير صالح.',
+                    'auth/email-already-in-use': 'البريد الإلكتروني مستخدم بالفعل.',
+                    'auth/weak-password': 'كلمة المرور ضعيفة جداً (6 خانات على الأقل).',
+                    'auth/too-many-requests': 'تم تعطيل الحساب مؤقتاً. حاول لاحقاً.',
+                    'auth/network-request-failed': 'فشل الاتصال بالإنترنت. تحقق من اتصالك.',
+                    'auth/invalid-credential': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+                    'auth/operation-not-allowed': 'نوع تسجيل الدخول غير مفعل حالياً.'
                 };
+                return messages[code] || 'حدث خطأ غير متوقع. حاول مرة أخرى.';
+            }
+
+            // ========== Auth State Listener ==========
+            setupAuthListener() {
+                this.unsubscribeAuth = this.auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        await this.handleAuthenticatedUser(user);
+                    } else {
+                        this.handleUnauthenticatedUser();
+                    }
+                });
+            }
+
+            async handleAuthenticatedUser(user) {
+                console.log('✅ User authenticated:', user.uid);
+                this.currentUser = user;
+                
+                // Load profile data
+                let profile = await this.loadProfileFromLocal(user.uid);
+                
+                if (!profile) {
+                    const cloudProfile = await this.fetchProfileFromCloud(user.uid);
+                    profile = await this.saveProfileToLocal(user, {
+                        alias: cloudProfile?.alias || user.displayName,
+                        photoURL: cloudProfile?.photoURL || user.photoURL
+                    });
+                } else {
+                    profile = await this.saveProfileToLocal(user, {
+                        alias: user.displayName || profile.alias,
+                        photoURL: user.photoURL || profile.photoURL
+                    });
+                }
+                
+                // Save to accounts list
+                await this.saveAccountToList(profile);
+                
+                // Update UI
+                this.profileData = profile;
+                this.showProfilePanel(profile);
+                await this.updateInvoicesCount();
+            }
+
+            handleUnauthenticatedUser() {
+                console.log('ℹ️ User not authenticated');
+                this.currentUser = null;
+                this.profileData = null;
+                this.showLoginPanel();
+            }
+
+            // ========== Profile Updates ==========
+            async updateAlias(newAlias) {
+                if (!this.currentUser) {
+                    return { success: false, message: 'لا يوجد مستخدم نشط.' };
+                }
+                
+                const trimmedAlias = newAlias?.trim();
+                if (!trimmedAlias) {
+                    return { success: false, message: 'الاسم المستعار مطلوب.' };
+                }
+                if (trimmedAlias.length > 30) {
+                    return { success: false, message: 'الاسم المستعار طويل جداً (الحد الأقصى 30 حرف).' };
+                }
+                
                 try {
-                    localStorage.setItem('current_invoice_data', JSON.stringify(data));
-                    this.unsavedChanges = false;
-                } catch (e) {
-                    // Storage full - try clearing old drafts
-                    try {
-                        localStorage.removeItem('invoice_templates');
-                        localStorage.setItem('current_invoice_data', JSON.stringify(data));
-                    } catch (e2) {
-                        // Silent fail
+                    await this.currentUser.updateProfile({ displayName: trimmedAlias });
+                    await this.currentUser.reload();
+                    
+                    // Update local storage
+                    const profile = await this.loadProfileFromLocal(this.currentUser.uid);
+                    if (profile) {
+                        profile.alias = trimmedAlias;
+                        await this.putToDB('profile', profile);
+                    }
+                    
+                    // Update accounts list
+                    await this.saveAccountToList({
+                        uid: this.currentUser.uid,
+                        email: this.currentUser.email,
+                        alias: trimmedAlias,
+                        photoURL: this.currentUser.photoURL
+                    });
+                    
+                    // Sync to cloud
+                    await this.syncProfileToCloud(this.currentUser.uid, {
+                        alias: trimmedAlias,
+                        photoURL: this.currentUser.photoURL
+                    });
+                    
+                    // Update UI
+                    this.profileData = profile;
+                    this.updateProfileDisplay();
+                    
+                    return { success: true };
+                } catch (error) {
+                    console.error('Update alias failed:', error);
+                    return { success: false, message: 'فشل تحديث الاسم المستعار.' };
+                }
+            }
+
+            async updatePhoto(file) {
+                if (!this.currentUser) {
+                    return { success: false, message: 'لا يوجد مستخدم نشط.' };
+                }
+                
+                if (!file?.type?.startsWith('image/')) {
+                    return { success: false, message: 'الملف المحدد ليس صورة.' };
+                }
+                
+                if (file.size > this.MAX_IMAGE_SIZE) {
+                    return { success: false, message: `حجم الصورة كبير جداً. الحد الأقصى ${this.MAX_IMAGE_SIZE / 1024 / 1024} ميجابايت.` };
+                }
+                
+                try {
+                    const photoURL = await this.uploadAvatarToStorage(file, this.currentUser.uid);
+                    
+                    await this.currentUser.updateProfile({ photoURL });
+                    await this.currentUser.reload();
+                    
+                    // Update local storage
+                    const profile = await this.loadProfileFromLocal(this.currentUser.uid);
+                    if (profile) {
+                        profile.photoURL = photoURL;
+                        await this.putToDB('profile', profile);
+                    }
+                    
+                    // Update accounts list
+                    await this.saveAccountToList({
+                        uid: this.currentUser.uid,
+                        email: this.currentUser.email,
+                        alias: this.currentUser.displayName || profile?.alias,
+                        photoURL
+                    });
+                    
+                    // Sync to cloud
+                    await this.syncProfileToCloud(this.currentUser.uid, {
+                        alias: this.currentUser.displayName || profile?.alias,
+                        photoURL
+                    });
+                    
+                    // Update UI
+                    this.profileData = profile;
+                    this.updateProfileDisplay();
+                    
+                    return { success: true };
+                } catch (error) {
+                    console.error('Update photo failed:', error);
+                    return { success: false, message: 'فشل تحديث الصورة الشخصية.' };
+                }
+            }
+
+            async updateInvoicesCount() {
+                try {
+                    const invoices = await this.getAllFromDB('invoices');
+                    const count = invoices.length;
+                    const summaryEl = document.getElementById('dataSummary');
+                    if (summaryEl) {
+                        summaryEl.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> الفواتير المحفوظة: <strong>${count}</strong> ${count === 1 ? 'فاتورة' : 'فاتورة'}`;
+                    }
+                } catch (error) {
+                    console.warn('Failed to get invoices count:', error);
+                    const summaryEl = document.getElementById('dataSummary');
+                    if (summaryEl) {
+                        summaryEl.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> الفواتير المحفوظة: <strong>0</strong> فاتورة`;
                     }
                 }
             }
 
-            // ========== Rendering ==========
-            render() {
-                // Set initial values
-                this.els.supplierInput.value = this.invoiceData.supplier;
-                this.els.dateInput.value = this.invoiceData.date;
-                this.els.timeInput.value = this.invoiceData.time;
-
-                this.renderItems();
-                this.updateTotal();
-                this.updateUndoButton();
-                this.renderTemplates();
+            // ========== UI Management ==========
+            showMessage(elementId, text, type = 'error') {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                
+                el.textContent = text;
+                el.className = `msg show ${type}`;
+                
+                // Auto-hide after 4 seconds
+                clearTimeout(el._timeout);
+                el._timeout = setTimeout(() => {
+                    el.className = 'msg';
+                }, 4000);
             }
 
-            renderItems() {
-                const list = this.els.itemsList;
+            showLoginPanel() {
+                const loginPanel = document.getElementById('loginPanel');
+                const profilePanel = document.getElementById('profilePanel');
+                
+                if (loginPanel) loginPanel.classList.remove('hidden');
+                if (profilePanel) profilePanel.classList.add('hidden');
+                
+                this.updateQuickSwitchButton();
+            }
+
+            showProfilePanel(profile) {
+                const loginPanel = document.getElementById('loginPanel');
+                const profilePanel = document.getElementById('profilePanel');
+                
+                if (loginPanel) loginPanel.classList.add('hidden');
+                if (profilePanel) profilePanel.classList.remove('hidden');
+                
+                this.updateProfileDisplay();
+            }
+
+            updateProfileDisplay() {
+                if (!this.currentUser) return;
+                
+                const alias = this.currentUser.displayName || 
+                             this.profileData?.alias || 
+                             (this.currentUser.email?.split('@')[0] || 'مستخدم');
+                
+                const email = this.currentUser.email || '---';
+                const uid = this.currentUser.uid || '---';
+                
+                // Batch DOM updates
+                requestAnimationFrame(() => {
+                    const aliasEl = document.getElementById('displayAlias');
+                    const emailEl = document.getElementById('displayEmail');
+                    const uidEl = document.getElementById('displayAccountId');
+                    
+                    if (aliasEl) aliasEl.textContent = alias;
+                    if (emailEl) emailEl.textContent = email;
+                    if (uidEl) uidEl.textContent = uid;
+                    
+                    this.updateAvatar(this.currentUser.photoURL || this.profileData?.photoURL, alias);
+                });
+            }
+
+            updateAvatar(photoURL, alias) {
+                const img = document.getElementById('avatarImage');
+                const initial = document.getElementById('avatarInitial');
+                
+                if (!img || !initial) return;
+                
+                const hasValidPhoto = photoURL && (photoURL.startsWith('data:image') || photoURL.startsWith('http'));
+                
+                if (hasValidPhoto) {
+                    img.src = photoURL;
+                    img.style.display = 'block';
+                    initial.style.display = 'none';
+                } else {
+                    img.style.display = 'none';
+                    initial.style.display = 'flex';
+                    initial.textContent = (alias || '?').charAt(0).toUpperCase();
+                }
+            }
+
+            async updateQuickSwitchButton() {
+                const accounts = await this.getSavedAccounts();
+                const btn = document.getElementById('quickSwitchLoginBtn');
+                if (!btn) return;
+                
+                const loginPanel = document.getElementById('loginPanel');
+                const shouldShow = accounts.length > 0 && loginPanel && !loginPanel.classList.contains('hidden');
+                
+                btn.classList.toggle('hidden', !shouldShow);
+            }
+
+            async renderAccountsList() {
+                const container = document.getElementById('accountsListContainer');
+                if (!container) return;
+                
+                const accounts = await this.getSavedAccounts();
+                
+                if (accounts.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 1rem; color: var(--text-dim); font-size: 0.8rem;">
+                            لا توجد حسابات محفوظة
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Use DocumentFragment for better performance
                 const fragment = document.createDocumentFragment();
-
-                this.items.forEach((item, index) => {
-                    const row = document.createElement('div');
-                    row.className = 'item-row';
-                    row.dataset.index = index;
-                    row.setAttribute('role', 'listitem');
-
-                    const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0);
-
-                    row.innerHTML = `
-                <div class="delete-bg"><i class="fas fa-trash"></i></div>
-                <input class="item-input name-input" type="text" value="${this.escHtml(item.name)}"
-                       placeholder="اسم الصنف" data-field="name" data-index="${index}" aria-label="اسم الصنف">
-                <input class="item-input qty-input" type="number" value="${item.quantity}"
-                       min="1" step="1" data-field="quantity" data-index="${index}" aria-label="الكمية">
-                <input class="item-input price-input" type="number" value="${item.price}"
-                       min="0" step="0.01" data-field="price" data-index="${index}" aria-label="السعر">
-                <span class="item-total" data-index="${index}">${total.toFixed(2)}</span>
-                <div class="item-actions-inline">
-                  <button class="item-action-dot" data-action="duplicate" data-index="${index}" title="نسخ" aria-label="نسخ الصنف">
-                    <i class="fas fa-copy"></i>
-                  </button>
-                  <button class="item-action-dot delete-dot" data-action="delete" data-index="${index}" title="حذف" aria-label="حذف الصنف">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              `;
-
-                    fragment.appendChild(row);
-                });
-
-                list.innerHTML = '';
-                list.appendChild(fragment);
-
-                // Update count
-                this.els.itemsCountLabel.textContent = this.items.length;
-
-                // Re-attach swipe listeners
-                this.attachSwipeToDelete();
-            }
-
-            updateTotal() {
-                const total = this.calculateTotal();
-                this.els.totalDisplay.innerHTML = `<span class="currency">ج.م</span> ${total.toFixed(2)}`;
-            }
-
-            // ========== Event Handling ==========
-            attachEvents() {
-                // Supplier input
-                this.els.supplierInput.addEventListener('input', (e) => {
-                    this.invoiceData.supplier = e.target.value;
-                    this.showSupplierSuggestions(e.target.value);
-                    this.unsavedChanges = true;
-                });
-                this.els.supplierInput.addEventListener('blur', () => this.hideSupplierSuggestions());
-                this.els.supplierInput.addEventListener('focus', (e) => this.showSupplierSuggestions(e.target.value));
-
-                // Suggestion click
-                this.els.supplierSuggestions.addEventListener('pointerdown', (e) => {
-                    const item = e.target.closest('.suggestion-item');
-                    if (item) {
-                        this.els.supplierInput.value = item.textContent;
-                        this.invoiceData.supplier = item.textContent;
-                        this.els.supplierSuggestions.classList.remove('visible');
-                        this.unsavedChanges = true;
-                    }
-                });
-
-                // Date & time
-                this.els.dateInput.addEventListener('change', (e) => {
-                    this.invoiceData.date = e.target.value;
-                    this.unsavedChanges = true;
-                });
-                this.els.timeInput.addEventListener('change', (e) => {
-                    this.invoiceData.time = e.target.value;
-                    this.unsavedChanges = true;
-                });
-
-                // Add item
-                this.els.addItemBtn.addEventListener('click', () => this.addItem());
-
-                // Save
-                this.els.saveBtn.addEventListener('click', () => this.saveInvoice());
-
-                // Template save
-                this.els.templateBtn.addEventListener('click', () => this.saveAsTemplate());
-
-                // Clear
-                this.els.clearBtn.addEventListener('click', () => {
-                    if (this.items.length === 0) return;
-                    if (confirm('مسح جميع الأصناف؟ يمكنك التراجع بعد المسح.')) {
-                        this.items = [];
-                        this.renderItems();
-                        this.updateTotal();
-                        this.pushHistory();
-                        this.clearSelection();
-                    }
-                });
-
-                // Undo
-                this.els.undoBtn.addEventListener('click', () => this.undo());
-
-                // Batch actions
-                this.els.batchDeleteBtn.addEventListener('click', () => this.batchDelete());
-                this.els.batchDuplicateBtn.addEventListener('click', () => this.batchDuplicate());
-                this.els.cancelBatchBtn.addEventListener('click', () => this.clearSelection());
-
-                // Items list delegation
-                this.els.itemsList.addEventListener('input', this.onInputChange);
-                this.els.itemsList.addEventListener('click', this.onItemClick);
-
-                // Enter key in last item adds new
-                this.els.itemsList.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && e.target.classList.contains('name-input')) {
-                        const index = parseInt(e.target.dataset.index);
-                        if (index === this.items.length - 1 && this.items[index].name.trim()) {
-                            e.preventDefault();
-                            this.addItem();
+                
+                for (const acc of accounts) {
+                    const isActive = this.currentUser && acc.uid === this.currentUser.uid;
+                    const item = document.createElement('div');
+                    item.className = `account-item${isActive ? ' active' : ''}`;
+                    item.setAttribute('role', 'button');
+                    item.setAttribute('tabindex', '0');
+                    
+                    const hasPhoto = acc.photoURL && (acc.photoURL.startsWith('data:image') || acc.photoURL.startsWith('http'));
+                    const avatarContent = hasPhoto
+                        ? `<img src="${acc.photoURL}" alt="" loading="lazy">`
+                        : `<span>${(acc.alias || acc.email || '?').charAt(0).toUpperCase()}</span>`;
+                    
+                    item.innerHTML = `
+                        <div class="acc-info">
+                            <div class="acc-avatar-mini">${avatarContent}</div>
+                            <div class="acc-meta">
+                                <span class="acc-alias">${this.escapeHtml(acc.alias || 'مستخدم')}</span>
+                                <span class="acc-email">${this.escapeHtml(acc.email || '')}</span>
+                            </div>
+                        </div>
+                        ${isActive ? 
+                            '<div class="active-dot" title="الحساب النشط"></div>' : 
+                            '<i class="fa-solid fa-angles-left" style="font-size:0.75rem;color:var(--purple);"></i>'
                         }
-                    }
-                });
-
-                // Before unload warning
-                window.addEventListener('beforeunload', (e) => {
-                    if (this.unsavedChanges && this.items.some(i => i.name.trim())) {
-                        this.saveDraft();
-                    }
-                }, true);
-
-                // Toast dismiss
-                this.els.toast.addEventListener('click', () => {
-                    this.els.toast.classList.remove('show');
-                });
-            }
-
-            onInputChange(e) {
-                const index = parseInt(e.target.dataset.index);
-                const field = e.target.dataset.field;
-                if (isNaN(index) || !field) return;
-
-                this.updateItem(index, field, e.target.value);
-
-                // Debounce history push for typing
-                clearTimeout(this._historyDebounce);
-                this._historyDebounce = setTimeout(() => this.pushHistory(), 600);
-            }
-
-            onItemClick(e) {
-                const index = parseInt(e.target.dataset.index);
-                if (isNaN(index)) return;
-
-                // Action buttons
-                const action = e.target.closest('[data-action]')?.dataset.action;
-                if (action === 'delete') {
-                    this.deleteItem(index);
-                    return;
-                }
-                if (action === 'duplicate') {
-                    this.duplicateItem(index);
-                    return;
-                }
-
-                // Don't select when clicking inputs
-                if (e.target.tagName === 'INPUT') return;
-
-                // Toggle selection
-                this.toggleSelect(index, e);
-            }
-
-            attachSwipeToDelete() {
-                const rows = this.els.itemsList.querySelectorAll('.item-row');
-
-                rows.forEach(row => {
-                    // Remove old listeners by cloning (simple approach)
-                    const newRow = row.cloneNode(true);
-                    row.parentNode.replaceChild(newRow, row);
-
-                    let startX = 0;
-                    let currentX = 0;
-                    let swiping = false;
-
-                    newRow.addEventListener('touchstart', (e) => {
-                        if (e.target.tagName === 'INPUT') return;
-                        startX = e.touches[0].clientX;
-                        swiping = true;
-                    }, { passive: true });
-
-                    newRow.addEventListener('touchmove', (e) => {
-                        if (!swiping) return;
-                        currentX = e.touches[0].clientX;
-                        const diff = startX - currentX;
-                        if (diff > 15) {
-                            newRow.classList.add('swiping');
-                        } else {
-                            newRow.classList.remove('swiping');
-                        }
-                    }, { passive: true });
-
-                    newRow.addEventListener('touchend', () => {
-                        if (!swiping) return;
-                        swiping = false;
-                        const diff = startX - currentX;
-                        if (diff > 55) {
-                            const index = parseInt(newRow.dataset.index);
-                            if (!isNaN(index)) {
-                                // Visual feedback then delete
-                                newRow.style.transform = 'translateX(-60px)';
-                                newRow.style.opacity = '0';
-                                newRow.style.transition = 'all 0.2s ease';
-                                setTimeout(() => {
-                                    this.deleteItem(index);
-                                }, 200);
-                                return;
+                    `;
+                    
+                    if (!isActive) {
+                        item.addEventListener('click', () => this.switchToAccount(acc));
+                        item.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                this.switchToAccount(acc);
                             }
-                        }
-                        newRow.classList.remove('swiping');
-                        newRow.style.transform = '';
-                        newRow.style.opacity = '';
-                        newRow.style.transition = '';
+                        });
+                    }
+                    
+                    fragment.appendChild(item);
+                }
+                
+                container.innerHTML = '';
+                container.appendChild(fragment);
+            }
+
+            switchToAccount(account) {
+                this.hideModal('accountsModal');
+                document.getElementById('emailInput').value = account.email || '';
+                this.showMessage('loginMsg', 
+                    `للتبديل إلى ${account.alias || account.email}، يرجى إدخال كلمة المرور.`, 
+                    'info'
+                );
+                document.getElementById('passwordInput')?.focus();
+            }
+
+            // ========== Modal Management ==========
+            showModal(id) {
+                const modal = document.getElementById(id);
+                if (!modal) return;
+                
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                
+                // Focus trap and render content
+                if (id === 'accountsModal') {
+                    requestAnimationFrame(() => this.renderAccountsList());
+                }
+                
+                // Focus first input if exists
+                requestAnimationFrame(() => {
+                    const firstInput = modal.querySelector('input');
+                    if (firstInput) firstInput.focus();
+                });
+            }
+
+            hideModal(id) {
+                const modal = document.getElementById(id);
+                if (!modal) return;
+                
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            hideAllModals() {
+                document.querySelectorAll('.modal.active').forEach(modal => {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden', 'true');
+                });
+            }
+
+            // ========== Loading States ==========
+            setLoading(btnId, loading) {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+                
+                if (loading) {
+                    if (!btn.dataset.originalHTML) {
+                        btn.dataset.originalHTML = btn.innerHTML;
+                    }
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> جاري...';
+                    this.loadingStates.add(btnId);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = btn.dataset.originalHTML || btn.innerHTML;
+                    delete btn.dataset.originalHTML;
+                    this.loadingStates.delete(btnId);
+                }
+            }
+
+            isLoading(btnId) {
+                return this.loadingStates.has(btnId);
+            }
+
+            // ========== Utility Functions ==========
+            escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            async copyToClipboard(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        return true;
+                    } catch (err) {
+                        return false;
+                    } finally {
+                        document.body.removeChild(textarea);
+                    }
+                }
+            }
+
+            // ========== Event Listeners ==========
+            setupEventListeners() {
+                // Login
+                this.addListener('loginBtn', 'click', () => this.handleLogin());
+                this.addListener('passwordInput', 'keypress', (e) => {
+                    if (e.key === 'Enter') this.handleLogin();
+                });
+                
+                // Register
+                this.addListener('showRegisterBtn', 'click', () => this.showModal('registerModal'));
+                this.addListener('confirmRegisterBtn', 'click', () => this.handleRegister());
+                this.addListener('cancelRegisterBtn', 'click', () => this.hideModal('registerModal'));
+                
+                // Logout
+                this.addListener('logoutBtn', 'click', () => this.showModal('logoutChoiceModal'));
+                this.addListener('confirmSoftLogoutBtn', 'click', () => this.handleLogout(false));
+                this.addListener('confirmHardLogoutBtn', 'click', () => this.handleLogout(true));
+                this.addListener('cancelLogoutModalBtn', 'click', () => this.hideModal('logoutChoiceModal'));
+                
+                // Edit Alias
+                this.addListener('editAliasBtn', 'click', () => this.showEditAliasModal());
+                this.addListener('saveAliasBtn', 'click', () => this.handleAliasUpdate());
+                this.addListener('cancelAliasBtn', 'click', () => this.hideModal('editAliasModal'));
+                this.addListener('aliasInput', 'keypress', (e) => {
+                    if (e.key === 'Enter') this.handleAliasUpdate();
+                });
+                
+                // Avatar
+                this.addListener('avatarContainer', 'click', () => document.getElementById('imageUploadInput')?.click());
+                this.addListener('imageUploadInput', 'change', (e) => this.handleImageUpload(e));
+                
+                // Copy UID
+                this.addListener('copyIdBtn', 'click', () => this.handleCopyUID());
+                
+                // Switch Account
+                this.addListener('switchAccountBtn', 'click', () => this.showModal('accountsModal'));
+                this.addListener('quickSwitchLoginBtn', 'click', () => this.showModal('accountsModal'));
+                this.addListener('closeAccountsModalBtn', 'click', () => this.hideModal('accountsModal'));
+                this.addListener('addNewAccountFromModal', 'click', () => {
+                    this.hideModal('accountsModal');
+                    this.showModal('registerModal');
+                });
+                
+                // Change Password
+                this.addListener('changePasswordBtn', 'click', () => this.showChangePasswordModal());
+                this.addListener('savePasswordBtn', 'click', () => this.handlePasswordChange());
+                this.addListener('cancelPasswordBtn', 'click', () => this.hideModal('changePasswordModal'));
+                this.addListener('confirmNewPasswordInput', 'keypress', (e) => {
+                    if (e.key === 'Enter') this.handlePasswordChange();
+                });
+                
+                // Modal outside clicks
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) this.hideModal(modal.id);
                     });
                 });
+            }
+
+            addListener(id, event, handler) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(event, handler);
+                }
             }
 
             setupKeyboardShortcuts() {
                 document.addEventListener('keydown', (e) => {
-                    // Ctrl+Z = Undo
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.undo();
-                    }
-                    // Escape = clear selection
                     if (e.key === 'Escape') {
-                        this.clearSelection();
+                        this.hideAllModals();
                     }
                 });
             }
 
-            // ========== Toast ==========
-            showToast(message, type = 'info') {
-                const toast = this.els.toast;
-                toast.textContent = message;
-                toast.className = `toast show ${type}`;
-                clearTimeout(this.toastTimer);
-                this.toastTimer = setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 2500);
+            // ========== Event Handlers ==========
+            async handleLogin() {
+                const email = document.getElementById('emailInput')?.value.trim();
+                const password = document.getElementById('passwordInput')?.value;
+                
+                if (!email || !password) {
+                    return this.showMessage('loginMsg', 'يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+                }
+                
+                if (this.isLoading('loginBtn')) return;
+                
+                this.setLoading('loginBtn', true);
+                const result = await this.login(email, password);
+                this.setLoading('loginBtn', false);
+                
+                if (!result.success) {
+                    this.showMessage('loginMsg', result.message);
+                    document.getElementById('passwordInput').value = '';
+                }
             }
 
-            // ========== Utilities ==========
-            escHtml(str) {
-                if (!str) return '';
-                return String(str)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;');
+            async handleRegister() {
+                const email = document.getElementById('regEmailInput')?.value.trim();
+                const password = document.getElementById('regPasswordInput')?.value;
+                const alias = document.getElementById('regAliasInput')?.value.trim();
+                
+                if (!email || !password) {
+                    return this.showMessage('registerMsg', 'البريد الإلكتروني وكلمة المرور مطلوبان.');
+                }
+                
+                if (password.length < 6) {
+                    return this.showMessage('registerMsg', 'كلمة المرور يجب أن تكون 6 خانات على الأقل.');
+                }
+                
+                if (this.isLoading('confirmRegisterBtn')) return;
+                
+                this.setLoading('confirmRegisterBtn', true);
+                const result = await this.register(email, password, alias);
+                this.setLoading('confirmRegisterBtn', false);
+                
+                if (result.success) {
+                    this.hideModal('registerModal');
+                    this.showMessage('profileMsg', 'تم إنشاء الحساب بنجاح!', 'success');
+                } else {
+                    this.showMessage('registerMsg', result.message);
+                }
+            }
+
+            async handleLogout(removeFromDevice) {
+                if (removeFromDevice) {
+                    const confirmed = confirm('هل أنت متأكد؟ سيتم حذف جميع بيانات الحساب من هذا الجهاز.');
+                    if (!confirmed) return;
+                }
+                
+                const btnId = removeFromDevice ? 'confirmHardLogoutBtn' : 'confirmSoftLogoutBtn';
+                if (this.isLoading(btnId)) return;
+                
+                this.hideModal('logoutChoiceModal');
+                this.setLoading(btnId, true);
+                const result = await this.logout(removeFromDevice);
+                this.setLoading(btnId, false);
+                
+                const messageType = result.success ? 'success' : 'error';
+                this.showMessage('loginMsg', result.success ? 'تم تسجيل الخروج بنجاح.' : result.message, messageType);
+            }
+
+            showEditAliasModal() {
+                const currentAlias = this.currentUser?.displayName || 
+                                    this.profileData?.alias || 
+                                    this.currentUser?.email?.split('@')[0] || '';
+                const input = document.getElementById('aliasInput');
+                if (input) {
+                    input.value = currentAlias;
+                }
+                document.getElementById('aliasMsg').className = 'msg';
+                this.showModal('editAliasModal');
+            }
+
+            async handleAliasUpdate() {
+                const newAlias = document.getElementById('aliasInput')?.value.trim();
+                if (!newAlias) {
+                    return this.showMessage('aliasMsg', 'الاسم المستعار مطلوب.');
+                }
+                
+                if (this.isLoading('saveAliasBtn')) return;
+                
+                this.setLoading('saveAliasBtn', true);
+                const result = await this.updateAlias(newAlias);
+                this.setLoading('saveAliasBtn', false);
+                
+                if (result.success) {
+                    this.hideModal('editAliasModal');
+                    this.showMessage('profileMsg', 'تم تحديث الاسم المستعار بنجاح.', 'success');
+                } else {
+                    this.showMessage('aliasMsg', result.message);
+                }
+            }
+
+            async handleImageUpload(e) {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                
+                this.showMessage('profileMsg', 'جاري رفع الصورة ومعالجتها...', 'info');
+                const result = await this.updatePhoto(file);
+                
+                this.showMessage('profileMsg', result.message || (result.success ? 'تم تحديث الصورة الشخصية بنجاح.' : 'فشل تحديث الصورة.'), result.success ? 'success' : 'error');
+                
+                // Reset input
+                e.target.value = '';
+            }
+
+            async handleCopyUID() {
+                if (this.currentUser?.uid) {
+                    const success = await this.copyToClipboard(this.currentUser.uid);
+                    this.showMessage('profileMsg', success ? 'تم نسخ المعرف إلى الحافظة.' : 'فشل النسخ. حاول يدوياً.', success ? 'success' : 'error');
+                }
+            }
+
+            // ========== Change Password Handlers ==========
+            showChangePasswordModal() {
+                const currentInput = document.getElementById('currentPasswordInput');
+                const newInput = document.getElementById('newPasswordInput');
+                const confirmInput = document.getElementById('confirmNewPasswordInput');
+                
+                if (currentInput) currentInput.value = '';
+                if (newInput) newInput.value = '';
+                if (confirmInput) confirmInput.value = '';
+                
+                document.getElementById('passwordMsg').className = 'msg';
+                this.showModal('changePasswordModal');
+            }
+
+            async handlePasswordChange() {
+                const currentPassword = document.getElementById('currentPasswordInput')?.value;
+                const newPassword = document.getElementById('newPasswordInput')?.value;
+                const confirmNewPassword = document.getElementById('confirmNewPasswordInput')?.value;
+                
+                if (!currentPassword || !newPassword || !confirmNewPassword) {
+                    return this.showMessage('passwordMsg', 'جميع الحقول مطلوبة.');
+                }
+                
+                if (newPassword !== confirmNewPassword) {
+                    return this.showMessage('passwordMsg', 'كلمة السر الجديدة غير متطابقة مع التأكيد.');
+                }
+                
+                if (newPassword.length < 6) {
+                    return this.showMessage('passwordMsg', 'كلمة السر الجديدة يجب أن تكون 6 خانات على الأقل.');
+                }
+                
+                if (currentPassword === newPassword) {
+                    return this.showMessage('passwordMsg', 'كلمة السر الجديدة يجب أن تكون مختلفة عن الحالية.');
+                }
+                
+                if (this.isLoading('savePasswordBtn')) return;
+                
+                this.setLoading('savePasswordBtn', true);
+                const result = await this.changePassword(currentPassword, newPassword);
+                this.setLoading('savePasswordBtn', false);
+                
+                if (result.success) {
+                    this.hideModal('changePasswordModal');
+                    this.showMessage('profileMsg', result.message, 'success');
+                } else {
+                    this.showMessage('passwordMsg', result.message);
+                }
             }
 
             // ========== Cleanup ==========
             destroy() {
-                clearInterval(this.autoSaveTimer);
-                clearTimeout(this.toastTimer);
-                clearTimeout(this._historyDebounce);
-                if (this.unsavedChanges) this.saveDraft();
+                // Close BroadcastChannel
+                if (this.broadcastChannel) {
+                    this.broadcastChannel.close();
+                    this.broadcastChannel = null;
+                }
+                
+                // Unsubscribe from Firebase Auth
+                if (this.unsubscribeAuth) {
+                    this.unsubscribeAuth();
+                    this.unsubscribeAuth = null;
+                }
+                
+                // Close IndexedDB connection
+                if (this.idb) {
+                    this.idb.close();
+                    this.idb = null;
+                    this.idbReady = false;
+                }
+                
+                // Clear timeouts
+                const msgElements = document.querySelectorAll('.msg');
+                msgElements.forEach(el => clearTimeout(el._timeout));
+                
+                console.log('✅ Fast Sokon Profile destroyed');
             }
         }
 
-        // Bootstrap
-        let app;
-        document.addEventListener('DOMContentLoaded', () => {
-            app = new InvoiceReview();
-            window.reviewApp = app;
-        });
-
-        window.addEventListener('beforeunload', () => {
-            if (app) app.destroy();
-        });
-
-        window.addEventListener('pagehide', () => {
-            if (app) app.destroy();
-        });
+        // Initialize application
+        const app = new FastSokonProfile();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => app.destroy());
+        window.addEventListener('pagehide', () => app.destroy());
+        
+        // Expose for debugging
+        if (typeof window !== 'undefined') {
+            window.profileApp = app;
+        }
     </script>
 </body>
 </html>

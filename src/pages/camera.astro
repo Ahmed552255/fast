@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>لحظة | كاميرا مباشرة</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Tajawal', sans-serif;
+      background: #000;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      color: white;
+      direction: rtl;
+    }
+
+    .app-container {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* شريط الحالة العلوي */
+    .status-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .back-btn:active {
+      background: rgba(255,255,255,0.25);
+      transform: scale(0.95);
+    }
+
+    .grid-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: none;
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .grid-btn:active {
+      background: rgba(255,255,255,0.25);
+      transform: scale(0.95);
+    }
+
+    .grid-btn.active {
+      background: rgba(124, 58, 237, 0.4);
+      border: 2px solid rgba(124, 58, 237, 0.6);
+    }
+
+    /* منطقة الكاميرا */
+    .camera-view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+    }
+
+    #cameraVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ✅ عرض الصور الملتقطة - صور مصغرة */
+    .captured-images-panel {
+      position: absolute;
+      top: 90px;
+      left: 20px;
+      right: 20px;
+      z-index: 15;
+      display: none;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .captured-images-panel.active {
+      display: flex;
+    }
+
+    .thumbnail-container {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.3);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      transition: all 0.3s;
+    }
+
+    .thumbnail-container:active {
+      transform: scale(0.95);
+    }
+
+    .thumbnail-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumbnail-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 82, 82, 0.9);
+      border: none;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      transition: all 0.2s;
+    }
+
+    .thumbnail-remove:active {
+      transform: scale(1.2);
+      background: #ff0000;
+    }
+
+    .thumbnail-badge {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      background: rgba(124, 58, 237, 0.9);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    /* شبكة التصوير */
+    .grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 3;
+      display: none;
+    }
+
+    .grid-overlay.active {
+      display: block;
+    }
+
+    .grid-line {
+      position: absolute;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .grid-line.horizontal {
+      left: 0;
+      width: 100%;
+      height: 1px;
+    }
+
+    .grid-line.vertical {
+      top: 0;
+      width: 1px;
+      height: 100%;
+    }
+
+    /* رسالة تنبيهية */
+    .toast {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      backdrop-filter: blur(20px);
+      padding: 14px 28px;
+      border-radius: 25px;
+      font-size: 0.95rem;
+      z-index: 25;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.2);
+      text-align: center;
+      max-width: 90vw;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .toast.error {
+      border-color: #ff5252;
+      color: #ffb3b3;
+      background: rgba(180, 0, 0, 0.85);
+    }
+
+    .toast.success {
+      border-color: #2ecc71;
+      color: #b3ffe0;
+    }
+
+    .toast.warning {
+      border-color: #ffc400;
+      color: #ffe082;
+    }
+
+    .toast.info {
+      border-color: #7c3aed;
+      color: #c4b5fd;
+    }
+
+    /* ✅ زر التقاط الصورة */
+    .capture-zone {
+      position: absolute;
+      bottom: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .capture-btn {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: white;
+      border: 4px solid rgba(255,255,255,0.5);
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.15);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .capture-btn:active {
+      transform: scale(0.85);
+      box-shadow: 0 0 0 10px rgba(255,255,255,0.2);
+    }
+
+    .capture-btn::after {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .capture-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ✅ زر إضافة صورة من المعرض */
+    .gallery-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .gallery-btn:active {
+      transform: scale(0.9);
+      background: rgba(255,255,255,0.25);
+    }
+
+    /* البانل السفلي */
+    .bottom-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 5, 20, 0.9);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 16px 20px 24px;
+      z-index: 10;
+      border-radius: 25px 25px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ✅ عداد الصور */
+    .image-counter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .image-counter .count {
+      font-weight: 700;
+      color: #a855f7;
+      font-size: 1rem;
+    }
+
+    .image-counter .max {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* مربع الكتابة */
+    .message-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 25px;
+      padding: 4px 16px 4px 4px;
+    }
+
+    #messageBox {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 12px 4px;
+      font-size: 15px;
+      color: white;
+      font-family: inherit;
+      resize: none;
+      height: 44px;
+      line-height: 1.4;
+    }
+
+    #messageBox::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:active {
+      transform: scale(0.9);
+      background: linear-gradient(135deg, #8b5cf6, #c084fc);
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.6);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-container.active {
+      display: block;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Loader */
+    .loader {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #imageInput {
+      display: none;
+    }
+
+    @media (max-width: 400px) {
+      .capture-btn {
+        width: 65px;
+        height: 65px;
+      }
+      
+      .gallery-btn {
+        width: 44px;
+        height: 44px;
+      }
+
+      .thumbnail-container {
+        width: 65px;
+        height: 65px;
+      }
+      
+      .bottom-sheet {
+        padding: 12px 16px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- شريط الحالة -->
+    <div class="status-bar">
+      <button class="back-btn" id="backButton" title="رجوع">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      
+      <button class="grid-btn" id="gridBtn" title="شبكة التصوير">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- منطقة الكاميرا -->
+    <div class="camera-view" id="cameraView">
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      
+      <!-- ✅ الصور الملتقطة -->
+      <div class="captured-images-panel" id="capturedImagesPanel"></div>
+      
+      <!-- شبكة التصوير -->
+      <div class="grid-overlay" id="gridOverlay">
+        <div class="grid-line horizontal" style="top: 33.33%"></div>
+        <div class="grid-line horizontal" style="top: 66.66%"></div>
+        <div class="grid-line vertical" style="left: 33.33%"></div>
+        <div class="grid-line vertical" style="left: 66.66%"></div>
+      </div>
+    </div>
+
+    <!-- رسالة تنبيه -->
+    <div class="toast" id="toast"></div>
+
+    <!-- منطقة الالتقاط -->
+    <div class="capture-zone">
+      <button class="gallery-btn" id="galleryBtn" title="اختيار من المعرض">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </button>
+      
+      <button class="capture-btn" id="captureButton" title="التقاط صورة"></button>
+    </div>
+
+    <!-- البانل السفلي -->
+    <div class="bottom-sheet">
+      <!-- ✅ عداد الصور -->
+      <div class="image-counter" id="imageCounter">
+        <span>📸 الصور: </span>
+        <span class="count" id="imageCount">0</span>
+        <span class="max">/ 2</span>
+      </div>
+
+      <!-- شريط التقدم -->
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <!-- مربع الكتابة -->
+      <div class="message-container">
+        <button class="gallery-btn" id="attachBtn" title="اختيار من المعرض" style="width: 38px; height: 38px; border-radius: 50%;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+          </svg>
+        </button>
+        
+        <textarea 
+          id="messageBox" 
+          placeholder="اكتب تعليقك هنا..."
+          maxlength="500"
+        ></textarea>
+        
+        <button class="send-btn" id="sendButton" title="إرسال للتحليل">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <input type="file" id="imageInput" accept="image/*" multiple>
+  </div>
+
+  <script>
+    // ============================================
+    // لحظة كام - دعم صورتين + إزالة البيانات الوهمية
+    // ============================================
+
+    class LahzaCam {
+      constructor() {
+        // العناصر
+        this.cameraVideo = document.getElementById('cameraVideo');
+        this.imageInput = document.getElementById('imageInput');
+        this.captureButton = document.getElementById('captureButton');
+        this.backButton = document.getElementById('backButton');
+        this.sendButton = document.getElementById('sendButton');
+        this.messageBox = document.getElementById('messageBox');
+        this.attachBtn = document.getElementById('attachBtn');
+        this.galleryBtn = document.getElementById('galleryBtn');
+        this.gridBtn = document.getElementById('gridBtn');
+        this.gridOverlay = document.getElementById('gridOverlay');
+        this.toast = document.getElementById('toast');
+        this.progressContainer = document.getElementById('progressContainer');
+        this.progressBar = document.getElementById('progressBar');
+        this.capturedImagesPanel = document.getElementById('capturedImagesPanel');
+        this.imageCountEl = document.getElementById('imageCount');
+
+        // الحالة
+        this.currentStream = null;
+        this.facingMode = 'environment';
+        this.capturedImages = []; // ✅ مصفوفة لتخزين حتى صورتين
+        this.MAX_IMAGES = 2;
+        this.isSubmitting = false;
+        this.maxRetries = 2;
+        this.retryCount = 0;
+        this.requestTimeout = 30000;
+
+        // بدء التشغيل
+        this.init();
+      }
+
+      init() {
+        this.setupEventListeners();
+        this.startCamera('environment');
+        this.updateImageCounter();
+      }
+
+      // ========== وظائف مساعدة ==========
+      showToast(message, type = 'info', duration = 4000) {
+        const toast = this.toast;
+        if (!toast) return;
+
+        toast.textContent = message;
+        toast.className = `toast show ${type}`;
+
+        clearTimeout(this._toastTimeout);
+        this._toastTimeout = setTimeout(() => {
+          toast.className = 'toast';
+        }, duration);
+      }
+
+      showProgress(show) {
+        if (this.progressContainer) {
+          this.progressContainer.classList.toggle('active', show);
+        }
+        if (this.progressBar && !show) {
+          this.progressBar.style.width = '0%';
+        }
+      }
+
+      updateProgress(percent) {
+        if (this.progressBar) {
+          this.progressBar.style.width = `${Math.min(100, percent)}%`;
+        }
+      }
+
+      setSubmitting(loading) {
+        this.isSubmitting = loading;
+        const btn = this.sendButton;
+        if (!btn) return;
+
+        if (loading) {
+          btn.disabled = true;
+          btn.dataset.originalHTML = btn.innerHTML;
+          btn.innerHTML = '<span class="loader"></span>';
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = btn.dataset.originalHTML || `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          `;
+          delete btn.dataset.originalHTML;
+        }
+      }
+
+      updateImageCounter() {
+        if (this.imageCountEl) {
+          this.imageCountEl.textContent = this.capturedImages.length;
+        }
+        
+        // تحديث حالة زر الالتقاط
+        if (this.captureButton) {
+          this.captureButton.disabled = this.capturedImages.length >= this.MAX_IMAGES;
+          if (this.capturedImages.length >= this.MAX_IMAGES) {
+            this.captureButton.style.opacity = '0.4';
+            this.captureButton.style.cursor = 'not-allowed';
+          } else {
+            this.captureButton.style.opacity = '1';
+            this.captureButton.style.cursor = 'pointer';
+          }
+        }
+      }
+
+      // ========== الكاميرا ==========
+      async startCamera(mode = 'environment') {
+        if (this.currentStream) {
+          this.currentStream.getTracks().forEach(track => track.stop());
+        }
+        
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              facingMode: mode, 
+              width: { ideal: 1280 }, 
+              height: { ideal: 720 } 
+            },
+            audio: false
+          });
+          
+          this.cameraVideo.srcObject = stream;
+          this.currentStream = stream;
+          this.facingMode = mode;
+          
+          this.cameraVideo.style.display = 'block';
+        } catch (err) {
+          console.error('خطأ في الكاميرا:', err);
+          this.showToast('⚠️ تعذر الوصول إلى الكاميرا. تأكد من الصلاحيات.', 'error');
+          this.cameraVideo.style.display = 'none';
+        }
+      }
+
+      // ========== إضافة صورة ==========
+      addImage(imageData) {
+        if (this.capturedImages.length >= this.MAX_IMAGES) {
+          this.showToast(`⚠️ الحد الأقصى ${this.MAX_IMAGES} صور`, 'warning');
+          return false;
+        }
+
+        this.capturedImages.push(imageData);
+        this.renderThumbnails();
+        this.updateImageCounter();
+        
+        return true;
+      }
+
+      // ========== التقاط الصورة ==========
+      captureImage() {
+        if (this.capturedImages.length >= this.MAX_IMAGES) {
+          this.showToast(`⚠️ يمكنك التقاط صورتين فقط. احذف صورة أولاً.`, 'warning');
+          return;
+        }
+
+        if (!this.currentStream || this.cameraVideo.videoWidth === 0) {
+          this.showToast('الكاميرا غير جاهزة بعد', 'error');
+          return;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = this.cameraVideo.videoWidth;
+        canvas.height = this.cameraVideo.videoHeight;
+        const ctx = canvas.getContext('2d');
+        
+        if (this.facingMode === 'user') {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        }
+        
+        ctx.drawImage(this.cameraVideo, 0, 0, canvas.width, canvas.height);
+        
+        const compressedImage = this.compressImage(canvas);
+        
+        if (this.addImage(compressedImage)) {
+          const count = this.capturedImages.length;
+          this.showToast(`📸 تم التقاط الصورة (${count}/${this.MAX_IMAGES})`, 'success');
+          
+          // تأثير وميض
+          this.cameraVideo.style.opacity = '0.3';
+          setTimeout(() => {
+            this.cameraVideo.style.opacity = '1';
+          }, 150);
+        }
+      }
+
+      // ========== ضغط الصورة ==========
+      compressImage(canvas, targetSizeMB = 1.5) {
+        let quality = 0.85;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const maxBytes = targetSizeMB * 1024 * 1024 * 1.33;
+
+        while (dataUrl.length > maxBytes && quality > 0.5) {
+          quality -= 0.08;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        if (dataUrl.length > maxBytes && canvas.width > 1200) {
+          const scaleFactor = Math.sqrt(maxBytes / dataUrl.length);
+          const scaledCanvas = document.createElement('canvas');
+          scaledCanvas.width = Math.round(canvas.width * scaleFactor);
+          scaledCanvas.height = Math.round(canvas.height * scaleFactor);
+          const scaledCtx = scaledCanvas.getContext('2d');
+          scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+          dataUrl = scaledCanvas.toDataURL('image/jpeg', 0.75);
+        }
+
+        return dataUrl;
+      }
+
+      // ========== رفع من المعرض ==========
+      handleFileUpload(files) {
+        if (!files || files.length === 0) return;
+
+        const remainingSlots = this.MAX_IMAGES - this.capturedImages.length;
+        
+        if (remainingSlots <= 0) {
+          this.showToast(`⚠️ لديك صورتين بالفعل. احذف صورة أولاً.`, 'warning');
+          return;
+        }
+
+        let loaded = 0;
+        const filesToLoad = Math.min(files.length, remainingSlots);
+
+        Array.from(files).slice(0, filesToLoad).forEach(file => {
+          if (!file.type.startsWith('image/')) {
+            this.showToast('الرجاء اختيار ملف صورة صالح', 'error');
+            return;
+          }
+
+          if (file.size > 20 * 1024 * 1024) {
+            this.showToast('حجم الملف كبير جداً. الحد الأقصى 20 ميجابايت', 'error');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.addImage(e.target.result);
+            loaded++;
+            
+            if (loaded === filesToLoad) {
+              this.showToast(`🖼️ تم تحميل ${loaded} صورة`, 'success');
+            }
+          };
+          reader.onerror = () => {
+            this.showToast('فشل قراءة الملف', 'error');
+          };
+          reader.readAsDataURL(file);
+        });
+
+        if (files.length > filesToLoad) {
+          this.showToast(`⚠️ تم تجاهل ${files.length - filesToLoad} صور (الحد ${this.MAX_IMAGES})`, 'warning');
+        }
+      }
+
+      // ========== عرض الصور المصغرة ==========
+      renderThumbnails() {
+        if (!this.capturedImagesPanel) return;
+
+        if (this.capturedImages.length === 0) {
+          this.capturedImagesPanel.classList.remove('active');
+          this.capturedImagesPanel.innerHTML = '';
+          return;
+        }
+
+        this.capturedImagesPanel.classList.add('active');
+        
+        this.capturedImagesPanel.innerHTML = this.capturedImages.map((img, index) => `
+          <div class="thumbnail-container">
+            <button class="thumbnail-remove" data-index="${index}" title="حذف الصورة">✕</button>
+            <img src="${img}" alt="صورة ${index + 1}" />
+            <div class="thumbnail-badge">${index + 1}/${this.MAX_IMAGES}</div>
+          </div>
+        `).join('');
+
+        // إضافة مستمعي الحذف
+        this.capturedImagesPanel.querySelectorAll('.thumbnail-remove').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            this.removeImage(index);
+          });
+        });
+      }
+
+      // ========== حذف صورة ==========
+      removeImage(index) {
+        this.capturedImages.splice(index, 1);
+        this.renderThumbnails();
+        this.updateImageCounter();
+        
+        if (this.capturedImages.length === 0) {
+          this.capturedImagesPanel.classList.remove('active');
+        }
+        
+        this.showToast('🗑️ تم حذف الصورة', 'info');
+      }
+
+      // ========== ❌ حذف البيانات الوهمية - إظهار الخطأ الحقيقي ==========
+      formatInvoiceDataForReview(apiResponse) {
+        // لو الـ API رجع نتيجة حقيقية، استخدمها
+        if (apiResponse && apiResponse.text) {
+          return {
+            text: apiResponse.text,
+            meta: apiResponse.meta || {}
+          };
+        }
+
+        // ❌ لا نستخدم بيانات وهمية أبداً
+        // ✅ بدلاً من ذلك، نرجع null للإشارة إلى الفشل
+        return null;
+      }
+
+      // ========== الإرسال للمعالجة ==========
+      async handleSend() {
+        if (this.isSubmitting) return;
+
+        const message = this.messageBox.value.trim();
+        const hasImages = this.capturedImages.length > 0;
+        
+        if (!hasImages && message === '') {
+          this.showToast('✨ التقط صورتين على الأقل أو اكتب رسالة', 'info');
+          return;
+        }
+
+        if (!hasImages && message !== '') {
+          this.showToast('📸 يرجى التقاط صورة واحدة على الأقل للتحليل', 'warning');
+          return;
+        }
+
+        // ✅ تجهيز البيانات الحقيقية فقط
+        const payload = {
+          text: message || 'استخرج بيانات الفاتورة من الصور',
+          images: this.capturedImages, // ✅ إرسال كل الصور
+          imageCount: this.capturedImages.length,
+          timestamp: Date.now()
+        };
+
+        this.retryCount = 0;
+        await this.submitWithRetry(payload);
+      }
+
+      async submitWithRetry(payload) {
+        this.setSubmitting(true);
+        this.showProgress(true);
+        this.updateProgress(10);
+
+        try {
+          let result = null;
+          
+          try {
+            result = await this.sendToAI(payload);
+          } catch (apiError) {
+            console.error('❌ API call failed:', apiError);
+            
+            // ✅ إظهار رسالة الخطأ الحقيقية
+            this.showToast(`❌ فشل الاتصال: ${apiError.message}`, 'error', 6000);
+            
+            // إعادة رمي الخطأ للتعامل معه في catch التالي
+            throw apiError;
+          }
+
+          // ✅ التحقق من صحة النتيجة
+          if (!result || !result.text) {
+            throw new Error('الخادم أرجع نتيجة فارغة أو غير صالحة');
+          }
+
+          const formattedData = this.formatInvoiceDataForReview(result);
+          
+          if (!formattedData) {
+            throw new Error('فشل في تنسيق بيانات الفاتورة');
+          }
+          
+          this.saveToSessionStorage(formattedData);
+          this.handleSubmitSuccess();
+          
+        } catch (error) {
+          console.error('❌ Submit error:', error);
+
+          if (this.retryCount < this.maxRetries) {
+            this.retryCount++;
+            this.updateProgress(20 + (this.retryCount * 20));
+            
+            const retryMsg = this.retryCount === 1 ? 
+              `🔄 المحاولة مرة أخرى... (${this.retryCount}/${this.maxRetries})` :
+              `🔄 المحاولة الأخيرة... (${this.retryCount}/${this.maxRetries})`;
+            
+            this.showToast(retryMsg, 'info', 2500);
+
+            const delay = Math.min(1000 * Math.pow(2, this.retryCount - 1), 4000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+
+            await this.submitWithRetry(payload);
+          } else {
+            // ✅ فشل كل المحاولات - إظهار رسالة خطأ واضحة
+            const errorMsg = error.message || 'خطأ غير معروف';
+            
+            this.showProgress(false);
+            this.setSubmitting(false);
+            
+            this.showToast(
+              `❌ فشل تحليل الصور بعد ${this.maxRetries + 1} محاولات\nالسبب: ${errorMsg}\nالرجاء المحاولة مرة أخرى`,
+              'error',
+              8000
+            );
+            
+            console.error('❌ All retries exhausted:', {
+              error: errorMsg,
+              attempts: this.maxRetries + 1,
+              imagesCount: this.capturedImages.length
+            });
+          }
+        }
+      }
+
+      async sendToAI(payload) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
+
+        try {
+          this.updateProgress(30);
+
+          const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+
+          this.updateProgress(70);
+
+          if (!response.ok) {
+            let errorMsg = `خطأ في الخادم (${response.status})`;
+            try {
+              const errData = await response.json();
+              errorMsg = errData.error || errData.message || errorMsg;
+            } catch (e) {
+              // استخدام رسالة الخطأ الافتراضية
+            }
+            throw new Error(errorMsg);
+          }
+
+          const result = await response.json();
+          
+          // ✅ التحقق من صحة النتيجة
+          if (!result || (!result.text && !result.items)) {
+            throw new Error('الخادم أرجع بيانات غير صالحة');
+          }
+          
+          this.updateProgress(90);
+
+          return result;
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            throw new Error('انتهت مهلة الاتصال بالخادم (30 ثانية)');
+          }
+          throw error;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      saveToSessionStorage(data) {
+        try {
+          const jsonStr = JSON.stringify(data);
+          console.log('💾 Saving to sessionStorage:', {
+            size: (jsonStr.length / 1024).toFixed(2) + ' KB',
+            hasText: !!data.text,
+            textLength: data.text?.length || 0,
+            imagesCount: this.capturedImages.length
+          });
+          
+          sessionStorage.setItem('analysis_result', jsonStr);
+          console.log('✅ Data saved successfully');
+        } catch (e) {
+          console.error('❌ sessionStorage error:', e);
+          throw new Error('فشل في حفظ البيانات - قد تكون الصور كبيرة جداً');
+        }
+      }
+
+      handleSubmitSuccess() {
+        this.updateProgress(100);
+        this.showToast('✅ تم تجهيز البيانات للمراجعة!', 'success', 1500);
+
+        setTimeout(() => {
+          console.log('🔀 Redirecting to /review');
+          window.location.href = '/review';
+        }, 800);
+      }
+
+      // ========== إعداد المستمعين ==========
+      setupEventListeners() {
+        // زر الالتقاط
+        this.captureButton.addEventListener('click', () => this.captureImage());
+
+        // رفع من المعرض
+        this.attachBtn.addEventListener('click', () => this.imageInput.click());
+        this.galleryBtn.addEventListener('click', () => this.imageInput.click());
+        
+        this.imageInput.addEventListener('change', (e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            this.handleFileUpload(e.target.files);
+            e.target.value = '';
+          }
+        });
+
+        // شبكة التصوير
+        this.gridBtn.addEventListener('click', () => {
+          this.gridOverlay.classList.toggle('active');
+          this.gridBtn.classList.toggle('active');
+        });
+
+        // رجوع
+        this.backButton.addEventListener('click', () => {
+          if (this.capturedImages.length > 0) {
+            if (confirm(`لديك ${this.capturedImages.length} صور غير مرسلة. هل تريد المغادرة؟`)) {
+              window.location.href = '/';
+            }
+          } else {
+            window.location.href = '/';
+          }
+        });
+
+        // إرسال
+        this.sendButton.addEventListener('click', () => this.handleSend());
+
+        // إرسال بـ Enter
+        this.messageBox.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.handleSend();
+          }
+        });
+
+        // تبديل الكاميرا
+        this.cameraVideo.addEventListener('dblclick', () => {
+          const newMode = this.facingMode === 'environment' ? 'user' : 'environment';
+          this.startCamera(newMode);
+        });
+
+        // تنظيف
+        window.addEventListener('beforeunload', () => {
+          if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+          }
+        });
+      }
+
+      destroy() {
+        if (this.currentStream) {
+          this.currentStream.getTracks().forEach(track => track.stop());
+          this.currentStream = null;
+        }
+        clearTimeout(this._toastTimeout);
+        this.capturedImages = [];
+      }
+    }
+
+    // بدء التطبيق
+    let app;
+    document.addEventListener('DOMContentLoaded', () => {
+      app = new LahzaCam();
+      window.camApp = app;
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (app) app.destroy();
+    });
+  </script>
+</body>
+</html>

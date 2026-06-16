@@ -6,15 +6,11 @@
     <title>مراجعة ذكية وتحسين الأداء | Fast Sokon AI</title>
     
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
-
-    <!-- Firebase SDKs - deferred -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" defer></script>
-    <script src="/firebase-config.js" defer></script>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --bg-app: #060411;
@@ -139,10 +135,10 @@
             transition: all 0.3s ease;
         }
 
-        .storage-badge.cloud {
-            background: rgba(88, 47, 255, 0.1);
-            border: 1px solid rgba(88, 47, 255, 0.2);
-            color: var(--color-primary);
+        .storage-badge.local {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid rgba(46, 204, 113, 0.2);
+            color: var(--color-success);
         }
 
         .storage-badge.saving {
@@ -156,12 +152,6 @@
             background: rgba(255, 82, 82, 0.1);
             border: 1px solid rgba(255, 82, 82, 0.2);
             color: var(--color-danger);
-        }
-
-        .storage-badge.local {
-            background: rgba(46, 204, 113, 0.1);
-            border: 1px solid rgba(46, 204, 113, 0.2);
-            color: var(--color-success);
         }
 
         @keyframes pulse {
@@ -225,15 +215,20 @@
             white-space: nowrap;
             z-index: 10;
         }
-        /* Fix date/time placeholder color */
-        input[type="date"]::-webkit-calendar-picker-indicator,
-        input[type="time"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.8);
-            cursor: pointer;
+
+        .vendor-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
         }
 
-        /* Supplier suggestions */
-        .suggestions-wrap {
+        .meta-box {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.25rem;
+            transition: all var(--transition-fast);
             position: relative;
         }
         .meta-box:focus-within {
@@ -451,23 +446,31 @@
             background: rgba(33, 150, 243, 0.05) !important;
             animation: correctPulse 0.5s ease;
         }
-        .batch-bar.active {
-            display: flex;
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+
+        @keyframes correctPulse {
+            0%, 100% { box-shadow: 0 0 0px rgba(33, 150, 243, 0); }
+            50% { box-shadow: 0 0 15px rgba(33, 150, 243, 0.4); }
         }
-        .batch-bar .batch-count {
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: var(--purple);
+
+        .cell-input.number-type { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+        /* مؤشرات ذكية */
+        .cell-tooltip {
+            position: absolute;
+            bottom: -20px;
+            right: 0;
+            background: #1a1430;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.65rem;
+            color: var(--color-text-muted);
             white-space: nowrap;
             z-index: 5;
             opacity: 0;
@@ -569,30 +572,7 @@
 
         .action-bar {
             display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            padding: 4px 0;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .templates-wrap::-webkit-scrollbar {
-            display: none;
-        }
-        .template-chip {
-            flex-shrink: 0;
-            padding: 8px 14px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            color: var(--text-dim);
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: var(--font);
-            white-space: nowrap;
-            transition: var(--transition-fast);
-            display: flex;
+            justify-content: flex-end;
             align-items: center;
             gap: 1rem;
             flex-wrap: wrap;
@@ -631,12 +611,10 @@
             text-decoration: none;
             box-sizing: border-box;
         }
-        .btn:active {
-            transform: scale(0.96);
-        }
-        .btn.primary {
-            background: linear-gradient(135deg, var(--purple-dark), #441ece);
-            border: none;
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary-dark) 0%, #441ece 100%);
             color: #fff;
             box-shadow: 0 4px 15px var(--color-primary-glow);
         }
@@ -644,48 +622,15 @@
             box-shadow: 0 6px 25px rgba(88, 47, 255, 0.4);
             transform: translateY(-1px);
         }
-        .btn:disabled {
-            opacity: 0.45;
-            pointer-events: none;
-            filter: grayscale(30%);
+        .btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+        .btn-secondary {
+            background: rgba(255,255,255,0.04);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
         }
+        .btn-secondary:hover { background: rgba(255,255,255,0.08); border-color: var(--color-border-hover); }
 
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 110px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: var(--bg-elevated);
-            border: 1px solid var(--purple);
-            padding: 10px 20px;
-            border-radius: 25px;
-            color: #fff;
-            font-weight: 600;
-            font-size: 0.82rem;
-            z-index: 200;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.25s ease;
-            text-align: center;
-            max-width: 85vw;
-            white-space: nowrap;
-            font-family: var(--font);
-        }
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-            pointer-events: auto;
-        }
-        .toast.error {
-            border-color: var(--danger);
-            background: rgba(30, 5, 10, 0.95);
-        }
-        .toast.success {
-            border-color: var(--success);
-            background: rgba(5, 20, 15, 0.95);
-        }
+        .loading-error-zone { text-align: center; padding: 5rem 2rem; color: var(--color-text-muted); }
 
         /* Modal */
         .modal-overlay {
@@ -702,63 +647,85 @@
             backdrop-filter: blur(4px);
             animation: fadeIn 0.3s ease;
         }
-        .saving-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        .saving-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            border-top-color: var(--purple);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
+        .modal-box {
+            background: #1a1430;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Haptic feedback hint (visual only) */
-        @media (hover: none) and (pointer: coarse) {
-            .btn:active,
-            .nav-btn:active,
-            .btn-icon:active,
-            .template-chip:active {
-                transition: transform 0.05s ease;
-            }
+        .modal-box h3 { color: var(--color-primary); margin-bottom: 1rem; }
+        .modal-box .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
         }
 
-        /* Reduced motion */
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                animation-duration: 0.01ms !important;
-                transition-duration: 0.01ms !important;
-            }
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            pointer-events: none;
         }
 
-        /* Small screens adjustments */
-        @media (max-width: 360px) {
-            .item-row {
-                grid-template-columns: 1fr 55px 65px 48px auto;
-                gap: 2px;
-                padding: 6px 6px;
-            }
-            .item-input {
-                font-size: 0.75rem;
-                padding: 6px 3px;
-            }
-            .item-total {
-                font-size: 0.75rem;
-                min-width: 40px;
-            }
-            .btn {
-                font-size: 0.78rem;
-                padding: 11px 8px;
-            }
+        .toast {
+            background: #1a1430;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: 0.8rem 1.5rem;
+            color: var(--color-text);
+            font-weight: 700;
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { border-color: rgba(46, 204, 113, 0.3); color: #b3ffe0; }
+        .toast.error { border-color: rgba(255, 82, 82, 0.3); color: #ffb3b3; }
+        .toast.warning { border-color: rgba(255, 196, 0, 0.3); color: #ffe082; }
+        .toast.info { border-color: rgba(33, 150, 243, 0.3); color: #90caf9; }
+
+        .recovery-bar {
+            background: rgba(255, 196, 0, 0.1);
+            border: 1px solid rgba(255, 196, 0, 0.2);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+        .recovery-bar.visible { display: flex; align-items: center; justify-content: space-between; }
+        .recovery-bar .recovery-actions { display: flex; gap: 0.5rem; }
+
+        @media (max-width: 768px) {
+            body { padding: 0.5rem; }
+            .review-card { padding: 1.25rem 1rem; border-radius: var(--radius-md); }
+            .review-header { flex-direction: column; align-items: flex-start; }
+            .title-zone { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+            .badge-group { width: 100%; }
+            .undo-redo { width: 100%; justify-content: flex-end; }
+            .vendor-summary { grid-template-columns: 1fr; }
+            .summary-footer { flex-direction: column; gap: 0.75rem; align-items: flex-start; padding: 1rem; }
+            .summary-footer .total-amount { font-size: 1.4rem; }
+            .stats-mini { margin-right: 0; flex-wrap: wrap; }
+            .action-bar { flex-direction: column-reverse; gap: 0.75rem; width: 100%; }
+            .btn { width: 100%; }
+            .save-status { margin-right: 0; width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -770,13 +737,13 @@
             <div class="title-zone">
                 <h1><i class="fas fa-clipboard-check"></i> مراجعة ذكية وتحسين الأداء</h1>
                 <div class="badge-group">
-                    <div class="storage-badge cloud" id="storage-badge">
-                        <i class="fas fa-cloud"></i>
-                        <span id="storage-badge-text">تخزين سحابي</span>
+                    <div class="storage-badge local" id="storage-badge">
+                        <i class="fas fa-database"></i>
+                        <span id="storage-badge-text">تخزين محلي</span>
                     </div>
                     <div class="health-indicator">
                         <span class="health-dot" id="health-dot"></span>
-                        <span id="health-text">متصل</span>
+                        <span id="health-text">محلي</span>
                     </div>
                 </div>
             </div>
@@ -806,429 +773,470 @@
 
     <div class="toast-container" id="toast-container"></div>
 
-    <!-- ✅ تم إصلاح السطر ده بس - ضيفنا is:inline -->
-    <script is:inline src="/firebase-config.js"></script>
-    
     <script>
         // ============================================
-        // Fast Sokon - مراجعة ذكية للفاتورة v3.0
-        // خفيف، متوافق مع الكاميرا، ومخصص للموبايل
+        // Fast Sokon Review v5.0 - Local Storage Only
         // ============================================
 
-        class InvoiceReview {
-            constructor() {
-                // Core state
-                this.invoiceData = {
-                    supplier: '',
-                    date: new Date().toISOString().split('T')[0],
-                    time: new Date().toTimeString().slice(0, 5)
+        (function() {
+            'use strict';
+
+            // ========== النظام الذكي للتحقق والتصحيح ==========
+            const SmartValidator = {
+                rules: {
+                    name: {
+                        validate: (val) => val && val.trim().length > 0,
+                        message: 'اسم الصنف مطلوب',
+                        severity: 'error',
+                        autoFix: null
+                    },
+                    quantity: {
+                        validate: (val) => !isNaN(val) && val > 0 && Number.isInteger(Number(val)),
+                        message: 'الكمية يجب أن تكون رقماً صحيحاً أكبر من 0',
+                        severity: 'error',
+                        autoFix: (val) => {
+                            let num = parseInt(val);
+                            if (isNaN(num) || num < 1) return 1;
+                            return num;
+                        }
+                    },
+                    price: {
+                        validate: (val) => !isNaN(val) && val >= 0,
+                        message: 'السعر يجب أن يكون رقماً موجباً',
+                        severity: 'error',
+                        autoFix: (val) => {
+                            let num = parseFloat(val);
+                            if (isNaN(num) || num < 0) return 0;
+                            return Math.round(num * 100) / 100;
+                        }
+                    },
+                    publicPrice: {
+                        validate: (val) => !isNaN(val) && val >= 0,
+                        message: 'سعر الجمهور يجب أن يكون رقماً موجباً',
+                        severity: 'warning',
+                        autoFix: (val) => {
+                            let num = parseFloat(val);
+                            if (isNaN(num) || num < 0) return 0;
+                            return Math.round(num * 100) / 100;
+                        }
+                    },
+                    sellingPrice: {
+                        validate: (val) => !isNaN(val) && val >= 0,
+                        message: 'سعر الصيدلية يجب أن يكون رقماً موجباً',
+                        severity: 'warning',
+                        autoFix: (val) => {
+                            let num = parseFloat(val);
+                            if (isNaN(num) || num < 0) return 0;
+                            return Math.round(num * 100) / 100;
+                        }
+                    },
+                    discount: {
+                        validate: (val) => !isNaN(val) && val >= 0 && val <= 100,
+                        message: 'نسبة الخصم بين 0 و 100',
+                        severity: 'warning',
+                        autoFix: (val) => {
+                            let num = parseFloat(val);
+                            if (isNaN(num) || num < 0) return 0;
+                            if (num > 100) return 100;
+                            return Math.round(num * 100) / 100;
+                        }
+                    },
+                    bonus: {
+                        validate: (val) => !isNaN(val) && val >= 0 && Number.isInteger(Number(val)),
+                        message: 'البونص يجب أن يكون رقماً صحيحاً موجباً',
+                        severity: 'warning',
+                        autoFix: (val) => {
+                            let num = parseInt(val);
+                            if (isNaN(num) || num < 0) return 0;
+                            return num;
+                        }
+                    },
+                    expiry: {
+                        validate: (val) => {
+                            if (!val) return true; // اختياري
+                            const date = new Date(val);
+                            return !isNaN(date.getTime());
+                        },
+                        message: 'تاريخ صلاحية غير صالح',
+                        severity: 'warning',
+                        autoFix: null
+                    }
+                },
+
+                validateItem(item, columns) {
+                    const issues = [];
+                    columns.forEach(col => {
+                        if (this.rules[col.key]) {
+                            const rule = this.rules[col.key];
+                            const value = item[col.key];
+                            if (col.required && !rule.validate(value)) {
+                                issues.push({
+                                    field: col.key,
+                                    label: col.label,
+                                    value: value,
+                                    message: rule.message,
+                                    severity: rule.severity,
+                                    autoFix: rule.autoFix
+                                });
+                            }
+                        }
+                    });
+                    return issues;
+                },
+
+                autoCorrect(value, fieldKey) {
+                    if (this.rules[fieldKey] && this.rules[fieldKey].autoFix) {
+                        return this.rules[fieldKey].autoFix(value);
+                    }
+                    return value;
+                }
+            };
+
+            // ========== نظام الاقتراحات الذكية ==========
+            const SmartSuggestions = {
+                analyzeItems(items, columns) {
+                    const suggestions = [];
+                    
+                    // كشف أسعار صفرية مع كميات
+                    items.forEach((item, idx) => {
+                        if (item.quantity > 0 && parseFloat(item.price) === 0) {
+                            suggestions.push({
+                                type: 'warning',
+                                message: `الصنف #${idx + 1}: "${item.name || 'بدون اسم'}" لديه كمية ${item.quantity} لكن سعره صفر`,
+                                action: 'تحديد السعر',
+                                rowIndex: idx,
+                                field: 'price'
+                            });
+                        }
+                        
+                        if (parseFloat(item.discount) > 50) {
+                            suggestions.push({
+                                type: 'warning',
+                                message: `الصنف #${idx + 1}: خصم ${item.discount}% مرتفع جداً`,
+                                action: 'مراجعة الخصم',
+                                rowIndex: idx,
+                                field: 'discount'
+                            });
+                        }
+                        
+                        if (item.publicPrice > 0 && item.sellingPrice > item.publicPrice) {
+                            suggestions.push({
+                                type: 'error',
+                                message: `الصنف #${idx + 1}: سعر الصيدلية (${item.sellingPrice}) أعلى من سعر الجمهور (${item.publicPrice})`,
+                                action: 'تصحيح الأسعار',
+                                rowIndex: idx,
+                                field: 'sellingPrice'
+                            });
+                        }
+                    });
+
+                    // كشف أسماء مكررة
+                    const nameCount = {};
+                    items.forEach((item, idx) => {
+                        if (item.name) {
+                            if (!nameCount[item.name]) nameCount[item.name] = [];
+                            nameCount[item.name].push(idx);
+                        }
+                    });
+                    
+                    Object.entries(nameCount).forEach(([name, indices]) => {
+                        if (indices.length > 1) {
+                            suggestions.push({
+                                type: 'info',
+                                message: `الصنف "${name}" مكرر ${indices.length} مرات`,
+                                action: 'دمج الأصناف',
+                                rows: indices
+                            });
+                        }
+                    });
+
+                    return suggestions;
+                }
+            };
+
+            // ========== نظام الاسترداد الذكي ==========
+            class AutoRecoverySystem {
+                constructor() {
+                    this.recoveryAttempts = 0;
+                    this.maxRecoveryAttempts = 5;
+                    this.backupData = null;
+                }
+
+                async attemptRecovery(error, context) {
+                    console.log(`🔄 Recovery attempt ${this.recoveryAttempts + 1} for:`, context);
+                    
+                    // حفظ نسخة احتياطية
+                    this.backupData = {
+                        timestamp: Date.now(),
+                        context: context,
+                        error: error.message,
+                        items: this.captureCurrentState()
+                    };
+                    
+                    try {
+                        localStorage.setItem('crash_recovery', JSON.stringify(this.backupData));
+                    } catch (e) {
+                        console.warn('Could not save recovery data');
+                    }
+
+                    this.recoveryAttempts++;
+                    return await this.genericRecovery();
+                }
+
+                captureCurrentState() {
+                    try {
+                        return getItemsData();
+                    } catch (e) {
+                        return [];
+                    }
+                }
+
+                async genericRecovery() {
+                    showToast('🔄 محاولة استرداد تلقائي...', 'warning');
+                    return { success: true, fallback: 'local' };
+                }
+
+                getRecoveryUI() {
+                    if (this.backupData) {
+                        return `
+                            <i class="fas fa-undo"></i>
+                            <span>تم اكتشاف نسخة احتياطية (${new Date(this.backupData.timestamp).toLocaleTimeString('ar-EG')})</span>
+                            <div class="recovery-actions">
+                                <button class="btn btn-secondary" onclick="window.autoRecovery.restoreBackup()" style="padding: 0.4rem 1rem; font-size: 0.8rem;">
+                                    <i class="fas fa-check"></i> استعادة
+                                </button>
+                                <button class="btn btn-secondary" onclick="window.autoRecovery.dismissRecovery()" style="padding: 0.4rem 1rem; font-size: 0.8rem;">
+                                    <i class="fas fa-times"></i> تجاهل
+                                </button>
+                            </div>
+                        `;
+                    }
+                    return '';
+                }
+
+                restoreBackup() {
+                    if (this.backupData && this.backupData.items) {
+                        restoreItemsFromArray(this.backupData.items);
+                        showToast('✅ تم استعادة البيانات بنجاح', 'success');
+                    }
+                    this.dismissRecovery();
+                }
+
+                dismissRecovery() {
+                    document.getElementById('recovery-bar')?.classList.remove('visible');
+                    localStorage.removeItem('crash_recovery');
+                }
+            }
+
+            // ========== إعدادات الأعمدة الديناميكية ==========
+            const ALL_POSSIBLE_COLUMNS = {
+                name: { key: 'name', label: 'اسم الصنف', icon: 'fa-box', type: 'text', required: true, cssClass: 'name-input', columnClass: 'col-name', placeholder: 'اسم المنتج', align: 'right', width: 'auto' },
+                quantity: { key: 'quantity', label: 'الكمية', icon: 'fa-hashtag', type: 'number', required: true, cssClass: 'number-type item-qty', columnClass: 'col-numeric', placeholder: '0', align: 'center', width: '80px', affectsTotal: true, multiplier: true },
+                price: { key: 'price', label: 'سعر الوحدة', icon: 'fa-tag', type: 'decimal', cssClass: 'number-type item-price', columnClass: 'col-numeric', placeholder: '0.00', align: 'center', width: '110px', affectsTotal: true, multiplier: true },
+                publicPrice: { key: 'publicPrice', label: 'سعر الجمهور', icon: 'fa-users', type: 'decimal', cssClass: 'number-type item-public-price', columnClass: 'col-numeric', placeholder: '0.00', align: 'center', width: '110px' },
+                sellingPrice: { key: 'sellingPrice', label: 'سعر الصيدلية', icon: 'fa-clinic-medical', type: 'decimal', cssClass: 'number-type item-selling-price', columnClass: 'col-numeric', placeholder: '0.00', align: 'center', width: '110px' },
+                discount: { key: 'discount', label: 'الخصم %', icon: 'fa-percent', type: 'decimal', cssClass: 'number-type item-discount', columnClass: 'col-numeric', placeholder: '0', align: 'center', width: '85px' },
+                bonus: { key: 'bonus', label: 'البونص', icon: 'fa-gift', type: 'number', cssClass: 'number-type item-bonus', columnClass: 'col-numeric', placeholder: '0', align: 'center', width: '80px' },
+                expiry: { key: 'expiry', label: 'تاريخ الصلاحية', icon: 'fa-calendar-alt', type: 'date', cssClass: 'item-expiry', columnClass: 'col-date', placeholder: '', align: 'center', width: '145px' }
+            };
+
+            // ========== متغيرات عامة ==========
+            const MAX_HISTORY = 50;
+            let historyStack = [];
+            let historyIndex = -1;
+            let isUndoRedoAction = false;
+            let stateCaptureTimer = null;
+            let validationTimer = null;
+            let activeColumns = [];
+            let totalMultiplierFields = ['quantity', 'price'];
+            
+            window.autoRecovery = new AutoRecoverySystem();
+
+            // ========== نظام التخزين المحلي المتقدم ==========
+            const LocalStorageManager = {
+                DB_NAME: 'FastSokonLocalDB',
+                DB_VERSION: 1,
+                STORE_NAME: 'invoices',
+                
+                // فتح قاعدة بيانات IndexedDB
+                openDB() {
+                    return new Promise((resolve, reject) => {
+                        if (!window.indexedDB) {
+                            reject(new Error('IndexedDB غير مدعوم'));
+                            return;
+                        }
+                        
+                        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                        
+                        request.onupgradeneeded = (event) => {
+                            const db = event.target.result;
+                            if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                                const store = db.createObjectStore(this.STORE_NAME, { 
+                                    keyPath: 'id',
+                                    autoIncrement: true 
+                                });
+                                store.createIndex('date', 'date', { unique: false });
+                                store.createIndex('store', 'store', { unique: false });
+                                store.createIndex('createdAt', 'createdAt', { unique: false });
+                            }
+                        };
+                        
+                        request.onsuccess = (event) => {
+                            resolve(event.target.result);
+                        };
+                        
+                        request.onerror = (event) => {
+                            reject(event.target.error);
+                        };
+                    });
+                },
+
+                // حفظ فاتورة في IndexedDB
+                async saveInvoice(invoiceData) {
+                    try {
+                        const db = await this.openDB();
+                        const tx = db.transaction(this.STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(this.STORE_NAME);
+                        
+                        const dataToSave = {
+                            ...invoiceData,
+                            activeColumns: activeColumns.map(c => c.key),
+                            createdAt: new Date().toISOString(),
+                            version: '5.0'
+                        };
+                        
+                        const request = store.add(dataToSave);
+                        
+                        return new Promise((resolve, reject) => {
+                            request.onsuccess = () => {
+                                db.close();
+                                resolve(request.result);
+                            };
+                            request.onerror = () => {
+                                db.close();
+                                reject(request.error);
+                            };
+                        });
+                    } catch (error) {
+                        console.error('❌ IndexedDB save error:', error);
+                        // Fallback to localStorage
+                        return this.saveToLocalStorageFallback(invoiceData);
+                    }
+                },
+
+                // حفظ احتياطي في localStorage
+                saveToLocalStorageFallback(invoiceData) {
+                    try {
+                        const invoices = JSON.parse(localStorage.getItem('fast_sokon_invoices') || '[]');
+                        const backup = {
+                            ...invoiceData,
+                            id: 'local_' + Date.now(),
+                            activeColumns: activeColumns.map(c => c.key),
+                            createdAt: new Date().toISOString(),
+                            version: '5.0'
+                        };
+                        invoices.push(backup);
+                        
+                        // الاحتفاظ بآخر 50 فاتورة فقط
+                        if (invoices.length > 50) {
+                            invoices.splice(0, invoices.length - 50);
+                        }
+                        
+                        localStorage.setItem('fast_sokon_invoices', JSON.stringify(invoices));
+                        return backup.id;
+                    } catch (error) {
+                        console.error('❌ localStorage fallback error:', error);
+                        return null;
+                    }
+                },
+
+                // استرجاع جميع الفواتير
+                async getAllInvoices() {
+                    try {
+                        const db = await this.openDB();
+                        const tx = db.transaction(this.STORE_NAME, 'readonly');
+                        const store = tx.objectStore(this.STORE_NAME);
+                        const request = store.getAll();
+                        
+                        return new Promise((resolve, reject) => {
+                            request.onsuccess = () => {
+                                db.close();
+                                resolve(request.result || []);
+                            };
+                            request.onerror = () => {
+                                db.close();
+                                // Fallback to localStorage
+                                const localData = JSON.parse(localStorage.getItem('fast_sokon_invoices') || '[]');
+                                resolve(localData);
+                            };
+                        });
+                    } catch (error) {
+                        console.warn('⚠️ IndexedDB read error, using localStorage:', error);
+                        return JSON.parse(localStorage.getItem('fast_sokon_invoices') || '[]');
+                    }
+                },
+
+                // حذف فاتورة
+                async deleteInvoice(id) {
+                    try {
+                        const db = await this.openDB();
+                        const tx = db.transaction(this.STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(this.STORE_NAME);
+                        store.delete(id);
+                        
+                        return new Promise((resolve) => {
+                            tx.oncomplete = () => {
+                                db.close();
+                                resolve(true);
+                            };
+                        });
+                    } catch (error) {
+                        console.warn('⚠️ Could not delete from IndexedDB');
+                        return false;
+                    }
+                },
+
+                // تصدير جميع البيانات
+                async exportAllData() {
+                    const invoices = await this.getAllInvoices();
+                    const exportData = {
+                        version: '5.0',
+                        exportedAt: new Date().toISOString(),
+                        totalInvoices: invoices.length,
+                        invoices: invoices
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `fast-sokon-backup-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    return exportData;
+                }
+            };
+
+            // ========== Toast Notification System ==========
+            function showToast(message, type = 'success', duration = 4000) {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+                
+                const icons = {
+                    success: 'fa-check-circle',
+                    error: 'fa-exclamation-circle',
+                    warning: 'fa-exclamation-triangle',
+                    info: 'fa-info-circle'
                 };
-                this.items = [];
-                this.originalItems = [];
-
-                // History for undo
-                this.history = [];
-                this.historyIndex = -1;
-                this.maxHistory = 25;
-
-                // Selection
-                this.selectedIndices = new Set();
-                this.lastSelectedIndex = null;
-
-                // Templates
-                this.templates = [];
-
-                // Supplier autocomplete
-                this.supplierSuggestions = [];
-
-                // Services
-                this.db = null;
-                this.auth = null;
-                this.firestore = null;
-                this.currentUser = null;
-
-                // Timers
-                this.autoSaveTimer = null;
-                this.toastTimer = null;
-                this.unsavedChanges = false;
-                this.isSaving = false;
-
-                // Swipe tracking
-                this.swipeState = new Map();
-
-                // Bind methods
-                this.onInputChange = this.onInputChange.bind(this);
-                this.onItemClick = this.onItemClick.bind(this);
-
-                // Init
-                this.init();
-            }
-
-            async init() {
-                this.cacheDom();
-                await this.waitForFirebase();
-                this.setupFirebase();
-                await this.openDatabase();
-                this.setupAuthListener();
-                this.loadInitialData();
-                this.render();
-                this.attachEvents();
-                this.loadTemplates();
-                this.loadSupplierHistory();
-                this.pushHistory();
-                this.startAutoSave();
-                this.setupKeyboardShortcuts();
-                console.log('✅ مراجعة ذكية v3.0 جاهزة');
-            }
-
-            // ========== DOM Cache ==========
-            cacheDom() {
-                this.els = {
-                    supplierInput: document.getElementById('supplierInput'),
-                    supplierSuggestions: document.getElementById('supplierSuggestions'),
-                    dateInput: document.getElementById('dateInput'),
-                    timeInput: document.getElementById('timeInput'),
-                    itemsList: document.getElementById('itemsList'),
-                    itemsCountLabel: document.getElementById('itemsCountLabel'),
-                    totalDisplay: document.getElementById('totalDisplay'),
-                    templatesContainer: document.getElementById('templatesContainer'),
-                    batchBar: document.getElementById('batchBar'),
-                    selectedCount: document.getElementById('selectedCount'),
-                    undoBtn: document.getElementById('undoBtn'),
-                    toast: document.getElementById('toast'),
-                    savingOverlay: document.getElementById('savingOverlay'),
-                    addItemBtn: document.getElementById('addItemBtn'),
-                    saveBtn: document.getElementById('saveBtn'),
-                    templateBtn: document.getElementById('templateBtn'),
-                    clearBtn: document.getElementById('clearBtn'),
-                    batchDeleteBtn: document.getElementById('batchDeleteBtn'),
-                    batchDuplicateBtn: document.getElementById('batchDuplicateBtn'),
-                    cancelBatchBtn: document.getElementById('cancelBatchBtn'),
-                };
-            }
-
-            // ========== Firebase ==========
-            waitForFirebase() {
-                return new Promise(resolve => {
-                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                        resolve();
-                        return;
-                    }
-                    let attempts = 0;
-                    const check = () => {
-                        attempts++;
-                        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                            resolve();
-                        } else if (attempts < 80) {
-                            setTimeout(check, 60);
-                        } else {
-                            console.warn('⚠️ Firebase لم يتم تحميله - تشغيل بدون مزامنة');
-                            resolve();
-                        }
-                    };
-                    check();
-                });
-            }
-
-            setupFirebase() {
-                try {
-                    if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-                        this.auth = firebase.auth();
-                        this.firestore = firebase.firestore();
-                    }
-                } catch (e) {
-                    console.warn('⚠️ خطأ في إعداد Firebase:', e);
-                }
-            }
-
-            setupAuthListener() {
-                if (!this.auth) return;
-                this.auth.onAuthStateChanged(user => {
-                    this.currentUser = user;
-                    if (user) {
-                        this.els.saveBtn.disabled = false;
-                        this.els.saveBtn.title = '';
-                    } else {
-                        this.els.saveBtn.disabled = true;
-                        this.els.saveBtn.title = 'يجب تسجيل الدخول أولاً';
-                    }
-                });
-            }
-
-            // ========== IndexedDB ==========
-            openDatabase() {
-                return new Promise((resolve) => {
-                    const request = indexedDB.open('FastSokonDB', 8);
-                    request.onsuccess = (e) => {
-                        this.db = e.target.result;
-                        resolve();
-                    };
-                    request.onerror = () => {
-                        this.db = null;
-                        resolve();
-                    };
-                    request.onupgradeneeded = (e) => {
-                        const db = e.target.result;
-                        if (!db.objectStoreNames.contains('invoices')) {
-                            db.createObjectStore('invoices', { keyPath: 'id' });
-                        }
-                    };
-                });
-            }
-
-            // ========== Data Loading ==========
-            loadInitialData() {
-                // First priority: sessionStorage from camera flow
-                const analysisResult = this.getAnalysisFromCamera();
-                if (analysisResult) {
-                    this.parseAnalysisResult(analysisResult);
-                    return;
-                }
-
-                // Second priority: localStorage draft
-                const draft = this.getDraftFromLocal();
-                if (draft) {
-                    this.invoiceData = {
-                        supplier: draft.supplier || '',
-                        date: draft.date || this.invoiceData.date,
-                        time: draft.time || this.invoiceData.time
-                    };
-                    this.items = draft.items || [];
-                }
-
-                this.originalItems = JSON.parse(JSON.stringify(this.items));
-                this.unsavedChanges = false;
-            }
-
-            getAnalysisFromCamera() {
-                try {
-                    const stored = sessionStorage.getItem('analysis_result');
-                    if (!stored) return null;
-                    const data = JSON.parse(stored);
-                    // Clean up after reading
-                    sessionStorage.removeItem('analysis_result');
-                    return data;
-                } catch (e) {
-                    return null;
-                }
-            }
-
-            getDraftFromLocal() {
-                try {
-                    const stored = localStorage.getItem('current_invoice_data');
-                    return stored ? JSON.parse(stored) : null;
-                } catch (e) {
-                    return null;
-                }
-            }
-
-            parseAnalysisResult(result) {
-                const text = result.text || '';
-                const items = [];
-
-                // Try multiple parsing strategies
-                const strategies = [
-                    this.parseTableFormat,
-                    this.parseLineByLine,
-                    this.parseJsonEmbedded,
-                ];
-
-                for (const strategy of strategies) {
-                    const parsed = strategy.call(this, text);
-                    if (parsed && parsed.length > 0) {
-                        items.push(...parsed);
-                        break;
-                    }
-                }
-
-                // Extract supplier name
-                const supplierMatch = text.match(/(?:مورد|شركة|محل|متجر|بائع|المورد|الشركة)[:\s]*[:\s]+([^\n]{2,40})/i);
-                if (supplierMatch) {
-                    this.invoiceData.supplier = supplierMatch[1].trim();
-                }
-
-                // Extract date
-                const dateMatch = text.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
-                if (dateMatch) {
-                    const d = dateMatch[1].replace(/\//g, '-');
-                    if (!isNaN(Date.parse(d))) this.invoiceData.date = d;
-                }
-
-                this.items = items.length > 0 ? items : [{ name: '', quantity: 1, price: 0 }];
-                this.originalItems = JSON.parse(JSON.stringify(this.items));
-
-                if (items.length > 0) {
-                    this.showToast(`✅ تم استخراج ${items.length} صنف من الفاتورة`, 'success');
-                } else if (text) {
-                    this.showToast('⚠️ لم نتمكن من استخراج أصناف تلقائياً. يمكنك إضافتها يدوياً.', 'error');
-                }
-            }
-
-            parseTableFormat(text) {
-                // Look for table-like patterns: name | quantity | price | total
-                const items = [];
-                const lines = text.split('\n').filter(l => l.trim());
-
-                for (const line of lines) {
-                    // Match: item name ... quantity ... price ... total
-                    const match = line.match(
-                        /([^\d]{2,40}?)\s+(\d+)\s+([\d,.]+)\s+([\d,.]+)/
-                    );
-                    if (match) {
-                        items.push({
-                            name: match[1].trim(),
-                            quantity: parseInt(match[2]) || 1,
-                            price: parseFloat(match[3].replace(/,/g, '')) || 0
-                        });
-                        continue;
-                    }
-
-                    // Match: item name x quantity @ price
-                    const match2 = line.match(
-                        /([^\d]{2,40}?)\s*[x×]\s*(\d+)\s*[@]?\s*([\d,.]+)/
-                    );
-                    if (match2) {
-                        items.push({
-                            name: match2[1].trim(),
-                            quantity: parseInt(match2[2]) || 1,
-                            price: parseFloat(match2[3].replace(/,/g, '')) || 0
-                        });
-                    }
-                }
-
-                return items;
-            }
-
-            parseLineByLine(text) {
-                const items = [];
-                const lines = text.split('\n').filter(l => l.trim());
-
-                for (const line of lines) {
-                    // Try: name price (simple format)
-                    const match = line.match(/^(.{2,30}?)\s+([\d,.]+)\s*(?:ج\.م|EGP|جنيه)?\s*$/);
-                    if (match && !match[1].match(/إجمال|مجموع|total|sum/i)) {
-                        items.push({
-                            name: match[1].trim(),
-                            quantity: 1,
-                            price: parseFloat(match[2].replace(/,/g, '')) || 0
-                        });
-                    }
-                }
-
-                return items;
-            }
-
-            parseJsonEmbedded(text) {
-                try {
-                    const jsonMatch = text.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        const data = JSON.parse(jsonMatch[0]);
-                        if (data.items && Array.isArray(data.items)) {
-                            return data.items.map(item => ({
-                                name: item.name || item.product || '',
-                                quantity: item.quantity || item.qty || 1,
-                                price: item.price || item.unit_price || 0
-                            }));
-                        }
-                    }
-                } catch (e) {
-                    // Not JSON
-                }
-                return [];
-            }
-
-            // ========== History / Undo ==========
-            pushHistory() {
-                const snapshot = JSON.stringify(this.items);
-                // Don't push if same as current
-                if (this.history.length > 0 && this.history[this.historyIndex] === snapshot) return;
-
-                // Trim future history
-                this.history = this.history.slice(0, this.historyIndex + 1);
-                this.history.push(snapshot);
-
-                // Limit history size
-                if (this.history.length > this.maxHistory) this.history.shift();
-                this.historyIndex = this.history.length - 1;
-
-                this.unsavedChanges = true;
-                this.updateUndoButton();
-            }
-
-            undo() {
-                if (this.historyIndex <= 0) return;
-                this.historyIndex--;
-                this.items = JSON.parse(this.history[this.historyIndex]);
-                this.renderItems();
-                this.updateTotal();
-                this.clearSelection();
-                this.unsavedChanges = true;
-                this.updateUndoButton();
-                // Haptic-like visual feedback
-                this.pulseElement(this.els.undoBtn);
-            }
-
-            updateUndoButton() {
-                const btn = this.els.undoBtn;
-                if (this.historyIndex > 0) {
-                    btn.classList.remove('undo-disabled');
-                } else {
-                    btn.classList.add('undo-disabled');
-                }
-            }
-
-            pulseElement(el) {
-                el.style.transform = 'scale(0.88)';
-                setTimeout(() => el.style.transform = '', 120);
-            }
-
-            // ========== Supplier Autocomplete ==========
-            async loadSupplierHistory() {
-                if (!this.db) return;
-                try {
-                    const tx = this.db.transaction('invoices', 'readonly');
-                    const store = tx.objectStore('invoices');
-                    const req = store.getAll();
-                    req.onsuccess = () => {
-                        const invoices = req.result || [];
-                        const suppliers = new Set(
-                            invoices.map(inv => inv.supplier).filter(Boolean)
-                        );
-                        this.supplierSuggestions = Array.from(suppliers).sort();
-                    };
-                    req.onerror = () => {};
-                } catch (e) {
-                    // Silent fail
-                }
-            }
-
-            showSupplierSuggestions(value) {
-                const dropdown = this.els.supplierSuggestions;
-                if (!dropdown) return;
-
-                const query = value.trim().toLowerCase();
-                if (query.length === 0) {
-                    dropdown.classList.remove('visible');
-                    return;
-                }
-
-                const matches = this.supplierSuggestions
-                    .filter(s => s.toLowerCase().includes(query))
-                    .slice(0, 5);
-
-                if (matches.length === 0) {
-                    dropdown.classList.remove('visible');
-                    return;
-                }
-
-                dropdown.innerHTML = matches
-                    .map(s => `<div class="suggestion-item" role="option">${this.escHtml(s)}</div>`)
-                    .join('');
-                dropdown.classList.add('visible');
-            }
-
-            hideSupplierSuggestions() {
+                
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
+                container.appendChild(toast);
+                
+                requestAnimationFrame(() => toast.classList.add('show'));
+                
                 setTimeout(() => {
                     toast.classList.remove('show');
                     setTimeout(() => {
@@ -1245,41 +1253,53 @@
                 
                 const statusConfig = {
                     'saving': { class: 'saving', text: '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...' },
-                    'cloud': { class: 'cloud', text: '<i class="fas fa-cloud" style="margin-left: 0.3rem;"></i> تخزين سحابي' },
-                    'error': { class: 'error', text: '<i class="fas fa-exclamation-triangle" style="margin-left: 0.3rem;"></i> خطأ في الاتصال' },
-                    'local': { class: 'local', text: '<i class="fas fa-database" style="margin-left: 0.3rem;"></i> تخزين محلي' }
+                    'local': { class: 'local', text: '<i class="fas fa-database" style="margin-left: 0.3rem;"></i> تخزين محلي' },
+                    'error': { class: 'error', text: '<i class="fas fa-exclamation-triangle" style="margin-left: 0.3rem;"></i> خطأ في التخزين' }
                 };
                 
-                const config = statusConfig[status] || statusConfig['cloud'];
+                const config = statusConfig[status] || statusConfig['local'];
                 badge.className = `storage-badge ${config.class}`;
                 badgeText.innerHTML = config.text;
             }
 
-            saveAsTemplate() {
-                const name = prompt('اسم القالب (مثال: مشتريات أسبوعية):');
-                if (!name || !name.trim()) return;
-
-                const template = {
-                    name: name.trim(),
-                    supplier: this.invoiceData.supplier,
-                    items: JSON.parse(JSON.stringify(this.items)),
-                    savedAt: Date.now()
-                };
-
-                // Avoid duplicates
-                const existing = this.templates.findIndex(t => t.name === template.name);
-                if (existing >= 0) {
-                    this.templates[existing] = template;
-                } else {
-                    this.templates.unshift(template);
+            function setSaveStatus(message, type) {
+                const statusEl = document.getElementById('save-status');
+                if (!statusEl) return;
+                
+                statusEl.className = `save-status visible ${type}`;
+                statusEl.innerHTML = message;
+                
+                if (type === 'success' || type === 'error') {
+                    setTimeout(() => {
+                        statusEl.className = 'save-status';
+                        statusEl.innerHTML = '';
+                    }, 5000);
                 }
+            }
 
-                // Limit templates
-                if (this.templates.length > 15) this.templates = this.templates.slice(0, 15);
+            // ========== الكشف الذكي عن الأعمدة ==========
+            function detectActiveColumns(items) {
+                const detectedColumns = new Set(['name', 'quantity']);
+                
+                items.forEach(item => {
+                    Object.keys(ALL_POSSIBLE_COLUMNS).forEach(colKey => {
+                        if (colKey === 'name' || colKey === 'quantity') return;
+                        const value = item[colKey];
+                        if (value !== undefined && value !== null && value !== '' && value !== 0 && value !== '0' && value !== '0.00') {
+                            detectedColumns.add(colKey);
+                        }
+                    });
+                });
 
-                localStorage.setItem('invoice_templates', JSON.stringify(this.templates));
-                this.renderTemplates();
-                this.showToast(`✅ تم حفظ القالب "${template.name}"`, 'success');
+                if (!detectedColumns.has('price')) detectedColumns.add('price');
+
+                const columnOrder = ['name', 'quantity', 'price', 'publicPrice', 'sellingPrice', 'discount', 'bonus', 'expiry'];
+                activeColumns = columnOrder
+                    .filter(key => detectedColumns.has(key))
+                    .map(key => ALL_POSSIBLE_COLUMNS[key]);
+
+                console.log('📋 Active columns:', activeColumns.map(c => c.label).join(', '));
+                return activeColumns;
             }
 
             // ========== معالجة ذكية للبيانات ==========
@@ -1303,76 +1323,90 @@
                 return Array.from(rows).map(row => getItemDataFromRow(row));
             }
 
-            deleteTemplate(index) {
-                const template = this.templates[index];
-                if (!template) return;
-                if (!confirm(`حذف القالب "${template.name}"؟`)) return;
-
-                this.templates.splice(index, 1);
-                localStorage.setItem('invoice_templates', JSON.stringify(this.templates));
-                this.renderTemplates();
-                this.showToast('🗑️ تم حذف القالب');
+            // ========== التحقق الذكي من الأخطاء ==========
+            function validateAllItems() {
+                const rows = document.querySelectorAll('#items-tbody .invoice-item-row');
+                let hasErrors = false;
+                let issues = [];
+                
+                rows.forEach((row, idx) => {
+                    const item = getItemDataFromRow(row);
+                    const itemIssues = SmartValidator.validateItem(item, activeColumns);
+                    
+                    // إزالة كلاسات الأخطاء السابقة
+                    row.classList.remove('row-error', 'row-warning');
+                    row.querySelectorAll('.cell-input').forEach(input => {
+                        input.classList.remove('error', 'warning', 'auto-corrected');
+                    });
+                    
+                    if (itemIssues.length > 0) {
+                        const hasError = itemIssues.some(i => i.severity === 'error');
+                        row.classList.add(hasError ? 'row-error' : 'row-warning');
+                        
+                        itemIssues.forEach(issue => {
+                            const input = row.querySelector(`.item-${issue.field}`);
+                            if (input) {
+                                input.classList.add(issue.severity);
+                                input.title = issue.message;
+                            }
+                            issues.push({ ...issue, rowIndex: idx });
+                        });
+                        
+                        if (hasError) hasErrors = true;
+                    }
+                });
+                
+                return { hasErrors, issues };
             }
 
-            renderTemplates() {
-                const container = this.els.templatesContainer;
-                if (!container) return;
+            // ========== إنشاء صف جديد ==========
+            function createItemRow(item = {}, index = 0) {
+                const row = document.createElement('tr');
+                row.className = 'invoice-item-row';
+                row.dataset.index = index;
 
-                if (this.templates.length === 0) {
-                    container.innerHTML = '';
-                    return;
-                }
-
-                container.innerHTML = this.templates
-                    .map((t, i) => `
-                <div class="template-chip" data-index="${i}" title="اضغط للتطبيق | ضغطة طويلة للحذف">
-                  <i class="fas fa-layer-group" style="font-size:10px;"></i>
-                  ${this.escHtml(t.name)}
-                </div>
-              `).join('');
-
-                // Template click events
-                container.querySelectorAll('.template-chip').forEach(chip => {
-                    let pressTimer;
-                    const index = parseInt(chip.dataset.index);
-
-                    chip.addEventListener('pointerdown', (e) => {
-                        pressTimer = setTimeout(() => {
-                            this.deleteTemplate(index);
-                        }, 800);
-                    });
-
-                    chip.addEventListener('pointerup', () => {
-                        clearTimeout(pressTimer);
-                    });
-
-                    chip.addEventListener('pointerleave', () => {
-                        clearTimeout(pressTimer);
-                    });
-
-                    chip.addEventListener('click', (e) => {
-                        if (pressTimer) {
-                            clearTimeout(pressTimer);
-                            this.applyTemplate(index);
-                        }
-                    });
+                activeColumns.forEach(col => {
+                    const td = document.createElement('td');
+                    
+                    if (col.key === 'name') {
+                        td.innerHTML = `
+                            <input type="text" class="cell-input name-input item-name" 
+                                   value="${escapeHtml(item.name || '')}" placeholder="${col.placeholder}" autocomplete="off" />
+                            <div class="cell-tooltip">${col.label}</div>
+                        `;
+                    } else if (col.type === 'date') {
+                        td.innerHTML = `
+                            <input type="date" class="cell-input item-expiry" value="${item[col.key] || ''}" />
+                        `;
+                    } else {
+                        const inputMode = col.type === 'decimal' ? 'decimal' : 'numeric';
+                        const value = item[col.key] !== undefined ? item[col.key] : (col.type === 'decimal' ? '0.00' : '0');
+                        td.innerHTML = `
+                            <input type="text" inputmode="${inputMode}" 
+                                   class="cell-input ${col.cssClass} item-${col.key}" 
+                                   value="${value}" placeholder="${col.placeholder}" autocomplete="off" />
+                            <div class="cell-tooltip">${col.label}</div>
+                        `;
+                    }
+                    
+                    row.appendChild(td);
                 });
-            }
 
-            // ========== Item Operations ==========
-            addItem(insertIndex = this.items.length) {
-                this.items.splice(insertIndex, 0, { name: '', quantity: 1, price: 0 });
-                this.renderItems();
-                this.updateTotal();
-                this.pushHistory();
-                this.clearSelection();
+                const subtotalTd = document.createElement('td');
+                subtotalTd.className = 'subtotal-cell';
+                subtotalTd.innerHTML = '<span class="subtotal-val">0.00</span>';
+                row.appendChild(subtotalTd);
 
-                // Focus the new item's name input
-                requestAnimationFrame(() => {
-                    const inputs = this.els.itemsList.querySelectorAll('.name-input');
-                    const target = inputs[Math.min(insertIndex, inputs.length - 1)];
-                    if (target) target.focus();
-                });
+                const actionTd = document.createElement('td');
+                actionTd.className = 'action-cell';
+                actionTd.innerHTML = `
+                    <button class="action-btn duplicate-btn" title="نسخ"><i class="fas fa-copy"></i></button>
+                    <button class="action-btn split-btn" title="تقسيم"><i class="fas fa-code-branch"></i></button>
+                    <button class="action-btn delete-btn" title="حذف"><i class="fas fa-trash-alt"></i></button>
+                `;
+                row.appendChild(actionTd);
+
+                return row;
             }
 
             // ========== إنشاء رأس الجدول ==========
@@ -1429,7 +1463,6 @@
                 const grandTotalEl = document.getElementById('grand-total-val');
                 if (grandTotalEl) grandTotalEl.textContent = total.toFixed(2);
                 
-                // تحديث الإحصائيات
                 const countEl = document.getElementById('item-count');
                 if (countEl) countEl.textContent = rows.length;
                 
@@ -1441,48 +1474,78 @@
                 rows.forEach((row, idx) => row.dataset.index = idx);
             }
 
-            // ========== Batch Operations ==========
-            toggleSelect(index, event) {
-                if (event && event.shiftKey && this.lastSelectedIndex !== null && this.lastSelectedIndex !==
-                    undefined) {
-                    const start = Math.min(index, this.lastSelectedIndex);
-                    const end = Math.max(index, this.lastSelectedIndex);
-                    const allInRange = Array.from({ length: end - start + 1 }, (_, i) => start + i);
-                    const allSelected = allInRange.every(i => this.selectedIndices.has(i));
-
-                    if (allSelected) {
-                        allInRange.forEach(i => this.selectedIndices.delete(i));
-                    } else {
-                        allInRange.forEach(i => this.selectedIndices.add(i));
-                    }
-                } else {
-                    if (this.selectedIndices.has(index)) {
-                        this.selectedIndices.delete(index);
-                    } else {
-                        this.selectedIndices.add(index);
-                    }
+            // ========== Undo/Redo ==========
+            function captureState() {
+                if (isUndoRedoAction) return;
+                
+                const storeInput = document.getElementById('editable-store');
+                const dateInput = document.getElementById('editable-date');
+                const paymentSelect = document.getElementById('editable-payment-status');
+                if (!storeInput || !dateInput) return;
+                
+                const state = {
+                    store: storeInput.value,
+                    date: dateInput.value,
+                    paymentStatus: paymentSelect ? paymentSelect.value : 'unpaid',
+                    items: getItemsData(),
+                    activeColumns: activeColumns.map(c => c.key)
+                };
+                
+                if (historyIndex >= 0 && JSON.stringify(historyStack[historyIndex]) === JSON.stringify(state)) {
+                    return;
                 }
-
-                this.lastSelectedIndex = index;
-                this.renderSelection();
+                
+                historyStack = historyStack.slice(0, historyIndex + 1);
+                historyStack.push(state);
+                
+                if (historyStack.length > MAX_HISTORY) {
+                    historyStack.shift();
+                } else {
+                    historyIndex = historyStack.length - 1;
+                }
+                
+                updateUndoRedoButtons();
             }
 
-            clearSelection() {
-                this.selectedIndices.clear();
-                this.lastSelectedIndex = null;
-                this.renderSelection();
+            function restoreState(state) {
+                const storeInput = document.getElementById('editable-store');
+                const dateInput = document.getElementById('editable-date');
+                const paymentSelect = document.getElementById('editable-payment-status');
+                const tbody = document.getElementById('items-tbody');
+                
+                if (storeInput) storeInput.value = state.store;
+                if (dateInput) dateInput.value = state.date;
+                if (paymentSelect) paymentSelect.value = state.paymentStatus || 'unpaid';
+                
+                if (state.activeColumns && JSON.stringify(state.activeColumns) !== JSON.stringify(activeColumns.map(c => c.key))) {
+                    rebuildTableStructure(state.items);
+                }
+                
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    state.items.forEach((item, idx) => tbody.appendChild(createItemRow(item, idx)));
+                }
+                
+                recalculateTotal();
             }
 
-            renderSelection() {
-                const rows = this.els.itemsList.querySelectorAll('.item-row');
-                rows.forEach(row => {
-                    const idx = parseInt(row.dataset.index);
-                    row.classList.toggle('selected', this.selectedIndices.has(idx));
-                });
+            function rebuildTableStructure(items) {
+                detectActiveColumns(items);
+                const table = document.getElementById('invoice-table');
+                if (table) {
+                    const oldThead = table.querySelector('thead');
+                    if (oldThead) oldThead.remove();
+                    table.insertBefore(createTableHeader(), table.firstChild);
+                }
+            }
 
-                const count = this.selectedIndices.size;
-                this.els.selectedCount.textContent = `${count} مختار`;
-                this.els.batchBar.classList.toggle('active', count > 0);
+            function undo() {
+                if (historyIndex <= 0) return;
+                isUndoRedoAction = true;
+                historyIndex--;
+                restoreState(historyStack[historyIndex]);
+                updateUndoRedoButtons();
+                isUndoRedoAction = false;
             }
 
             function redo() {
@@ -1511,472 +1574,616 @@
                 }
             }
 
-            // ========== Save ==========
-            async saveInvoice() {
-                if (this.isSaving) return;
-                if (!this.currentUser) {
-                    this.showToast('🔐 يرجى تسجيل الدخول أولاً', 'error');
-                    return;
-                }
-                if (!this.invoiceData.supplier.trim()) {
-                    this.showToast('⚠️ يرجى إدخال اسم المورد', 'error');
-                    this.els.supplierInput.focus();
-                    return;
-                }
+            // ========== الحفظ المحلي ==========
+            async function saveInvoiceLocally() {
+                const commitBtn = document.getElementById('commit-btn');
+                const storeInput = document.getElementById('editable-store');
+                const dateInput = document.getElementById('editable-date');
+                const paymentSelect = document.getElementById('editable-payment-status');
+                const grandTotalEl = document.getElementById('grand-total-val');
 
-                // التحقق من وجود مستخدم مسجل
-                if (!currentUser) {
-                    showToast('يجب تسجيل الدخول للحفظ السحابي', 'error');
+                if (!commitBtn || !storeInput || !dateInput || !grandTotalEl) {
+                    showToast('خطأ في الواجهة. يرجى تحديث الصفحة.', 'error');
                     return;
                 }
 
-                this.isSaving = true;
-                this.showSaving(true);
-                this.els.saveBtn.disabled = true;
+                // التحقق من صحة البيانات قبل الحفظ
+                const { hasErrors } = validateAllItems();
+                if (hasErrors) {
+                    showToast('يرجى تصحيح الأخطاء المميزة باللون الأحمر قبل الحفظ', 'error');
+                    return;
+                }
 
-                const invoice = {
-                    id: this.generateId(),
-                    supplier: this.invoiceData.supplier.trim(),
-                    dateStr: this.invoiceData.date,
-                    time: this.invoiceData.time,
-                    items: this.items.map(item => ({
-                        name: item.name.trim() || 'صنف غير معروف',
-                        quantity: parseFloat(item.quantity) || 1,
-                        price: parseFloat(item.price) || 0
-                    })),
-                    total: this.calculateTotal(),
-                    uid: this.currentUser.uid,
-                    createdAt: new Date().toISOString(),
-                    source: 'review_page'
-                };
-
-                let savedToCloud = false;
-                let savedToLocal = false;
+                commitBtn.disabled = true;
+                updateStorageBadge('saving');
+                setSaveStatus('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ في التخزين المحلي...', 'saving');
 
                 try {
-                    // Save to Firestore
-                    await this.firestore
-                        .collection('users')
-                        .doc(this.currentUser.uid)
-                        .collection('invoices')
-                        .doc(invoice.id)
-                        .set(invoice);
+                    const items = getItemsData();
+                    const invoiceData = {
+                        store: storeInput.value || 'غير محدد',
+                        date: dateInput.value || new Date().toISOString().split('T')[0],
+                        items: items,
+                        total: parseFloat(grandTotalEl.textContent) || 0,
+                        itemCount: items.length,
+                        paymentStatus: paymentSelect ? paymentSelect.value : 'unpaid',
+                        saveTime: Date.now()
+                    };
 
-                    // Save to IndexedDB
-                    await this.saveToLocalDB(invoice);
+                    // حفظ في IndexedDB (مع fallback إلى localStorage)
+                    const savedId = await LocalStorageManager.saveInvoice(invoiceData);
+                    
+                    // حفظ الحالة الأخيرة للاسترداد
+                    localStorage.setItem('last_valid_state', JSON.stringify(invoiceData));
 
-                    // Clear draft
-                    localStorage.removeItem('current_invoice_data');
-                    this.unsavedChanges = false;
+                    setSaveStatus('<i class="fas fa-check-circle"></i> تم حفظ الفاتورة محلياً بنجاح!', 'success');
+                    updateStorageBadge('local');
+                    showToast('✅ تم حفظ الفاتورة في التخزين المحلي بنجاح!', 'success', 3000);
+                    
+                    // طباعة رسالة نجاح في الكونسول
+                    console.log('✅ Invoice saved locally:', {
+                        id: savedId,
+                        store: invoiceData.store,
+                        date: invoiceData.date,
+                        items: invoiceData.itemCount,
+                        total: invoiceData.total.toFixed(2)
+                    });
 
-                    this.showToast(`✅ تم حفظ فاتورة ${invoice.supplier}`, 'success');
-                    this.showSaving(false);
+                    setTimeout(() => {
+                        try { sessionStorage.removeItem('analysis_result'); } catch (e) {}
+                    }, 500);
 
-                    // Navigate back after short delay
+                    // العودة للصفحة الرئيسية بعد الحفظ الناجح
                     setTimeout(() => {
                         window.location.href = '/';
-                    }, 900);
+                    }, 1500);
+
                 } catch (error) {
-                    console.error('Save error:', error);
-
-                    // Try offline save
-                    try {
-                        await this.saveToLocalDB(invoice);
-                        localStorage.removeItem('current_invoice_data');
-                        this.showToast('📦 تم الحفظ محلياً. ستتم المزامنة عند الاتصال.', 'info');
-                        setTimeout(() => window.location.href = '/', 900);
-                    } catch (localError) {
-                        this.showToast('❌ فشل الحفظ. حاول مجدداً.', 'error');
-                    }
-
-                    this.showSaving(false);
-                    this.els.saveBtn.disabled = false;
+                    console.error('❌ Save error:', error);
+                    setSaveStatus('<i class="fas fa-exclamation-circle"></i> فشل الحفظ - يرجى المحاولة مرة أخرى', 'error');
+                    updateStorageBadge('error');
+                    showToast('❌ فشل حفظ الفاتورة. يرجى المحاولة مرة أخرى.', 'error');
                 } finally {
-                    this.isSaving = false;
+                    commitBtn.disabled = false;
                 }
             }
 
-            saveToLocalDB(invoice) {
-                return new Promise((resolve, reject) => {
-                    if (!this.db) {
-                        resolve();
-                        return;
-                    }
-                    try {
-                        const tx = this.db.transaction('invoices', 'readwrite');
-                        const store = tx.objectStore('invoices');
-                        store.put(invoice);
-                        tx.oncomplete = () => resolve();
-                        tx.onerror = () => reject(tx.error);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
+            // ========== عرض الاقتراحات الذكية ==========
+            function showSmartSuggestions() {
+                const items = getItemsData();
+                const suggestions = SmartSuggestions.analyzeItems(items, activeColumns);
+                const box = document.getElementById('smart-suggestions-box');
+                
+                if (!box || suggestions.length === 0) {
+                    if (box) box.classList.remove('visible');
+                    showToast('✅ لم يتم العثور على مشاكل في الفاتورة', 'success');
+                    return;
+                }
+
+                box.innerHTML = `
+                    <div class="suggestion-header">
+                        <i class="fas fa-magic"></i>
+                        اقتراحات ذكية (${suggestions.length})
+                        <button class="action-btn" onclick="document.getElementById('smart-suggestions-box').classList.remove('visible')" style="margin-right: auto; font-size: 0.7rem;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <ul class="suggestion-list">
+                        ${suggestions.map((s, i) => `
+                            <li class="suggestion-item">
+                                <i class="fas fa-${s.type === 'error' ? 'exclamation-circle' : s.type === 'warning' ? 'exclamation-triangle' : 'info-circle'}" 
+                                   style="color: var(--color-${s.type === 'error' ? 'danger' : s.type === 'warning' ? 'warning' : 'info'});"></i>
+                                <span>${s.message}</span>
+                                ${s.field ? `<button class="action-btn" onclick="focusField(${s.rowIndex}, '${s.field}')">${s.action}</button>` : ''}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                box.classList.add('visible');
             }
 
-            // ✅ مزامنة الفواتير المحلية عند الاتصال
-            async syncOfflineInvoices() {
+            function focusField(rowIndex, fieldKey) {
+                const rows = document.querySelectorAll('#items-tbody .invoice-item-row');
+                if (rows[rowIndex]) {
+                    const input = rows[rowIndex].querySelector(`.item-${fieldKey}`);
+                    if (input) {
+                        input.focus();
+                        input.select();
+                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
+
+            // ========== بناء واجهة المستخدم الذكية ==========
+            function parseAndBuildEditableUI(textData) {
+                const viewContainer = document.getElementById('render-target');
+                if (!viewContainer) return;
+
                 try {
-                    const offlineInvoices = JSON.parse(localStorage.getItem('offline_invoices') || '[]');
-                    if (offlineInvoices.length === 0) return;
+                    let storeName = "غير محدد";
+                    let invoiceDate = new Date().toISOString().split('T')[0];
+                    let itemsList = [];
 
-                    console.log(`🔄 جاري مزامنة ${offlineInvoices.length} فاتورة محلية...`);
+                    // استخراج اسم المتجر
+                    const storePatterns = [/متجر\s+(.+)/, /المورد\s*:\s*(.+)/, /المحل\s+(.+)/, /صيدلية\s+(.+)/];
+                    for (const pattern of storePatterns) {
+                        const match = textData.match(pattern);
+                        if (match) { storeName = match[1].trim(); break; }
+                    }
 
-                    for (const invoice of offlineInvoices) {
-                        try {
-                            if (this.firestore && invoice.userId !== 'anonymous') {
-                                await this.firestore
-                                    .collection('users')
-                                    .doc(invoice.userId)
-                                    .collection('invoices')
-                                    .doc(invoice.id)
-                                    .set(invoice);
+                    // استخراج التاريخ
+                    const datePatterns = [/التاريخ:\s*([\d-]+)/, /التاريخ\s*:\s*(\d{4}-\d{2}-\d{2})/, /(\d{4}-\d{2}-\d{2})/];
+                    for (const pattern of datePatterns) {
+                        const match = textData.match(pattern);
+                        if (match) { invoiceDate = match[1].trim(); break; }
+                    }
+
+                    // استخراج JSON
+                    const jsonPatterns = [/\{"items"\s*:\s*\[/g, /\{"items":\[/g, /\{[\s\S]*"items"[\s\S]*\}/g];
+                    let extractedJson = null;
+                    
+                    for (const pattern of jsonPatterns) {
+                        const match = textData.match(pattern);
+                        if (match) {
+                            let jsonStr = match[0];
+                            if (!jsonStr.endsWith('}')) {
+                                const startIndex = textData.indexOf(jsonStr);
+                                const remaining = textData.substring(startIndex);
+                                const endIndex = remaining.indexOf('}]}') + 3;
+                                if (endIndex > 3) {
+                                    jsonStr = remaining.substring(0, endIndex);
+                                }
                             }
-                        } catch (e) {
-                            console.warn('⚠️ فشل مزامنة فاتورة:', invoice.id);
+                            
+                            try {
+                                const parsed = JSON.parse(jsonStr);
+                                if (parsed.items && Array.isArray(parsed.items)) {
+                                    extractedJson = jsonStr;
+                                    itemsList = parsed.items;
+                                    break;
+                                }
+                            } catch (e) {
+                                continue;
+                            }
                         }
                     }
 
-                    localStorage.removeItem('offline_invoices');
-                    console.log('✅ تمت مزامنة جميع الفواتير المحلية');
-                } catch (e) {
-                    console.warn('⚠️ فشل المزامنة:', e.message);
+                    if (itemsList.length === 0) {
+                        throw new Error("لم يتم العثور على بيانات الأصناف");
+                    }
+
+                    // تنظيف البيانات
+                    itemsList = itemsList.map(item => {
+                        const clean = {};
+                        Object.keys(item).forEach(k => {
+                            if (item[k] !== null && item[k] !== undefined) {
+                                clean[k] = item[k];
+                            }
+                        });
+                        return clean;
+                    });
+
+                    detectActiveColumns(itemsList);
+
+                    viewContainer.innerHTML = `
+                        <div class="vendor-summary">
+                            <div class="meta-box" id="store-box">
+                                <label for="editable-store"><i class="fas fa-store"></i> المورد</label>
+                                <input type="text" id="editable-store" value="${escapeHtml(storeName)}" />
+                                <div class="validation-hint">اسم المورد مطلوب</div>
+                            </div>
+                            <div class="meta-box" id="date-box">
+                                <label for="editable-date"><i class="fas fa-calendar"></i> تاريخ الفاتورة</label>
+                                <input type="date" id="editable-date" value="${invoiceDate}" />
+                            </div>
+                            <div class="meta-box" id="payment-box">
+                                <label for="editable-payment-status"><i class="fas fa-money-bill-wave"></i> حالة الدفع</label>
+                                <select id="editable-payment-status">
+                                    <option value="unpaid">غير مدفوعة</option>
+                                    <option value="paid">مدفوعة</option>
+                                    <option value="partial">مدفوعة جزئياً</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <div class="scroll-indicator" id="scroll-indicator"></div>
+                            <table id="invoice-table"></table>
+                            <button class="add-row-btn" id="add-row-btn">
+                                <i class="fas fa-plus-circle"></i> إضافة صنف جديد
+                            </button>
+                        </div>
+
+                        <div class="summary-footer">
+                            <div class="stats-mini">
+                                <span><i class="fas fa-boxes"></i> عدد الأصناف: <strong id="item-count">${itemsList.length}</strong></span>
+                            </div>
+                            <span class="total-label"><i class="fas fa-calculator"></i> الإجمالي النهائي</span>
+                            <span class="total-amount"><span id="grand-total-val">0.00</span> ج.م</span>
+                        </div>
+
+                        <div class="action-bar">
+                            <span class="save-status" id="save-status"></span>
+                            <a href="/camera" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> إلغاء</a>
+                            <button id="commit-btn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ محلياً</button>
+                        </div>
+                    `;
+
+                    const table = document.getElementById('invoice-table');
+                    table.appendChild(createTableHeader());
+                    
+                    const tbody = document.createElement('tbody');
+                    tbody.id = 'items-tbody';
+                    itemsList.forEach((item, idx) => tbody.appendChild(createItemRow(item, idx)));
+                    table.appendChild(tbody);
+                    
+                    recalculateTotal();
+                    captureState();
+                    setupEventListeners();
+                    setupScrollIndicator();
+                    
+                    // التحقق الأولي من الأخطاء
+                    setTimeout(validateAllItems, 500);
+                    
+                    // التحقق من وجود نسخة استرداد
+                    checkForRecovery();
+                    
+                    console.log('✅ Smart UI built with', activeColumns.length, 'columns and', itemsList.length, 'items');
+
+                } catch (err) {
+                    console.error('❌ Build error:', err);
+                    
+                    // محاولة استرداد من النسخة الاحتياطية
+                    const backup = localStorage.getItem('last_valid_state');
+                    if (backup) {
+                        try {
+                            const backupData = JSON.parse(backup);
+                            viewContainer.innerHTML = `
+                                <div class="loading-error-zone">
+                                    <p style="color: var(--color-warning); font-size: 1.1rem;">
+                                        <i class="fas fa-exclamation-triangle"></i> تم اكتشاف خطأ ولكن توجد نسخة احتياطية
+                                    </p>
+                                    <button class="btn btn-secondary" onclick="window.autoRecovery.restoreBackup()" style="margin-top: 1rem; display: inline-flex;">
+                                        <i class="fas fa-undo"></i> استعادة النسخة الاحتياطية
+                                    </button>
+                                    <a href="/camera" class="btn btn-secondary" style="margin-top: 0.5rem; display: inline-flex;">
+                                        <i class="fas fa-camera"></i> العودة للكاميرا
+                                    </a>
+                                </div>
+                            `;
+                            window.autoRecovery.backupData = { items: backupData.items, timestamp: backupData.timestamp };
+                            return;
+                        } catch (e2) {}
+                    }
+                    
+                    viewContainer.innerHTML = `
+                        <div class="loading-error-zone">
+                            <p style="color: var(--color-danger); font-size: 1.1rem;">
+                                <i class="fas fa-exclamation-triangle"></i> حدث خلل فني
+                            </p>
+                            <p style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+                                ${escapeHtml(err.message)}
+                            </p>
+                            <a href="/camera" class="btn btn-secondary" style="margin-top: 1.5rem; display: inline-flex;">
+                                <i class="fas fa-camera"></i> العودة للكاميرا
+                            </a>
+                        </div>
+                    `;
                 }
             }
 
-            generateId() {
-                if (crypto.randomUUID) return crypto.randomUUID();
-                return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-            }
-
-            showSaving(show) {
-                this.els.savingOverlay.classList.toggle('active', show);
-            }
-
-            // ========== Auto-save Draft ==========
-            startAutoSave() {
-                this.autoSaveTimer = setInterval(() => {
-                    if (this.unsavedChanges) this.saveDraft();
-                }, 2500);
-            }
-
-            saveDraft() {
-                const data = {
-                    ...this.invoiceData,
-                    items: this.items,
-                    savedAt: Date.now()
-                };
-                try {
-                    localStorage.setItem('current_invoice_data', JSON.stringify(data));
-                    this.unsavedChanges = false;
-                } catch (e) {
-                    // Storage full - try clearing old drafts
+            function checkForRecovery() {
+                const recoveryData = localStorage.getItem('crash_recovery');
+                if (recoveryData) {
                     try {
-                        localStorage.removeItem('invoice_templates');
-                        localStorage.setItem('current_invoice_data', JSON.stringify(data));
-                    } catch (e2) {
-                        // Silent fail
+                        const data = JSON.parse(recoveryData);
+                        const recoveryBar = document.getElementById('recovery-bar');
+                        if (recoveryBar && data.items && data.items.length > 0) {
+                            window.autoRecovery.backupData = data;
+                            recoveryBar.innerHTML = window.autoRecovery.getRecoveryUI();
+                            recoveryBar.classList.add('visible');
+                        }
+                    } catch (e) {
+                        localStorage.removeItem('crash_recovery');
                     }
                 }
             }
 
-            // ========== Rendering ==========
-            render() {
-                // Set initial values
-                this.els.supplierInput.value = this.invoiceData.supplier;
-                this.els.dateInput.value = this.invoiceData.date;
-                this.els.timeInput.value = this.invoiceData.time;
-
-                this.renderItems();
-                this.updateTotal();
-                this.updateUndoButton();
-                this.renderTemplates();
+            // ========== مؤشر التمرير ==========
+            function setupScrollIndicator() {
+                const wrapper = document.querySelector('.table-wrapper');
+                const indicator = document.getElementById('scroll-indicator');
+                if (!wrapper || !indicator) return;
+                
+                wrapper.addEventListener('scroll', () => {
+                    const hasScroll = wrapper.scrollWidth > wrapper.clientWidth;
+                    const isScrolledToEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 10;
+                    indicator.classList.toggle('visible', hasScroll && !isScrolledToEnd);
+                });
             }
 
-            renderItems() {
-                const list = this.els.itemsList;
-                const fragment = document.createDocumentFragment();
+            // ========== Event Listeners ==========
+            function setupEventListeners() {
+                const tbody = document.getElementById('items-tbody');
+                if (!tbody) return;
 
-                this.items.forEach((item, index) => {
-                    const row = document.createElement('div');
-                    row.className = 'item-row';
-                    row.dataset.index = index;
-                    row.setAttribute('role', 'listitem');
-
-                    const total = (parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0);
-
-                    row.innerHTML = `
-                <div class="delete-bg"><i class="fas fa-trash"></i></div>
-                <input class="item-input name-input" type="text" value="${this.escHtml(item.name)}"
-                       placeholder="اسم الصنف" data-field="name" data-index="${index}" aria-label="اسم الصنف">
-                <input class="item-input qty-input" type="number" value="${item.quantity}"
-                       min="1" step="1" data-field="quantity" data-index="${index}" aria-label="الكمية">
-                <input class="item-input price-input" type="number" value="${item.price}"
-                       min="0" step="0.01" data-field="price" data-index="${index}" aria-label="السعر">
-                <span class="item-total" data-index="${index}">${total.toFixed(2)}</span>
-                <div class="item-actions-inline">
-                  <button class="item-action-dot" data-action="duplicate" data-index="${index}" title="نسخ" aria-label="نسخ الصنف">
-                    <i class="fas fa-copy"></i>
-                  </button>
-                  <button class="item-action-dot delete-dot" data-action="delete" data-index="${index}" title="حذف" aria-label="حذف الصنف">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              `;
-
-                    fragment.appendChild(row);
-                });
-
-                list.innerHTML = '';
-                list.appendChild(fragment);
-
-                // Update count
-                this.els.itemsCountLabel.textContent = this.items.length;
-
-                // Re-attach swipe listeners
-                this.attachSwipeToDelete();
-            }
-
-            updateTotal() {
-                const total = this.calculateTotal();
-                this.els.totalDisplay.innerHTML = `<span class="currency">ج.م</span> ${total.toFixed(2)}`;
-            }
-
-            // ========== Event Handling ==========
-            attachEvents() {
-                // Supplier input
-                this.els.supplierInput.addEventListener('input', (e) => {
-                    this.invoiceData.supplier = e.target.value;
-                    this.showSupplierSuggestions(e.target.value);
-                    this.unsavedChanges = true;
-                });
-                this.els.supplierInput.addEventListener('blur', () => this.hideSupplierSuggestions());
-                this.els.supplierInput.addEventListener('focus', (e) => this.showSupplierSuggestions(e.target.value));
-
-                // Suggestion click
-                this.els.supplierSuggestions.addEventListener('pointerdown', (e) => {
-                    const item = e.target.closest('.suggestion-item');
-                    if (item) {
-                        this.els.supplierInput.value = item.textContent;
-                        this.invoiceData.supplier = item.textContent;
-                        this.els.supplierSuggestions.classList.remove('visible');
-                        this.unsavedChanges = true;
-                    }
-                });
-
-                // Date & time
-                this.els.dateInput.addEventListener('change', (e) => {
-                    this.invoiceData.date = e.target.value;
-                    this.unsavedChanges = true;
-                });
-                this.els.timeInput.addEventListener('change', (e) => {
-                    this.invoiceData.time = e.target.value;
-                    this.unsavedChanges = true;
-                });
-
-                // Add item
-                this.els.addItemBtn.addEventListener('click', () => this.addItem());
-
-                // Save
-                this.els.saveBtn.addEventListener('click', () => this.saveInvoice());
-
-                // Template save
-                this.els.templateBtn.addEventListener('click', () => this.saveAsTemplate());
-
-                // Clear
-                this.els.clearBtn.addEventListener('click', () => {
-                    if (this.items.length === 0) return;
-                    if (confirm('مسح جميع الأصناف؟ يمكنك التراجع بعد المسح.')) {
-                        this.items = [];
-                        this.renderItems();
-                        this.updateTotal();
-                        this.pushHistory();
-                        this.clearSelection();
-                    }
-                });
-
-                // Undo
-                this.els.undoBtn.addEventListener('click', () => this.undo());
-
-                // Batch actions
-                this.els.batchDeleteBtn.addEventListener('click', () => this.batchDelete());
-                this.els.batchDuplicateBtn.addEventListener('click', () => this.batchDuplicate());
-                this.els.cancelBatchBtn.addEventListener('click', () => this.clearSelection());
-
-                // Items list delegation
-                this.els.itemsList.addEventListener('input', this.onInputChange);
-                this.els.itemsList.addEventListener('click', this.onItemClick);
-
-                // Enter key in last item adds new
-                this.els.itemsList.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && e.target.classList.contains('name-input')) {
-                        const index = parseInt(e.target.dataset.index);
-                        if (index === this.items.length - 1 && this.items[index].name.trim()) {
-                            e.preventDefault();
-                            this.addItem();
+                // معالجة الإدخال الذكية
+                tbody.addEventListener('input', (e) => {
+                    const target = e.target;
+                    if (!target.classList.contains('cell-input')) return;
+                    
+                    // معالجة الأرقام العربية
+                    if (target.classList.contains('number-type')) {
+                        let currentVal = target.value;
+                        currentVal = currentVal.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+                        
+                        if (target.classList.contains('item-qty') || target.classList.contains('item-bonus')) {
+                            currentVal = currentVal.replace(/[^0-9]/g, '');
+                        } else {
+                            currentVal = currentVal.replace(/[^0-9.]/g, '');
+                            const parts = currentVal.split('.');
+                            if (parts.length > 2) {
+                                currentVal = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                        }
+                        target.value = currentVal;
+                        
+                        // تصحيح تلقائي
+                        const fieldKey = Array.from(target.classList)
+                            .find(c => c.startsWith('item-'))
+                            ?.replace('item-', '');
+                        if (fieldKey) {
+                            const corrected = SmartValidator.autoCorrect(currentVal, fieldKey);
+                            if (corrected !== undefined && corrected != currentVal) {
+                                setTimeout(() => {
+                                    if (target.value === currentVal) {
+                                        target.value = corrected;
+                                        target.classList.add('auto-corrected');
+                                        setTimeout(() => target.classList.remove('auto-corrected'), 1000);
+                                    }
+                                }, 500);
+                            }
                         }
                     }
+                    
+                    recalculateTotal();
+                    clearTimeout(stateCaptureTimer);
+                    stateCaptureTimer = setTimeout(captureState, 250);
+                    
+                    // تحقق مؤجل من الأخطاء
+                    clearTimeout(validationTimer);
+                    validationTimer = setTimeout(validateAllItems, 1000);
                 });
 
-                // Before unload warning
-                window.addEventListener('beforeunload', (e) => {
-                    if (this.unsavedChanges && this.items.some(i => i.name.trim())) {
-                        this.saveDraft();
+                // تحديد النص عند التركيز
+                tbody.addEventListener('focus', (e) => {
+                    if (e.target && e.target.classList.contains('cell-input') && e.target.classList.contains('number-type')) {
+                        setTimeout(() => e.target.select(), 0);
                     }
                 }, true);
 
-                // Toast dismiss
-                this.els.toast.addEventListener('click', () => {
-                    this.els.toast.classList.remove('show');
-                });
-            }
-
-            onInputChange(e) {
-                const index = parseInt(e.target.dataset.index);
-                const field = e.target.dataset.field;
-                if (isNaN(index) || !field) return;
-
-                this.updateItem(index, field, e.target.value);
-
-                // Debounce history push for typing
-                clearTimeout(this._historyDebounce);
-                this._historyDebounce = setTimeout(() => this.pushHistory(), 600);
-            }
-
-            onItemClick(e) {
-                const index = parseInt(e.target.dataset.index);
-                if (isNaN(index)) return;
-
-                // Action buttons
-                const action = e.target.closest('[data-action]')?.dataset.action;
-                if (action === 'delete') {
-                    this.deleteItem(index);
-                    return;
-                }
-                if (action === 'duplicate') {
-                    this.duplicateItem(index);
-                    return;
-                }
-
-                // Don't select when clicking inputs
-                if (e.target.tagName === 'INPUT') return;
-
-                // Toggle selection
-                this.toggleSelect(index, e);
-            }
-
-            attachSwipeToDelete() {
-                const rows = this.els.itemsList.querySelectorAll('.item-row');
-
-                rows.forEach(row => {
-                    // Remove old listeners by cloning (simple approach)
-                    const newRow = row.cloneNode(true);
-                    row.parentNode.replaceChild(newRow, row);
-
-                    let startX = 0;
-                    let currentX = 0;
-                    let swiping = false;
-
-                    newRow.addEventListener('touchstart', (e) => {
-                        if (e.target.tagName === 'INPUT') return;
-                        startX = e.touches[0].clientX;
-                        swiping = true;
-                    }, { passive: true });
-
-                    newRow.addEventListener('touchmove', (e) => {
-                        if (!swiping) return;
-                        currentX = e.touches[0].clientX;
-                        const diff = startX - currentX;
-                        if (diff > 15) {
-                            newRow.classList.add('swiping');
+                // أزرار الإجراءات
+                tbody.addEventListener('click', (e) => {
+                    const row = e.target.closest('tr');
+                    if (!row) return;
+                    
+                    if (e.target.closest('.delete-btn')) {
+                        if (tbody.children.length > 1) {
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(-20px)';
+                            row.style.transition = 'all 0.3s ease';
+                            setTimeout(() => {
+                                row.remove();
+                                updateIndices();
+                                recalculateTotal();
+                                captureState();
+                                validateAllItems();
+                            }, 300);
                         } else {
-                            newRow.classList.remove('swiping');
+                            showToast('يجب وجود صنف واحد على الأقل', 'warning');
                         }
-                    }, { passive: true });
+                    }
+                    
+                    if (e.target.closest('.split-btn')) {
+                        const clone = row.cloneNode(true);
+                        clone.style.opacity = '0';
+                        clone.querySelectorAll('input').forEach(input => {
+                            if (input.classList.contains('item-qty')) input.value = '1';
+                            else if (input.classList.contains('number-type')) input.value = '0';
+                            else if (input.classList.contains('item-expiry')) input.value = '';
+                            else if (input.classList.contains('item-name')) input.value = '';
+                        });
+                        row.parentNode.insertBefore(clone, row.nextSibling);
+                        setTimeout(() => {
+                            clone.style.transition = 'all 0.3s ease';
+                            clone.style.opacity = '1';
+                        }, 10);
+                        updateIndices();
+                        recalculateTotal();
+                        captureState();
+                        clone.querySelector('.item-name')?.focus();
+                    }
+                    
+                    if (e.target.closest('.duplicate-btn')) {
+                        const clone = row.cloneNode(true);
+                        clone.style.opacity = '0';
+                        row.parentNode.insertBefore(clone, row.nextSibling);
+                        setTimeout(() => {
+                            clone.style.transition = 'all 0.3s ease';
+                            clone.style.opacity = '1';
+                        }, 10);
+                        updateIndices();
+                        recalculateTotal();
+                        captureState();
+                    }
+                });
 
-                    newRow.addEventListener('touchend', () => {
-                        if (!swiping) return;
-                        swiping = false;
-                        const diff = startX - currentX;
-                        if (diff > 55) {
-                            const index = parseInt(newRow.dataset.index);
-                            if (!isNaN(index)) {
-                                // Visual feedback then delete
-                                newRow.style.transform = 'translateX(-60px)';
-                                newRow.style.opacity = '0';
-                                newRow.style.transition = 'all 0.2s ease';
-                                setTimeout(() => {
-                                    this.deleteItem(index);
-                                }, 200);
-                                return;
-                            }
-                        }
-                        newRow.classList.remove('swiping');
-                        newRow.style.transform = '';
-                        newRow.style.opacity = '';
-                        newRow.style.transition = '';
+                // إضافة صف جديد
+                document.getElementById('add-row-btn')?.addEventListener('click', () => {
+                    const newItem = {};
+                    activeColumns.forEach(col => {
+                        if (col.key === 'quantity') newItem[col.key] = 1;
+                        else if (col.type === 'number' || col.type === 'decimal') newItem[col.key] = 0;
+                        else newItem[col.key] = '';
                     });
+                    const newRow = createItemRow(newItem);
+                    newRow.style.opacity = '0';
+                    tbody.appendChild(newRow);
+                    setTimeout(() => {
+                        newRow.style.transition = 'all 0.3s ease';
+                        newRow.style.opacity = '1';
+                    }, 10);
+                    updateIndices();
+                    recalculateTotal();
+                    captureState();
+                    newRow.querySelector('.item-name')?.focus();
                 });
-            }
 
-            setupKeyboardShortcuts() {
+                // أزرار التراجع والإعادة
+                document.getElementById('undo-btn')?.addEventListener('click', undo);
+                document.getElementById('redo-btn')?.addEventListener('click', redo);
+                document.getElementById('ai-suggest-btn')?.addEventListener('click', showSmartSuggestions);
+
+                // اختصارات لوحة المفاتيح
                 document.addEventListener('keydown', (e) => {
-                    // Ctrl+Z = Undo
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                         e.preventDefault();
-                        this.undo();
+                        e.shiftKey ? redo() : undo();
                     }
-                    // Escape = clear selection
-                    if (e.key === 'Escape') {
-                        this.clearSelection();
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                        e.preventDefault();
+                        redo();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                        e.preventDefault();
+                        saveInvoiceLocally();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                        e.preventDefault();
+                        showSmartSuggestions();
                     }
                 });
+
+                // زر الحفظ
+                const commitBtn = document.getElementById('commit-btn');
+                if (commitBtn) {
+                    commitBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        saveInvoiceLocally();
+                    });
+                }
+
+                // تحديث عند تغيير البيانات الوصفية
+                document.getElementById('editable-store')?.addEventListener('input', () => {
+                    clearTimeout(stateCaptureTimer);
+                    stateCaptureTimer = setTimeout(captureState, 250);
+                    
+                    const box = document.getElementById('store-box');
+                    if (box) {
+                        box.classList.toggle('error', !document.getElementById('editable-store').value.trim());
+                    }
+                });
+                document.getElementById('editable-date')?.addEventListener('change', captureState);
+                document.getElementById('editable-payment-status')?.addEventListener('change', captureState);
             }
 
-            // ========== Toast ==========
-            showToast(message, type = 'info') {
-                const toast = this.els.toast;
-                toast.textContent = message;
-                toast.className = `toast show ${type}`;
-                clearTimeout(this.toastTimer);
-                this.toastTimer = setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 2500);
+            // ========== Utility Functions ==========
+            function escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = String(text);
+                return div.innerHTML;
             }
 
-            // ========== Utilities ==========
-            escHtml(str) {
-                if (!str) return '';
-                return String(str)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;');
+            // ========== Initialization ==========
+            function initApp() {
+                console.log('🚀 Fast Sokon AI v5.0 - Local Storage System');
+                console.log('💾 Storage: IndexedDB + localStorage fallback');
+
+                const rawSessionData = sessionStorage.getItem('analysis_result');
+                
+                if (!rawSessionData) {
+                    // محاولة استرداد من localStorage
+                    const backup = localStorage.getItem('last_valid_state');
+                    if (backup) {
+                        try {
+                            const backupData = JSON.parse(backup);
+                            sessionStorage.setItem('analysis_result', JSON.stringify({ text: JSON.stringify(backupData) }));
+                            showToast('🔄 تم استرداد آخر فاتورة من النسخة الاحتياطية', 'info');
+                            location.reload();
+                            return;
+                        } catch (e) {}
+                    }
+                    
+                    document.getElementById('render-target').innerHTML = `
+                        <div class="loading-error-zone">
+                            <p style="color: var(--color-danger); font-size: 1.1rem;">
+                                <i class="fas fa-exclamation-triangle"></i> لم يتم العثور على بيانات الفاتورة.
+                            </p>
+                            <a href="/camera" class="btn btn-secondary" style="margin-top: 1.5rem; display: inline-flex;">
+                                <i class="fas fa-camera"></i> العودة للكاميرا
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                try {
+                    const payload = JSON.parse(rawSessionData);
+                    
+                    if (payload && payload.text) {
+                        parseAndBuildEditableUI(payload.text);
+                    } else {
+                        throw new Error('النص غير موجود');
+                    }
+                } catch (e) {
+                    console.error('❌ Parse failed:', e);
+                    
+                    document.getElementById('render-target').innerHTML = `
+                        <div class="loading-error-zone">
+                            <p style="color: var(--color-danger); font-size: 1.1rem;">
+                                <i class="fas fa-exclamation-triangle"></i> البيانات غير صالحة
+                            </p>
+                            <p style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
+                                ${escapeHtml(e.message)}
+                            </p>
+                            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;">
+                                <a href="/camera" class="btn btn-secondary">
+                                    <i class="fas fa-camera"></i> العودة للكاميرا
+                                </a>
+                                <button class="btn btn-secondary" onclick="window.autoRecovery.restoreBackup()">
+                                    <i class="fas fa-undo"></i> استعادة نسخة احتياطية
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
             }
 
-            // ========== Cleanup ==========
-            destroy() {
-                clearInterval(this.autoSaveTimer);
-                clearTimeout(this.toastTimer);
-                clearTimeout(this._historyDebounce);
-                if (this.unsavedChanges) this.saveDraft();
+            // ========== تنظيف عند مغادرة الصفحة ==========
+            window.addEventListener('beforeunload', () => {
+                try {
+                    const items = getItemsData();
+                    if (items && items.length > 0) {
+                        localStorage.setItem('last_valid_state', JSON.stringify({
+                            items: items,
+                            timestamp: Date.now()
+                        }));
+                    }
+                } catch (e) {
+                    // Silent fail
+                }
+            });
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initApp);
+            } else {
+                initApp();
             }
-        }
 
-        // Bootstrap
-        let app;
-        document.addEventListener('DOMContentLoaded', () => {
-            app = new InvoiceReview();
-            window.reviewApp = app;
-        });
-
-        window.addEventListener('beforeunload', () => {
-            if (app) app.destroy();
-        });
-
-        window.addEventListener('pagehide', () => {
-            if (app) app.destroy();
-        });
+            console.log('🧠 Fast Sokon AI v5.0 - Local Storage System Loaded');
+            console.log('📦 Storage: IndexedDB (primary) + localStorage (fallback)');
+        })();
     </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // ============================================================
-// 🔑 ضع مفتاح Gemini API هنا (لن تضطر للبحث عنه)
+// 🔑 تم نقل مفتاح Gemini API إلى متغير بيئي
 // ============================================================
-const GEMINI_API_KEY = "AQ.Ab8RN6IZIELJN_SJw60XgIZ1873HgYhQFf6pyf2zJg87Va3khw";
+const GEMINI_API_KEY = import.meta.env.GEMINI_API_KEY;
 
 import { GoogleGenAI, Type } from '@google/genai';
 

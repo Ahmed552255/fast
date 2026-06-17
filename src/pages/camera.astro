@@ -620,8 +620,32 @@
 
       init() {
         this.setupEventListeners();
-        this.startCamera('environment');
+        // ✅ تشغيل الكاميرا فوراً مع معالجة أفضل
+        this.initializeCamera();
         this.updateImageCounter();
+      }
+
+      // ✅ دالة جديدة لتشغيل الكاميرا مع معالجة محسنة
+      async initializeCamera() {
+        try {
+          // أولاً: التحقق من دعم الكاميرا
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('متصفحك لا يدعم الوصول للكاميرا');
+          }
+
+          // ثانياً: محاولة تشغيل الكاميرا الخلفية أولاً
+          await this.startCamera('environment');
+          console.log('✅ الكاميرا تعمل بنجاح');
+        } catch (err) {
+          console.warn('⚠️ فشل تشغيل الكاميرا الخلفية، تجربة الأمامية...');
+          try {
+            // ثالثاً: إذا فشلت الخلفية، نجرب الأمامية
+            await this.startCamera('user');
+          } catch (err2) {
+            console.error('❌ فشل تشغيل الكاميرا:', err2);
+            this.showToast('⚠️ تعذر الوصول للكاميرا. تأكد من: 1) صلاحية الموقع 2) اتصال HTTPS 3) عدم استخدام الكاميرا في تطبيق آخر', 'error', 8000);
+          }
+        }
       }
 
       // ========== وظائف مساعدة ==========
@@ -694,29 +718,70 @@
 
       // ========== الكاميرا ==========
       async startCamera(mode = 'environment') {
+        // إيقاف أي بث سابق
         if (this.currentStream) {
           this.currentStream.getTracks().forEach(track => track.stop());
+          this.currentStream = null;
         }
         
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({
+          // ✅ تحسين إعدادات الكاميرا للعمل على جميع الأجهزة
+          const constraints = {
             video: { 
-              facingMode: mode, 
-              width: { ideal: 1280 }, 
-              height: { ideal: 720 } 
+              facingMode: { ideal: mode },
+              width: { ideal: 1280, min: 640 },
+              height: { ideal: 720, min: 480 }
             },
             audio: false
-          });
+          };
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
           
           this.cameraVideo.srcObject = stream;
           this.currentStream = stream;
           this.facingMode = mode;
           
+          // ✅ انتظار تحميل الفيديو فعلياً
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('انتهت مهلة تحميل الكاميرا')), 10000);
+            
+            this.cameraVideo.onloadedmetadata = () => {
+              clearTimeout(timeout);
+              this.cameraVideo.play().then(resolve).catch(reject);
+            };
+            
+            this.cameraVideo.onerror = () => {
+              clearTimeout(timeout);
+              reject(new Error('خطأ في تحميل الفيديو'));
+            };
+          });
+          
           this.cameraVideo.style.display = 'block';
+          console.log(`✅ الكاميرا ${mode === 'environment' ? 'الخلفية' : 'الأمامية'} تعمل`);
+          
         } catch (err) {
-          console.error('خطأ في الكاميرا:', err);
-          this.showToast('⚠️ تعذر الوصول إلى الكاميرا. تأكد من الصلاحيات.', 'error');
+          console.error(`❌ خطأ في تشغيل الكاميرا (${mode}):`, err);
+          
+          // ✅ رسائل خطأ أكثر وضوحاً
+          let errorMessage = 'تعذر الوصول إلى الكاميرا';
+          
+          if (err.name === 'NotAllowedError') {
+            errorMessage = 'يرجى السماح بالوصول للكاميرا من إعدادات المتصفح';
+          } else if (err.name === 'NotFoundError') {
+            errorMessage = 'لم يتم العثور على كاميرا في جهازك';
+          } else if (err.name === 'NotReadableError') {
+            errorMessage = 'الكاميرا قيد الاستخدام من تطبيق آخر';
+          } else if (err.name === 'OverconstrainedError') {
+            errorMessage = 'إعدادات الكاميرا غير مدعومة';
+          } else if (err.message) {
+            errorMessage = err.message;
+          }
+          
+          this.showToast(`⚠️ ${errorMessage}`, 'error', 6000);
           this.cameraVideo.style.display = 'none';
+          
+          // ✅ إعادة رمي الخطأ للتعامل معه في initializeCamera
+          throw err;
         }
       }
 
@@ -742,7 +807,8 @@
         }
 
         if (!this.currentStream || this.cameraVideo.videoWidth === 0) {
-          this.showToast('الكاميرا غير جاهزة بعد', 'error');
+          this.showToast('الكاميرا غير جاهزة بعد، جاري إعادة التشغيل...', 'warning');
+          this.initializeCamera();
           return;
         }
 
@@ -1126,6 +1192,14 @@
         this.cameraVideo.addEventListener('dblclick', () => {
           const newMode = this.facingMode === 'environment' ? 'user' : 'environment';
           this.startCamera(newMode);
+        });
+
+        // ✅ إعادة محاولة تشغيل الكاميرا عند النقر على الفيديو إذا كان معطلاً
+        this.cameraVideo.addEventListener('click', () => {
+          if (!this.currentStream || this.cameraVideo.videoWidth === 0) {
+            this.showToast('🔄 جاري إعادة تشغيل الكاميرا...', 'info', 2000);
+            this.initializeCamera();
+          }
         });
 
         // تنظيف

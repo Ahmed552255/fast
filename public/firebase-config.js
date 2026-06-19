@@ -8,9 +8,10 @@
  * 
  * ✅ الميزة الجديدة: مزامنة تلقائية للفواتير المحلية كل 16 ثانية
  * 🔄 يتبع نظام التخزين في صفحة المراجعة (IndexedDB + localStorage)
+ * 📅 الفواتير تُرفع بتاريخ وقت الرفع السحابي (serverTimestamp)
  * 
- * @version 2.2.0
- * @lastUpdate 2026-06-16
+ * @version 2.3.0
+ * @lastUpdate 2026-06-18
  * @project i-excelled
  */
 
@@ -47,7 +48,7 @@ const firebaseConfig = {
     
     // معلومات التطبيق
     appName: 'Fast Sokon',
-    version: '2.2.0',
+    version: '2.3.0',
     
     // إعدادات Realtime Database
     database: {
@@ -92,6 +93,7 @@ const firebaseConfig = {
         deleteAfterSync: true,            // حذف من المحلي بعد الرفع الناجح
         requireAuth: true,                // يتطلب تسجيل الدخول للمزامنة
         syncOnConnect: true,              // مزامنة فورية عند استعادة الاتصال
+        useServerTimestamp: true,         // ✅ استخدام توقيت الخادم كتاريخ للفاتورة
         debug: CURRENT_ENV === 'development' // تفعيل سجلات التصحيح في بيئة التطوير
     },
     
@@ -115,6 +117,8 @@ const firebaseConfig = {
  * - localStorage: fast_sokon_invoices
  * - localStorage: last_valid_state
  * - localStorage: crash_recovery
+ * 
+ * 📅 الفواتير تُرفع بتاريخ وقت الرفع السحابي (serverTimestamp)
  */
 class LocalToCloudSync {
     constructor(config) {
@@ -144,6 +148,7 @@ class LocalToCloudSync {
         
         console.log('🔄 LocalToCloudSync initialized - interval:', this.config.sync?.interval || 16000, 'ms');
         console.log('📦 Following Page Review storage system (IndexedDB + localStorage)');
+        console.log('📅 Using server timestamp for invoice dates');
     }
 
     /**
@@ -263,7 +268,7 @@ class LocalToCloudSync {
                         resolve(invoices.map(inv => ({
                             ...inv,
                             _source: 'IndexedDB',
-                            id: inv.id || inv._source + '_' + Date.now()
+                            id: inv.id || 'idb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
                         })));
                     };
 
@@ -303,7 +308,7 @@ class LocalToCloudSync {
                     invoices.push({
                         ...inv,
                         _source: 'fast_sokon_invoices',
-                        id: inv.id || `local_${Date.now()}`
+                        id: inv.id || `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
                     });
                 });
             }
@@ -315,7 +320,6 @@ class LocalToCloudSync {
         try {
             const lastState = JSON.parse(localStorage.getItem('last_valid_state') || 'null');
             if (lastState && lastState.items && lastState.items.length > 0) {
-                // تحقق إذا كانت موجودة بالفعل في القائمة
                 const alreadyExists = invoices.some(inv => 
                     inv.timestamp === lastState.timestamp || 
                     JSON.stringify(inv.items) === JSON.stringify(lastState.items)
@@ -329,9 +333,8 @@ class LocalToCloudSync {
                         ...lastState,
                         id: lastState.id || `last_state_${lastState.timestamp || Date.now()}`,
                         _source: 'last_valid_state',
-                        // ضمان وجود الحقول المطلوبة
                         store: lastState.store || lastState.supplier || 'غير محدد',
-                        date: lastState.date || lastState.dateStr || new Date().toISOString().split('T')[0],
+                        originalInvoiceDate: lastState.date || lastState.dateStr || null,
                         total: parseFloat(lastState.total) || 0,
                         itemCount: lastState.itemCount || lastState.items?.length || 0,
                         paymentStatus: lastState.paymentStatus || 'unpaid'
@@ -360,7 +363,7 @@ class LocalToCloudSync {
                         id: `recovery_${recovery.timestamp || Date.now()}`,
                         _source: 'crash_recovery',
                         store: recovery.context || recovery.store || 'استرداد تلقائي',
-                        date: recovery.date || new Date().toISOString().split('T')[0],
+                        originalInvoiceDate: recovery.date || null,
                         total: recovery.total || 0,
                         itemCount: recovery.itemCount || recovery.items?.length || 0,
                         paymentStatus: recovery.paymentStatus || 'unpaid'
@@ -385,7 +388,7 @@ class LocalToCloudSync {
                         invoices.push({
                             ...inv,
                             _source: 'fast_sokon_backup_invoices',
-                            id: inv.id || `backup_${Date.now()}`
+                            id: inv.id || `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
                         });
                     }
                 });
@@ -462,7 +465,6 @@ class LocalToCloudSync {
                 const tx = db.transaction('invoices', 'readwrite');
                 const store = tx.objectStore('invoices');
                 
-                // البحث عن الفاتورة وحذفها
                 const getAllRequest = store.getAll();
                 
                 await new Promise((resolve) => {
@@ -560,12 +562,19 @@ class LocalToCloudSync {
 
     /**
      * رفع فاتورة واحدة إلى Firestore
+     * 📅 التاريخ = وقت الرفع السحابي (serverTimestamp)
      */
     async uploadInvoice(invoice, firestore, user) {
         const invoiceData = {
             // البيانات الأساسية
             store: invoice.store || invoice.supplier || 'غير محدد',
-            date: invoice.date || invoice.dateStr || new Date().toISOString().split('T')[0],
+            
+            // ✅✅✅ تاريخ الفاتورة = وقت الرفع السحابي
+            date: firebase.firestore.FieldValue.serverTimestamp(),
+            
+            // ✅ التاريخ الأصلي للفاتورة (للرجوع إليه فقط)
+            originalInvoiceDate: invoice.date || invoice.dateStr || invoice.originalInvoiceDate || null,
+            
             total: parseFloat(invoice.total) || 0,
             itemCount: invoice.itemCount || invoice.items?.length || 0,
             paymentStatus: invoice.paymentStatus || 'unpaid',
@@ -590,13 +599,15 @@ class LocalToCloudSync {
             
             // بيانات التعريف
             metadata: {
+                // ✅ جميع التواريخ = وقت الخادم
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                syncedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                
                 userId: user.uid,
                 userEmail: user.email,
-                version: firebaseConfig.version || '2.2.0',
+                version: firebaseConfig.version || '2.3.0',
                 syncSource: 'local_to_cloud',
-                syncTimestamp: Date.now(),
                 deviceInfo: navigator.userAgent?.substring(0, 100) || 'unknown'
             }
         };
@@ -685,7 +696,7 @@ class LocalToCloudSync {
             this.syncStats.pending = uniqueInvoices.length;
             this.syncStats.total += uniqueInvoices.length;
             
-            console.log(`📤 Starting sync: ${uniqueInvoices.length} invoices pending`);
+            console.log(`📤 Starting sync: ${uniqueInvoices.length} invoices pending (using server timestamp)`);
             
             const firestore = this.getFirestore();
             const user = this.getCurrentUser();
@@ -718,7 +729,7 @@ class LocalToCloudSync {
                         if (this.config.sync?.deleteAfterSync) {
                             this.removeLocalInvoice(invoice.id, invoice.timestamp);
                             if (this.config.sync?.debug) {
-                                console.log(`✅ Synced & removed: ${invoice.id || invoice._source}`);
+                                console.log(`✅ Synced & removed: ${invoice.id || invoice._source} → ${result.value}`);
                             }
                         } else {
                             if (this.config.sync?.debug) {
@@ -919,6 +930,7 @@ function logConfigInfo() {
         console.log(`🔄 Auto-Sync: ${firebaseConfig.sync?.enabled ? 'Enabled' : 'Disabled'}`);
         console.log(`⏱️ Sync Interval: ${(firebaseConfig.sync?.interval || 16000) / 1000}s`);
         console.log(`🗑️ Delete After Sync: ${firebaseConfig.sync?.deleteAfterSync ? 'Yes' : 'No'}`);
+        console.log(`📅 Date System: Server Timestamp (upload time)`);
         console.log('📦 Following: Page Review Storage System');
         console.log('   - IndexedDB: FastSokonLocalDB');
         console.log('   - localStorage: fast_sokon_invoices');
